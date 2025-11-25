@@ -1,0 +1,25 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Metodos_Pago.UpsertModel
+@{
+    var isEdit = Model.MetodoPago != null;
+}
+
+<h2>@(isEdit ? "Editar Método de Pago" : "Crear Método de Pago")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="MetodoPago.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="MetodoPago.Descripcion" class="form-label"></label>
+        <input asp-for="MetodoPago.Descripcion" class="form-control" />
+        <span asp-validation-for="MetodoPago.Descripcion" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Metodos_Pago/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

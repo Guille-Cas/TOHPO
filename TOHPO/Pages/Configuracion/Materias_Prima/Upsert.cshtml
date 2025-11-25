@@ -1,0 +1,30 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Materias_Prima.UpsertModel
+@{
+    var isEdit = Model.MateriaPrima != null;
+}
+
+<h2>@(isEdit ? "Editar Materia Prima" : "Crear Materia Prima")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="MateriaPrima.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="MateriaPrima.Descripcion" class="form-label"></label>
+        <input asp-for="MateriaPrima.Descripcion" class="form-control" />
+        <span asp-validation-for="MateriaPrima.Descripcion" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="MateriaPrima.Unidad_Medida" class="form-label"></label>
+        <select asp-for="MateriaPrima.Unidad_Medida" class="form-select" asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()"></select>
+        <span asp-validation-for="MateriaPrima.Unidad_Medida" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Materias_Prima/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

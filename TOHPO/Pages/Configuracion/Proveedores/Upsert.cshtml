@@ -1,0 +1,40 @@
+@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Proveedores.UpsertModel
+@{
+    var isEdit = Model.Proveedor != null;
+}
+
+<h2>@(isEdit ? "Editar Proveedor" : "Crear Proveedor")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Proveedor.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="Proveedor.Nombre" class="form-label"></label>
+        <input asp-for="Proveedor.Nombre" class="form-control" />
+        <span asp-validation-for="Proveedor.Nombre" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Proveedor.Telefono" class="form-label"></label>
+        <input asp-for="Proveedor.Telefono" class="form-control" />
+        <span asp-validation-for="Proveedor.Telefono" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Proveedor.Correo_Electronico" class="form-label"></label>
+        <input asp-for="Proveedor.Correo_Electronico" class="form-control" />
+        <span asp-validation-for="Proveedor.Correo_Electronico" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Proveedor.Direccion" class="form-label"></label>
+        <input asp-for="Proveedor.Direccion" class="form-control" />
+        <span asp-validation-for="Proveedor.Direccion" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Proveedores/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

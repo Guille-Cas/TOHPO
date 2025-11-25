@@ -1,0 +1,90 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Agentes_ventas.UpsertModel
+@{
+    var isEdit = Model.AgenteVentas != null;
+}
+
+<h2>@(isEdit ? "Editar Agente de Ventas" : "Crear Agente de Ventas")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="AgenteVentas.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="AgenteVentas.Nombre" class="form-label"></label>
+        <input asp-for="AgenteVentas.Nombre" class="form-control" />
+        <span asp-validation-for="AgenteVentas.Nombre" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AgenteVentas.Telefono" class="form-label"></label>
+        <input asp-for="AgenteVentas.Telefono" class="form-control" />
+        <span asp-validation-for="AgenteVentas.Telefono" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AgenteVentas.Correo_Electronico" class="form-label"></label>
+        <input asp-for="AgenteVentas.Correo_Electronico" class="form-control" />
+        <span asp-validation-for="AgenteVentas.Correo_Electronico" class="text-danger"></span>
+    </div>
+    <div class="mb-3 d-flex align-items-center gap-2">
+        <label class="form-label">Proveedor</label>
+        <input type="text" class="form-control" value="@Model.ProveedorDescripcion" readonly style="max-width:300px;" />
+        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalProveedores">Seleccionar</button>
+        <input type="hidden" asp-for="AgenteVentas.Id_Proveedor" />
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Agentes_ventas/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+<!-- Modal de selección de proveedor -->
+<div class="modal fade" id="modalProveedores" tabindex="-1" aria-labelledby="modalProveedoresLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProveedoresLabel">Seleccionar Proveedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered" id="tablaModalProveedores">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Correo</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var proveedor in Model.Proveedores)
+                        {
+                            <tr>
+                                <td>@proveedor.Id</td>
+                                <td>@proveedor.Nombre</td>
+                                <td>@proveedor.Telefono</td>
+                                <td>@proveedor.Correo_Electronico</td>
+                                <td>
+                                    <button type="button" class="btn btn-success btnSeleccionarProveedor" data-id="@proveedor.Id" data-nombre="@proveedor.Nombre" data-bs-dismiss="modal">Seleccionar</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Configuracion/agentes_ventas.js" asp-append-version="true"></script>
+    <script>
+        $(document).on('click', '.btnSeleccionarProveedor', function () {
+            var id = $(this).data('id');
+            var nombre = $(this).data('nombre');
+            $('input[name="AgenteVentas.Id_Proveedor"]').val(id);
+            $('input[readonly][value]').val(nombre);
+        });
+    </script>
+}

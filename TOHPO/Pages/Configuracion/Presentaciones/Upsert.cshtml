@@ -1,0 +1,30 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Presentaciones.UpsertModel
+@{
+    var isEdit = Model.Presentacion != null;
+}
+
+<h2>@(isEdit ? "Editar Presentación" : "Crear Presentación")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Presentacion.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="Presentacion.Cantidad" class="form-label"></label>
+        <input asp-for="Presentacion.Cantidad" class="form-control" />
+        <span asp-validation-for="Presentacion.Cantidad" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Presentacion.Unidad_Medida" class="form-label"></label>
+        <select asp-for="Presentacion.Unidad_Medida" class="form-select" asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()"></select>
+        <span asp-validation-for="Presentacion.Unidad_Medida" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Presentaciones/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

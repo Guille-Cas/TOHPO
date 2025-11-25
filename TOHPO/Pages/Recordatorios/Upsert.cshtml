@@ -1,0 +1,687 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@using TOHPO.Models.Enums
+@model TOHPO.Pages.Recordatorios.UpsertModel
+@{
+    var isEdit = Model.Recordatorio?.Id > 0;
+    ViewData["Title"] = isEdit ? "Editar Recordatorio" : "Crear Recordatorio";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        @ViewData["Title"]
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <h6>Por favor corrija los siguientes errores:</h6>
+                            <div asp-validation-summary="All" class="mb-0"></div>
+                        </div>
+                    }
+
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="Recordatorio.Id" />
+                            <input type="hidden" asp-for="Recordatorio.RecordatorioPadreId" />
+                        }
+                        
+                        <div class="row g-3">
+                            <!-- Fecha y Hora -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Recordatorio.Fecha_Hora" class="form-label fw-bold">
+                                        Fecha y Hora *
+                                    </label>
+                                    <input asp-for="Recordatorio.Fecha_Hora" 
+                                           type="datetime-local" 
+                                           class="form-control form-control-lg"
+                                           id="fechaHoraInput" 
+                                           required />
+                                    <span asp-validation-for="Recordatorio.Fecha_Hora" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Cliente -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Cliente *
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               class="form-control form-control-lg" 
+                                               value="@Model.ClienteDescripcion" 
+                                               readonly 
+                                               id="clienteSeleccionado"
+                                               placeholder="Seleccione un cliente..." 
+                                               required />
+                                        <button type="button" 
+                                                class="btn btn-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalClientes">
+                                            Seleccionar cliente
+                                        </button>
+                                        <input type="hidden" asp-for="Recordatorio.ClienteId" id="clienteIdHidden" />
+                                    </div>
+                                    <span asp-validation-for="Recordatorio.ClienteId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Motivo -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        Motivo del Recordatorio *
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                               class="form-control form-control-lg" 
+                                               value="@Model.MotivoDescripcion" 
+                                               readonly 
+                                               id="motivoSeleccionado"
+                                               placeholder="Seleccione un motivo..." 
+                                               required />
+                                        <button type="button" 
+                                                class="btn btn-warning" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalMotivos">
+                                            Motivos
+                                        </button>
+                                        <input type="hidden" asp-for="Recordatorio.Motivo_RecordatorioId" id="motivoIdHidden" />
+                                    </div>
+                                    <span asp-validation-for="Recordatorio.Motivo_RecordatorioId" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Detalles -->
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label asp-for="Recordatorio.Detalles" class="form-label fw-bold">
+                                        Detalles Adicionales
+                                    </label>
+                                    <textarea asp-for="Recordatorio.Detalles" 
+                                              class="form-control" 
+                                              rows="4" 
+                                              placeholder="Agregue detalles adicionales del recordatorio (opcional)..."></textarea>
+                                    <span asp-validation-for="Recordatorio.Detalles" class="text-danger small"></span>
+                                    <div class="form-text">
+                                        Campo opcional para información adicional
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Recurrencia -->
+                        @if (!isEdit || Model.Recordatorio.RecordatorioPadreId == null)
+                        {
+                            <div class="card mt-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">
+                                        Configuración de Recurrencia
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <!-- Activar recurrencia -->
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                <input asp-for="Recordatorio.EsRecurrente" 
+                                                       class="form-check-input" 
+                                                       type="checkbox" 
+                                                       id="esRecurrente">
+                                                <label class="form-check-label fw-bold" for="esRecurrente">
+                                                    Este recordatorio se repetirá
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div id="opcionesRecurrencia" style="display: @(Model.Recordatorio?.EsRecurrente == true ? "block" : "none")">
+                                            <!-- Tipo de recurrencia -->
+                                            <div class="col-md-6">
+                                                <label asp-for="Recordatorio.TipoRecurrencia" class="form-label fw-bold">
+                                                    Tipo de Recurrencia
+                                                </label>
+                                                <select asp-for="Recordatorio.TipoRecurrencia" 
+                                                        asp-items="Html.GetEnumSelectList<TipoRecurrencia>()" 
+                                                        class="form-select">
+                                                </select>
+                                                <span asp-validation-for="Recordatorio.TipoRecurrencia" class="text-danger small"></span>
+                                            </div>
+
+                                            <!-- Intervalo -->
+                                            <div class="col-md-6">
+                                                <label asp-for="Recordatorio.IntervaloRecurrencia" class="form-label fw-bold">
+                                                    Cada
+                                                </label>
+                                                <div class="input-group">
+                                                    <input asp-for="Recordatorio.IntervaloRecurrencia" 
+                                                           type="number" 
+                                                           class="form-control" 
+                                                           min="1" 
+                                                           value="1" />
+                                                    <span class="input-group-text" id="textoIntervalo">día(s)</span>
+                                                </div>
+                                                <span asp-validation-for="Recordatorio.IntervaloRecurrencia" class="text-danger small"></span>
+                                            </div>
+
+                                            <!-- Límite por fecha -->
+                                            <div class="col-md-6">
+                                                <label asp-for="Recordatorio.FechaFinRecurrencia" class="form-label fw-bold">
+                                                    Terminar en (opcional)
+                                                </label>
+                                                <input asp-for="Recordatorio.FechaFinRecurrencia" 
+                                                       type="date" 
+                                                       class="form-control" />
+                                                <span asp-validation-for="Recordatorio.FechaFinRecurrencia" class="text-danger small"></span>
+                                            </div>
+
+                                            <!-- Límite por número -->
+                                            <div class="col-md-6">
+                                                <label asp-for="Recordatorio.MaximoRepeticiones" class="form-label fw-bold">
+                                                    Máximo repeticiones (opcional)
+                                                </label>
+                                                <input asp-for="Recordatorio.MaximoRepeticiones" 
+                                                       type="number" 
+                                                       class="form-control" 
+                                                       min="1" />
+                                                <span asp-validation-for="Recordatorio.MaximoRepeticiones" class="text-danger small"></span>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <div class="alert alert-info mt-2">
+                                                    <strong>Nota:</strong> Debe especificar al menos un tipo (Fecha o numero de repeticiones. Si especifica tanto fecha de fin como número máximo de repeticiones, se usará el límite que se alcance primero.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (isEdit && Model.Recordatorio.RecordatorioPadreId != null)
+                        {
+                            <div class="alert alert-warning mt-3">
+                                <strong>Recordatorio Recurrente:</strong> Este recordatorio forma parte de una serie recurrente. Los cambios solo afectarán esta instancia específica.
+                            </div>
+                        }
+
+                        <!-- Vista previa del recordatorio -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            Vista Previa
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="vistaPrevia" class="text-muted">
+                                            Complete los campos para ver la vista previa del recordatorio
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <div>
+                                <a asp-page="./Index" class="btn btn-secondary btn-lg">
+                                    Cancelar
+                                </a>
+                            </div>
+                            <div>
+                                @if (isEdit)
+                                {
+                                    <a asp-page="./Index" class="btn btn-info me-2">
+                                        Ver Lista
+                                    </a>
+                                }
+                                <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">
+                                    @(isEdit ? "Actualizar" : "Crear") Recordatorio
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de selección de clientes -->
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-labelledby="modalClientesLabel">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalClientesLabel">
+                    Seleccionar Cliente
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaModalClientes">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre Completo</th>
+                                <th>Teléfono</th>
+                                <th>Correo</th>
+                                <th>Cédula</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cliente in Model.Clientes)
+                            {
+                                <tr>
+                                    <td>@cliente.Id</td>
+                                    <td>
+                                        <div class="fw-bold">@cliente.Nombre @cliente.Primer_Apellido @cliente.Segundo_Apellido</div>
+                                    </td>
+                                    <td>
+                                        @cliente.Telefono
+                                    </td>
+                                    <td>
+                                        @cliente.Correo_Electronico
+                                    </td>
+                                    <td>
+                                        @cliente.Cedula
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn btn-success btn-sm btnSeleccionarCliente" 
+                                                data-id="@cliente.Id" 
+                                                data-nombre="@cliente.Nombre @cliente.Primer_Apellido @cliente.Segundo_Apellido" 
+                                                data-bs-dismiss="modal">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de selección de motivos -->
+<div class="modal fade" id="modalMotivos" tabindex="-1" aria-labelledby="modalMotivosLabel">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalMotivosLabel">
+                    Seleccionar Motivo del Recordatorio
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaModalMotivos">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>ID</th>
+                                <th>Descripción del Motivo</th>
+                                <th class="text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var motivo in Model.MotivosRecordatorio)
+                            {
+                                <tr>
+                                    <td>@motivo.Id</td>
+                                    <td>
+                                        <div class="fw-bold">
+                                            @motivo.Descripcion
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" 
+                                                class="btn btn-success btn-sm btnSeleccionarMotivo" 
+                                                data-id="@motivo.Id" 
+                                                data-descripcion="@motivo.Descripcion" 
+                                                data-bs-dismiss="modal">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Formatear fecha inicial sin segundos
+            formatearFechaSinSegundos();
+            
+            // Inicializar DataTables
+            inicializarTablas();
+            
+            // Eventos de selección
+            configurarEventos();
+            
+            // Vista previa
+            actualizarVistaPrevia();
+            
+            // Validación del formulario
+            validarFormulario();
+            
+            // Configurar recurrencia
+            configurarRecurrencia();
+        });
+
+        function formatearFechaSinSegundos() {
+            var fechaInput = $('#fechaHoraInput');
+            if (fechaInput.length && fechaInput.val()) {
+                var fecha = new Date(fechaInput.val());
+                if (!isNaN(fecha.getTime())) {
+                    fecha.setSeconds(0);
+                    fecha.setMilliseconds(0);
+                    
+                    var fechaFormateada = fecha.getFullYear() + '-' +
+                        String(fecha.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(fecha.getDate()).padStart(2, '0') + 'T' +
+                        String(fecha.getHours()).padStart(2, '0') + ':' +
+                        String(fecha.getMinutes()).padStart(2, '0');
+                    
+                    fechaInput.val(fechaFormateada);
+                }
+            }
+        }
+
+        function configurarRecurrencia() {
+            // Mostrar/ocultar opciones de recurrencia
+            $('#esRecurrente').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#opcionesRecurrencia').show();
+                } else {
+                    $('#opcionesRecurrencia').hide();
+                }
+                actualizarVistaPrevia();
+            });
+
+            // Cambiar texto del intervalo según el tipo
+            $('#Recordatorio_TipoRecurrencia').change(function() {
+                var tipo = $(this).val();
+                var texto = '';
+                
+                switch(tipo) {
+                    case '1': // Diario
+                        texto = 'día(s)';
+                        break;
+                    case '2': // Semanal
+                        texto = 'semana(s)';
+                        break;
+                    case '3': // Mensual
+                        texto = 'mes(es)';
+                        break;
+                    case '4': // Anual
+                        texto = 'año(s)';
+                        break;
+                    default:
+                        texto = 'período(s)';
+                        break;
+                }
+                
+                $('#textoIntervalo').text(texto);
+                actualizarVistaPrevia();
+            });
+
+            // Actualizar vista previa al cambiar opciones de recurrencia
+            $('#Recordatorio_IntervaloRecurrencia, #Recordatorio_FechaFinRecurrencia, #Recordatorio_MaximoRepeticiones').on('change keyup', function() {
+                actualizarVistaPrevia();
+            });
+        }
+
+        function inicializarTablas() {
+            // DataTable para clientes
+            $('#tablaModalClientes').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                pageLength: 5,
+                searching: true,
+                responsive: true,
+                order: [[1, 'asc']]
+            });
+
+            // DataTable para motivos
+            $('#tablaModalMotivos').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                searching: true,
+                responsive: true,
+                order: [[1, 'asc']]
+            });
+        }
+
+        function configurarEventos() {
+            // Seleccionar cliente
+            $(document).on('click', '.btnSeleccionarCliente', function () {
+                var id = $(this).data('id');
+                var nombre = $(this).data('nombre');
+                $('#clienteIdHidden').val(id);
+                $('#clienteSeleccionado').val(nombre);
+                
+                // Remover clases de error
+                $('#clienteSeleccionado').removeClass('is-invalid');
+                
+                actualizarVistaPrevia();
+            });
+
+            // Seleccionar motivo
+            $(document).on('click', '.btnSeleccionarMotivo', function () {
+                var id = $(this).data('id');
+                var descripcion = $(this).data('descripcion');
+                $('#motivoIdHidden').val(id);
+                $('#motivoSeleccionado').val(descripcion);
+                
+                // Remover clases de error
+                $('#motivoSeleccionado').removeClass('is-invalid');
+                
+                actualizarVistaPrevia();
+            });
+
+            // Actualizar vista previa al cambiar campos
+            $('#fechaHoraInput, #Recordatorio_Detalles').on('change keyup', function() {
+                formatearFechaSinSegundos();
+                actualizarVistaPrevia();
+            });
+        }
+
+        function validarFormulario() {
+            $('#btnGuardar').on('click', function(e) {
+                var esValido = true;
+                
+                // Validar cliente
+                if (!$('#clienteIdHidden').val() || $('#clienteIdHidden').val() == '0') {
+                    $('#clienteSeleccionado').addClass('is-invalid');
+                    esValido = false;
+                } else {
+                    $('#clienteSeleccionado').removeClass('is-invalid');
+                }
+                
+                // Validar motivo
+                if (!$('#motivoIdHidden').val() || $('#motivoIdHidden').val() == '0') {
+                    $('#motivoSeleccionado').addClass('is-invalid');
+                    esValido = false;
+                } else {
+                    $('#motivoSeleccionado').removeClass('is-invalid');
+                }
+                
+                // Validar fecha
+                if (!$('#fechaHoraInput').val()) {
+                    $('#fechaHoraInput').addClass('is-invalid');
+                    esValido = false;
+                } else {
+                    $('#fechaHoraInput').removeClass('is-invalid');
+                }
+                
+                // Validaciones de recurrencia
+                if ($('#esRecurrente').is(':checked')) {
+                    if (!$('#Recordatorio_TipoRecurrencia').val()) {
+                        $('#Recordatorio_TipoRecurrencia').addClass('is-invalid');
+                        esValido = false;
+                    } else {
+                        $('#Recordatorio_TipoRecurrencia').removeClass('is-invalid');
+                    }
+                    
+                    var intervalo = $('#Recordatorio_IntervaloRecurrencia').val();
+                    if (!intervalo || parseInt(intervalo) < 1) {
+                        $('#Recordatorio_IntervaloRecurrencia').addClass('is-invalid');
+                        esValido = false;
+                    } else {
+                        $('#Recordatorio_IntervaloRecurrencia').removeClass('is-invalid');
+                    }
+                }
+                
+                if (!esValido) {
+                    e.preventDefault();
+                    alert('Por favor complete todos los campos obligatorios');
+                    return false;
+                }
+            });
+        }
+
+        function actualizarVistaPrevia() {
+            const fecha = $('#fechaHoraInput').val();
+            const cliente = $('#clienteSeleccionado').val();
+            const motivo = $('#motivoSeleccionado').val();
+            const detalles = $('#Recordatorio_Detalles').val();
+            const esRecurrente = $('#esRecurrente').is(':checked');
+
+            let preview = '<div class="row g-3">';
+            
+            if (fecha) {
+                const fechaObj = new Date(fecha);
+                const fechaFormateada = fechaObj.toLocaleString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Verificar si es en el pasado
+                const ahora = new Date();
+                const esPasado = fechaObj < ahora;
+                const colorFecha = esPasado ? 'text-danger' : 'text-primary';
+                
+                preview += `
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <small class="text-muted">Fecha y Hora</small>
+                                <div class="fw-bold ${colorFecha}">${fechaFormateada}</div>
+                                ${esPasado ? '<small class="text-danger">⚠️ Fecha en el pasado</small>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (cliente) {
+                preview += `
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <small class="text-muted">Cliente</small>
+                                <div class="fw-bold">${cliente}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (motivo) {
+                preview += `
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <small class="text-muted">Motivo</small>
+                                <div class="fw-bold">${motivo}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (detalles) {
+                preview += `
+                    <div class="col-12">
+                        <div class="d-flex align-items-start">
+                            <div>
+                                <small class="text-muted">Detalles</small>
+                                <div>${detalles}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Mostrar información de recurrencia
+            if (esRecurrente) {
+                const tipoRecurrencia = $('#Recordatorio_TipoRecurrencia option:selected').text();
+                const intervalo = $('#Recordatorio_IntervaloRecurrencia').val();
+                const fechaFin = $('#Recordatorio_FechaFinRecurrencia').val();
+                const maxRepeticiones = $('#Recordatorio_MaximoRepeticiones').val();
+                
+                let textoRecurrencia = '';
+                if (tipoRecurrencia && tipoRecurrencia !== 'Seleccione tipo...') {
+                    textoRecurrencia = `Se repite cada ${intervalo} ${tipoRecurrencia.toLowerCase()}`;
+                    
+                    if (fechaFin) {
+                        const fechaFinObj = new Date(fechaFin);
+                        const fechaFinFormateada = fechaFinObj.toLocaleDateString('es-ES');
+                        textoRecurrencia += ` hasta el ${fechaFinFormateada}`;
+                    }
+                    
+                    if (maxRepeticiones) {
+                        textoRecurrencia += ` (máximo ${maxRepeticiones} repeticiones)`;
+                    }
+                }
+                
+                preview += `
+                    <div class="col-12">
+                        <div class="d-flex align-items-center">
+                            <div>
+                                <small class="text-muted">Recurrencia</small>
+                                <div class="fw-bold text-success">${textoRecurrencia || 'Recordatorio recurrente (configure los detalles)'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            preview += '</div>';
+
+            if (!fecha && !cliente && !motivo && !detalles) {
+                preview = '<div class="text-center text-muted">Complete los campos para ver la vista previa del recordatorio</div>';
+            }
+
+            $('#vistaPrevia').html(preview);
+        }
+    </script>
+}

@@ -1,0 +1,65 @@
+﻿@page
+@model TOHPO.Pages.Configuracion.Clientes.IndexModel
+@{
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container mt-4">
+    <h2>Gestión de Clientes</h2>
+
+    <div class="mb-3">
+        <a asp-page="/Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Regresar
+        </a>
+        <!-- Modificado: acceso al Upsert para crear cliente -->
+        <a asp-page="/Configuracion/Clientes/Upsert" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Cliente
+        </a>
+    </div>
+
+    <table id="tablaClientes" class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Identificación</th>
+                <th>Nombre completo</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<!-- Modal de detalles del cliente -->
+<div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detallesModalLabel">Detalles del Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group">
+                    <li class="list-group-item"><strong>ID:</strong> <span id="modalId"></span></li>
+                    <li class="list-group-item"><strong>Cédula:</strong> <span id="modalCedula"></span></li>
+                    <li class="list-group-item"><strong>Nombre:</strong> <span id="modalNombre"></span></li>
+                    <li class="list-group-item"><strong>Primer Apellido:</strong> <span id="modalPrimerApellido"></span></li>
+                    <li class="list-group-item"><strong>Segundo Apellido:</strong> <span id="modalSegundoApellido"></span></li>
+                    <li class="list-group-item"><strong>Correo:</strong> <span id="modalCorreo"></span></li>
+                    <li class="list-group-item"><strong>Teléfono:</strong> <span id="modalTelefono"></span></li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Configuracion/clientes.js" asp-append-version="true"></script>
+}

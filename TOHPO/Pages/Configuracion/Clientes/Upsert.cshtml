@@ -1,0 +1,52 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Clientes.UpsertModel
+@{
+    var isEdit = Model.Cliente != null;
+}
+
+<h2>@(isEdit ? "Editar Cliente" : "Crear Cliente")</h2>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Cliente.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="Cliente.Cedula" class="form-label"></label>
+        <input asp-for="Cliente.Cedula" class="form-control" />
+        <span asp-validation-for="Cliente.Cedula" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Cliente.Nombre" class="form-label"></label>
+        <input asp-for="Cliente.Nombre" class="form-control" />
+        <span asp-validation-for="Cliente.Nombre" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Cliente.Primer_Apellido" class="form-label"></label>
+        <input asp-for="Cliente.Primer_Apellido" class="form-control" />
+        <span asp-validation-for="Cliente.Primer_Apellido" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Cliente.Segundo_Apellido" class="form-label"></label>
+        <input asp-for="Cliente.Segundo_Apellido" class="form-control" />
+        <span asp-validation-for="Cliente.Segundo_Apellido" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Cliente.Correo_Electronico" class="form-label"></label>
+        <input asp-for="Cliente.Correo_Electronico" class="form-control" />
+        <span asp-validation-for="Cliente.Correo_Electronico" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Cliente.Telefono" class="form-label"></label>
+        <input asp-for="Cliente.Telefono" class="form-control" />
+        <span asp-validation-for="Cliente.Telefono" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Clientes/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

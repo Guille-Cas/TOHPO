@@ -1,0 +1,30 @@
+﻿@page "{id?}"
+@using TOHPO.Models
+@model TOHPO.Pages.Configuracion.Impuestos.UpsertModel
+@{
+    var isEdit = Model.Impuesto != null;
+}
+
+<h2>@(isEdit ? "Editar Impuesto" : "Crear Impuesto")</h2>
+<form method="post">
+    @Html.AntiForgeryToken()
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Impuesto.Id" />
+    }
+    <div class="mb-3">
+        <label asp-for="Impuesto.Descripcion" class="form-label"></label>
+        <input asp-for="Impuesto.Descripcion" class="form-control" />
+        <span asp-validation-for="Impuesto.Descripcion" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Impuesto.Porcentaje" class="form-label"></label>
+        <input asp-for="Impuesto.Porcentaje" class="form-control" />
+        <span asp-validation-for="Impuesto.Porcentaje" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-page="/Configuracion/Impuestos/Index" class="btn btn-secondary">Cancelar</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

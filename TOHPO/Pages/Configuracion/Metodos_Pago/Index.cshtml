@@ -1,0 +1,34 @@
+﻿@page
+@model TOHPO.Pages.Configuracion.Metodos_Pago.IndexModel
+@{
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+</form>
+
+<div class="container mt-4">
+    <h2>Gestión de Métodos de Pago</h2>
+    <div class="mb-3">
+        <a asp-page="/Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Regresar
+        </a>
+        <a asp-page="/Configuracion/Metodos_Pago/Upsert" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Método de Pago
+        </a>
+    </div>
+    <table id="tablaMetodosPago" class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/Configuracion/metodos_pago.js" asp-append-version="true"></script>
+}
