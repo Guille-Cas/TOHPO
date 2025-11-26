@@ -5,6 +5,11 @@
         Kilogramo,
         Litro,
         Metro,
-        Unidad
+        Unidad,
+        Gramo,
+        Mililitro,
+        Centimetro,
+        Paquete,
+        Caja
     }
 }

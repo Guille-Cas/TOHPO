@@ -1,0 +1,344 @@
+@page
+@model TOHPO.Pages.Operaciones.Productos.IndexModel
+@{
+    ViewData["Title"] = "Productos";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        Gestión de Productos
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Upsert" class="btn btn-primary btn-sm">
+                            Nuevo Producto
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="productosTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th>Categoría</th>
+                                    <th>Impuesto</th>
+                                    <th>Presentación</th>
+                                    <th>Unidad Medida</th>
+                                    <th>Características</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Productos != null)
+                                {
+                                    @foreach (var producto in Model.Productos)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">@producto.CodigoReferencia</span>
+                                                @if (!string.IsNullOrEmpty(producto.Codigo_Barra))
+                                                {
+                                                    <br><small class="text-muted">@producto.Codigo_Barra</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <strong>@producto.Descripcion</strong>
+                                                @if (producto.Tiempo_De_Vida > 0)
+                                                {
+                                                    <br><small class="text-info">
+                                                        @producto.Tiempo_De_Vida días
+                                                    </small>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (producto.Categoria != null)
+                                                {
+                                                    <span class="badge bg-primary">@producto.Categoria.Descripcion</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin categoría</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (producto.Impuesto != null)
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        @producto.Impuesto.Descripcion
+                                                        <br>@producto.Impuesto.Porcentaje.ToString("F2")%
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-dark">Sin impuesto</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (producto.Presentacion != null)
+                                                {
+                                                    @producto.Descripcion
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin presentación</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">
+                                                    @switch (producto.Unidad_Medida)
+                                                    {
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Unidad:
+                                                            <text>Unidad</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Kilogramo:
+                                                            <text>Kg</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Gramo:
+                                                            <text>g</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Litro:
+                                                            <text>L</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Mililitro:
+                                                            <text>ml</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Metro:
+                                                            <text>m</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Centimetro:
+                                                            <text>cm</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Caja:
+                                                            <text>Caja</text>
+                                                            break;
+                                                        case TOHPO.Models.Enums.Unidad_Medida.Paquete:
+                                                            <text>Paquete</text>
+                                                            break;
+                                                        default:
+                                                            <text>@producto.Unidad_Medida</text>
+                                                            break;
+                                                    }
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex flex-column gap-1">
+                                                    @if (producto.Es_Materia_Prima)
+                                                    {
+                                                        <span class="badge bg-success" title="Es Materia Prima">
+                                                            M.Prima
+                                                        </span>
+                                                    }
+                                                    @if (producto.Es_De_Terceros)
+                                                    {
+                                                        <span class="badge bg-warning text-dark" title="Es de Terceros">
+                                                           Terceros
+                                                        </span>
+                                                    }
+                                                    @if (producto.Materia_Prima != null)
+                                                    {
+                                                        <small class="text-muted" title="Materia Prima Asociada">
+                                                           @producto.Materia_Prima.Descripcion
+                                                        </small>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(producto.Estado ? "bg-success" : "bg-secondary")">
+                                                    @(producto.Estado ? "Activo" : "Inactivo")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-page="./Upsert" 
+                                                       asp-route-id="@producto.CodigoReferencia"
+                                                       class="btn btn-warning btn-sm me-2 rounded"
+                                                       title="Editar">
+                                                       Editar
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-info btn-sm me-2 rounded"
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#detailModal" 
+                                                            onclick="showDetails('@producto.CodigoReferencia')" 
+                                                            title="Ver Detalles">
+                                                        Detalles
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-danger btn-sm me-2 rounded"
+                                                            onclick="confirmarEliminar('@producto.CodigoReferencia', '@producto.Descripcion')" 
+                                                            title="Eliminar">
+                                                        Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para detalles del producto -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Detalles del Producto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detalleContenido">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#productosTable').DataTable({
+                "language": {
+                    "decimal": "",
+                    "emptyTable": "No hay productos disponibles",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                    "infoPostFix": "",
+                    "thousands": ",",
+                    "lengthMenu": "Mostrar _MENU_ registros",
+                    "loadingRecords": "Cargando...",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encontraron registros coincidentes",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    },
+                    "aria": {
+                        "sortAscending": ": activar para ordenar la columna de manera ascendente",
+                        "sortDescending": ": activar para ordenar la columna de manera descendente"
+                    }
+                },
+                "order": [[1, "asc"]], // Ordenar por descripción
+                "columnDefs": [
+                    { "orderable": false, "targets": 8 } // Desactivar ordenamiento en columna de acciones
+                ],
+                "pageLength": 10,
+                "responsive": true,
+                "dom": 'Bfrtip',
+                "buttons": [
+                    {
+                        extend: 'excelHtml5',
+                        text: 'Excel',
+                        className: 'btn btn-success btn-sm',
+                        title: 'Listado de Productos'
+                    },
+                    {
+                        extend: 'pdfHtml5',
+                        text: 'PDF',
+                        className: 'btn btn-danger btn-sm',
+                        title: 'Listado de Productos',
+                        orientation: 'landscape',
+                        pageSize: 'A4'
+                    }
+                ]
+            });
+
+            // Mostrar tooltips
+            $('[title]').tooltip();
+        });
+
+        function showDetails(codigoReferencia) {
+            // Buscar el producto en la tabla
+            const productos = @Html.Raw(Json.Serialize(Model.Productos));
+            const producto = productos.find(p => p.codigoReferencia === codigoReferencia);
+            
+            if (producto) {
+                let html = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Información Básica</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Código:</strong></td><td>${producto.codigoReferencia}</td></tr>
+                                <tr><td><strong>Código Barra:</strong></td><td>${producto.codigo_Barra || 'N/A'}</td></tr>
+                                <tr><td><strong>Descripción:</strong></td><td>${producto.descripcion}</td></tr>
+                                <tr><td><strong>Unidad Medida:</strong></td><td>${getUnidadMedidaText(producto.unidad_Medida)}</td></tr>
+                                <tr><td><strong>Tiempo de Vida:</strong></td><td>${producto.tiempo_De_Vida} días</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Clasificación</h6>
+                            <table class="table table-sm">
+                                <tr><td><strong>Categoría:</strong></td><td>${producto.categoria?.descripcion || 'Sin categoría'}</td></tr>
+                                <tr><td><strong>Impuesto:</strong></td><td>${producto.impuesto ? producto.impuesto.descripcion + ' (' + producto.impuesto.porcentaje + '%)' : 'Sin impuesto'}</td></tr>
+                                <tr><td><strong>Presentación:</strong></td><td>${producto.presentacion?.descripcion || 'Sin presentación'}</td></tr>
+                                <tr><td><strong>Materia Prima:</strong></td><td>${producto.materia_Prima?.descripcion || 'N/A'}</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6>Características</h6>
+                            <div class="d-flex gap-2">
+                                ${producto.es_Materia_Prima ? '<span class="badge bg-success">Es Materia Prima</span>' : ''}
+                                ${producto.es_De_Terceros ? '<span class="badge bg-warning text-dark">Es de Terceros</span>' : ''}
+                                ${producto.estado ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('#detalleContenido').html(html);
+            }
+        }
+
+        function getUnidadMedidaText(unidadMedida) {
+            const unidades = {
+                0: 'Unidad',
+                1: 'Kilogramo',
+                2: 'Gramo',
+                3: 'Litro',
+                4: 'Mililitro',
+                5: 'Metro',
+                6: 'Centímetro',
+                7: 'Caja',
+                8: 'Paquete'
+            };
+            return unidades[unidadMedida] || 'Desconocido';
+        }
+
+        function confirmarEliminar(codigoReferencia, descripcion) {
+            if (confirm(`¿Está seguro de que desea eliminar el producto "${descripcion}"?\n\nEsta acción no se puede deshacer.`)) {
+                // Aquí puedes implementar la lógica de eliminación
+                // Por ejemplo, hacer una petición POST al servidor
+                window.location.href = `?handler=Eliminar&id=${codigoReferencia}`;
+            }
+        }
+    </script>
+}

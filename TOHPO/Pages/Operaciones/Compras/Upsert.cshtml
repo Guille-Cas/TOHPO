@@ -1,0 +1,605 @@
+﻿@page "{id:int?}"
+@model TOHPO.Pages.Operaciones.Compras.UpsertModel
+@{
+    ViewData["Title"] = Model.Compra.Id == 0 ? "Nueva Compra" : "Editar Compra";
+}
+
+<style>
+    .producto-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fa;
+    }
+    .total-section {
+        background-color: #e7f3ff;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        border: 2px solid #0d6efd;
+    }
+    .btn-remove-product {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Index" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver
+                        </a>
+                    </div>
+                </div>
+
+                <form method="post" id="compraForm">
+                    <div class="card-body">
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="row">
+                            <!-- Información de la Compra -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">Información de la Compra</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <input type="hidden" asp-for="Compra.Id" />
+                                        
+                                        <div class="form-group mb-3">
+                                            <label asp-for="Compra.Fecha" class="form-label"></label>
+                                            <input asp-for="Compra.Fecha" class="form-control" type="datetime-local" />
+                                            <span asp-validation-for="Compra.Fecha" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label asp-for="Compra.Numero_Factura" class="form-label"></label>
+                                            <input asp-for="Compra.Numero_Factura" class="form-control" />
+                                            <span asp-validation-for="Compra.Numero_Factura" class="text-danger"></span>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label asp-for="Compra.Id_Proveedor" class="form-label">Proveedor *</label>
+                                            <select asp-for="Compra.Id_Proveedor" class="form-control" asp-items="Model.ProveedoresSelectList">
+                                                <option value="0">Seleccione un proveedor</option>
+                                            </select>
+                                            <span asp-validation-for="Compra.Id_Proveedor" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Agregar Productos -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">Agregar Productos</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Buscar Producto</label>
+                                            <select id="selectProducto" class="form-control">
+                                                <option value="">Seleccione un producto</option>
+                                                @foreach (var producto in Model.Productos)
+                                                {
+                                                    <option value="@producto.Codigo" 
+                                                            data-nombre="@producto.Nombre" 
+                                                            data-precio="@producto.Precio_Compra.ToString("F2")"
+                                                            data-stock="@producto.Stock"
+                                                            data-impuesto="@producto.PorcentajeImpuesto.ToString("F2")"
+                                                            data-descripcion-impuesto="@producto.DescripcionImpuesto">
+                                                        @producto.Codigo - @producto.Nombre (Stock: @producto.Stock) - @producto.DescripcionImpuesto (@producto.PorcentajeImpuesto.ToString("F1")%)
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">Cantidad</label>
+                                                    <input type="number" id="cantidadProducto" class="form-control" min="1" value="1" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">Costo Unit.</label>
+                                                    <input type="number" id="costoUnitario" class="form-control" step="0.01" min="0.01" />
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">Descuento %</label>
+                                                    <input type="number" id="descuentoPorcentaje" class="form-control" step="0.01" min="0" max="100" value="0" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group mb-3">
+                                                    <label class="form-label">Impuesto aplicable</label>
+                                                    <input type="text" id="impuestoInfo" class="form-control bg-light" readonly placeholder="Seleccione un producto para ver el impuesto" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="btnAgregarProducto" class="btn btn-primary">
+                                            <i class="fas fa-plus me-1"></i>
+                                            Agregar Producto
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Productos -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title mb-0">Productos en la Compra</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="productosContainer">
+                                            <!-- Los productos se agregan aquí dinámicamente -->
+                                        </div>
+                                        <div id="noProductsMessage" class="text-center text-muted py-3" style="display: none;">
+                                            <i class="fas fa-box-open fa-2x mb-2"></i>
+                                            <p>No hay productos agregados a la compra</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Totales -->
+                        <div class="row mt-4">
+                            <div class="col-md-8"></div>
+                            <div class="col-md-4">
+                                <div class="total-section">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Subtotal:</strong>
+                                        <span id="subtotal">₡0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Descuento Total:</strong>
+                                        <span id="descuentoTotal">₡0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>Total Gravado:</strong>
+                                        <span id="totalGravado">₡0.00</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <strong>IVA Total:</strong>
+                                        <span id="ivaTotal">₡0.00</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="fs-5">Total Final:</strong>
+                                        <strong class="fs-5" id="totalFinal">₡0.00</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos para envío -->
+                        <input type="hidden" asp-for="Compra.Total" id="hiddenTotal" />
+                        <input type="hidden" asp-for="Compra.Iva" id="hiddenIva" />
+                        <input type="hidden" asp-for="Compra.Gran_Total" id="hiddenGranTotal" />
+                        <input type="hidden" id="productosJson" name="ProductosJson" />
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success me-2" id="btnGuardar">
+                            <i class="fas fa-save me-1"></i>
+                            @(Model.Compra.Id == 0 ? "Guardar Compra" : "Actualizar Compra")
+                        </button>
+                        <a asp-page="./Index" class="btn btn-secondary">
+                            <i class="fas fa-times me-1"></i>
+                            Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let productosCompra = [];
+
+        // Debug: Verificar si hay productos cargados
+        console.log('Productos disponibles:', @Model.Productos.Count);
+        @if (Model.Productos.Count == 0)
+        {
+            <text>
+            console.warn('No hay productos cargados desde la base de datos');
+            </text>
+        }
+
+        // Función para cargar productos existentes (para edición)
+        function cargarProductosExistentes() {
+            @if (Model.Compra.Id > 0 && Model.Compra.Compra_Detalles?.Any() == true)
+            {
+                <text>
+                console.log('Cargando productos existentes para edición...');
+                @foreach (var detalle in Model.Compra.Compra_Detalles)
+                {
+                    // Verificar que el producto y el impuesto no sean nulos
+                    var productoNombre = detalle.Producto?.Descripcion ?? "Producto no encontrado";
+                    var porcentajeImpuesto = detalle.Producto?.Impuesto?.Porcentaje ?? 0;
+                    var descripcionImpuesto = detalle.Producto?.Impuesto?.Descripcion ?? "Sin impuesto";
+                    
+                    <text>
+                    try {
+                        agregarProductoALista({
+                            codigo: '@detalle.Codigo_Producto',
+                            nombre: '@productoNombre.Replace("'", "\\'").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "")',
+                            cantidad: @detalle.Cantidad,
+                            costoUnitario: @detalle.Costo_Unitario,
+                            porcentajeDescuento: @detalle.Porcentaje_Descuento,
+                            montoDescuento: @detalle.Monto_Descuento,
+                            porcentajeImpuesto: @porcentajeImpuesto,
+                            descripcionImpuesto: '@descripcionImpuesto.Replace("'", "\\'").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "")'
+                        });
+                        console.log('Producto cargado: @detalle.Codigo_Producto');
+                    } catch (error) {
+                        console.error('Error cargando producto @detalle.Codigo_Producto:', error);
+                    }
+                    </text>
+                }
+                
+                try {
+                    calcularTotales();
+                    console.log('Totales calculados para productos existentes');
+                } catch (error) {
+                    console.error('Error calculando totales:', error);
+                }
+                </text>
+            }
+            else
+            {
+                <text>
+                console.log('No hay productos existentes para cargar - ID: @Model.Compra.Id, Detalles: @(Model.Compra.Compra_Detalles?.Count ?? 0)');
+                </text>
+            }
+        }
+
+        document.getElementById('selectProducto').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                const precio = parseFloat(selectedOption.getAttribute('data-precio')) || 0;
+                const impuesto = parseFloat(selectedOption.getAttribute('data-impuesto')) || 0;
+                const descripcionImpuesto = selectedOption.getAttribute('data-descripcion-impuesto') || '';
+                
+                document.getElementById('costoUnitario').value = precio > 0 ? precio.toFixed(2) : '';
+                document.getElementById('impuestoInfo').value = `${descripcionImpuesto} (${impuesto.toFixed(1)}%)`;
+            } else {
+                document.getElementById('costoUnitario').value = '';
+                document.getElementById('impuestoInfo').value = '';
+            }
+        });
+
+        document.getElementById('btnAgregarProducto').addEventListener('click', function() {
+            const selectProducto = document.getElementById('selectProducto');
+            const selectedOption = selectProducto.options[selectProducto.selectedIndex];
+            
+            if (!selectedOption.value) {
+                alert('Por favor seleccione un producto');
+                return;
+            }
+
+            const cantidad = parseInt(document.getElementById('cantidadProducto').value) || 0;
+            const costoUnitario = parseFloat(document.getElementById('costoUnitario').value) || 0;
+            const porcentajeDescuento = parseFloat(document.getElementById('descuentoPorcentaje').value) || 0;
+            const porcentajeImpuesto = parseFloat(selectedOption.getAttribute('data-impuesto')) || 0;
+
+            if (cantidad <= 0) {
+                alert('La cantidad debe ser mayor a 0');
+                return;
+            }
+
+            if (costoUnitario <= 0) {
+                alert('El costo unitario debe ser mayor a 0');
+                return;
+            }
+
+            if (porcentajeDescuento < 0 || porcentajeDescuento > 100) {
+                alert('El porcentaje de descuento debe estar entre 0 y 100');
+                return;
+            }
+
+            // Verificar si el producto ya está en la lista
+            const productoExistente = productosCompra.find(p => p.codigo === selectedOption.value);
+            if (productoExistente) {
+                alert('Este producto ya está en la lista. Puede editarlo directamente.');
+                return;
+            }
+
+            const montoDescuento = (costoUnitario * cantidad * porcentajeDescuento) / 100;
+
+            const producto = {
+                codigo: selectedOption.value,
+                nombre: selectedOption.getAttribute('data-nombre'),
+                cantidad: cantidad,
+                costoUnitario: costoUnitario,
+                porcentajeDescuento: porcentajeDescuento,
+                montoDescuento: montoDescuento,
+                porcentajeImpuesto: porcentajeImpuesto
+            };
+
+            agregarProductoALista(producto);
+            calcularTotales();
+
+            // Limpiar campos
+            selectProducto.selectedIndex = 0;
+            document.getElementById('cantidadProducto').value = 1;
+            document.getElementById('costoUnitario').value = '';
+            document.getElementById('descuentoPorcentaje').value = 0;
+            document.getElementById('impuestoInfo').value = '';
+        });
+
+        function agregarProductoALista(producto) {
+            productosCompra.push(producto);
+            const container = document.getElementById('productosContainer');
+            const noProductsMessage = document.getElementById('noProductsMessage');
+            
+            // Ocultar mensaje de no productos
+            if (noProductsMessage) {
+                noProductsMessage.style.display = 'none';
+            }
+            
+            const productoDiv = document.createElement('div');
+            productoDiv.className = 'producto-card position-relative';
+            productoDiv.setAttribute('data-codigo', producto.codigo);
+            
+            const subtotal = (producto.costoUnitario * producto.cantidad) - producto.montoDescuento;
+            
+            productoDiv.innerHTML = `
+                <button type="button" class="btn btn-sm btn-danger btn-remove-product" onclick="removerProducto('${producto.codigo}')">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>${producto.codigo}</strong><br>
+                        <small class="text-muted">${producto.nombre}</small><br>
+                        <small class="text-info">Impuesto: ${producto.porcentajeImpuesto.toFixed(1)}%</small>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" class="form-control form-control-sm cantidad-input" 
+                               value="${producto.cantidad}" min="1" 
+                               onchange="actualizarCantidad('${producto.codigo}', this.value)">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Costo Unit.</label>
+                        <input type="number" class="form-control form-control-sm costo-input" 
+                               value="${producto.costoUnitario.toFixed(2)}" step="0.01" min="0.01" 
+                               onchange="actualizarCosto('${producto.codigo}', this.value)">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Desc. %</label>
+                        <input type="number" class="form-control form-control-sm descuento-input" 
+                               value="${producto.porcentajeDescuento.toFixed(2)}" step="0.01" min="0" max="100" 
+                               onchange="actualizarDescuento('${producto.codigo}', this.value)">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Subtotal</label>
+                        <div class="form-control form-control-sm bg-light subtotal-display">
+                            ₡${subtotal.toFixed(2)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(productoDiv);
+        }
+
+        function removerProducto(codigo) {
+            productosCompra = productosCompra.filter(p => p.codigo !== codigo);
+            const elemento = document.querySelector(`[data-codigo="${codigo}"]`);
+            if (elemento) {
+                elemento.remove();
+            }
+            
+            // Mostrar mensaje si no hay productos
+            if (productosCompra.length === 0) {
+                const noProductsMessage = document.getElementById('noProductsMessage');
+                if (noProductsMessage) {
+                    noProductsMessage.style.display = 'block';
+                }
+            }
+            
+            calcularTotales();
+        }
+
+        function actualizarCantidad(codigo, nuevaCantidad) {
+            const cantidad = parseInt(nuevaCantidad) || 1;
+            if (cantidad <= 0) {
+                alert('La cantidad debe ser mayor a 0');
+                return;
+            }
+            
+            const producto = productosCompra.find(p => p.codigo === codigo);
+            if (producto) {
+                producto.cantidad = cantidad;
+                producto.montoDescuento = (producto.costoUnitario * producto.cantidad * producto.porcentajeDescuento) / 100;
+                actualizarVisualizacionProducto(codigo);
+                calcularTotales();
+            }
+        }
+
+        function actualizarCosto(codigo, nuevoCosto) {
+            const costo = parseFloat(nuevoCosto) || 0;
+            if (costo <= 0) {
+                alert('El costo unitario debe ser mayor a 0');
+                return;
+            }
+            
+            const producto = productosCompra.find(p => p.codigo === codigo);
+            if (producto) {
+                producto.costoUnitario = costo;
+                producto.montoDescuento = (producto.costoUnitario * producto.cantidad * producto.porcentajeDescuento) / 100;
+                actualizarVisualizacionProducto(codigo);
+                calcularTotales();
+            }
+        }
+
+        function actualizarDescuento(codigo, nuevoDescuento) {
+            const descuento = parseFloat(nuevoDescuento) || 0;
+            if (descuento < 0 || descuento > 100) {
+                alert('El porcentaje de descuento debe estar entre 0 y 100');
+                return;
+            }
+            
+            const producto = productosCompra.find(p => p.codigo === codigo);
+            if (producto) {
+                producto.porcentajeDescuento = descuento;
+                producto.montoDescuento = (producto.costoUnitario * producto.cantidad * producto.porcentajeDescuento) / 100;
+                actualizarVisualizacionProducto(codigo);
+                calcularTotales();
+            }
+        }
+
+        function actualizarVisualizacionProducto(codigo) {
+            const producto = productosCompra.find(p => p.codigo === codigo);
+            const elemento = document.querySelector(`[data-codigo="${codigo}"]`);
+            if (elemento && producto) {
+                const subtotal = (producto.costoUnitario * producto.cantidad) - producto.montoDescuento;
+                const subtotalDisplay = elemento.querySelector('.subtotal-display');
+                if (subtotalDisplay) {
+                    subtotalDisplay.textContent = `₡${subtotal.toFixed(2)}`;
+                }
+            }
+        }
+
+        function calcularTotales() {
+            let subtotal = 0;
+            let descuentoTotal = 0;
+            let ivaTotal = 0;
+
+            productosCompra.forEach(producto => {
+                const subtotalProducto = producto.costoUnitario * producto.cantidad;
+                const subtotalConDescuento = subtotalProducto - producto.montoDescuento;
+                
+                subtotal += subtotalProducto;
+                descuentoTotal += producto.montoDescuento;
+                
+                // Calcular IVA basado en el porcentaje de impuesto del producto
+                const ivaProducto = subtotalConDescuento * (producto.porcentajeImpuesto / 100);
+                ivaTotal += ivaProducto;
+            });
+
+            const totalGravado = subtotal - descuentoTotal;
+            const granTotal = totalGravado + ivaTotal;
+
+            // Actualizar elementos de la interfaz de forma segura
+            const elementos = {
+                subtotal: document.getElementById('subtotal'),
+                descuentoTotal: document.getElementById('descuentoTotal'),
+                totalGravado: document.getElementById('totalGravado'),
+                ivaTotal: document.getElementById('ivaTotal'),
+                totalFinal: document.getElementById('totalFinal'),
+                hiddenTotal: document.getElementById('hiddenTotal'),
+                hiddenIva: document.getElementById('hiddenIva'),
+                hiddenGranTotal: document.getElementById('hiddenGranTotal')
+            };
+
+            if (elementos.subtotal) elementos.subtotal.textContent = `₡${subtotal.toFixed(2)}`;
+            if (elementos.descuentoTotal) elementos.descuentoTotal.textContent = `₡${descuentoTotal.toFixed(2)}`;
+            if (elementos.totalGravado) elementos.totalGravado.textContent = `₡${totalGravado.toFixed(2)}`;
+            if (elementos.ivaTotal) elementos.ivaTotal.textContent = `₡${ivaTotal.toFixed(2)}`;
+            if (elementos.totalFinal) elementos.totalFinal.textContent = `₡${granTotal.toFixed(2)}`;
+
+            // Actualizar campos ocultos con precisión correcta
+            if (elementos.hiddenTotal) elementos.hiddenTotal.value = totalGravado.toFixed(2);
+            if (elementos.hiddenIva) elementos.hiddenIva.value = ivaTotal.toFixed(2);
+            if (elementos.hiddenGranTotal) elementos.hiddenGranTotal.value = granTotal.toFixed(2);
+
+            console.log('Totales calculados:', {
+                totalGravado: totalGravado.toFixed(2),
+                ivaTotal: ivaTotal.toFixed(2),
+                granTotal: granTotal.toFixed(2)
+            });
+        }
+
+        // Antes de enviar el formulario
+        document.getElementById('compraForm').addEventListener('submit', function(e) {
+            if (productosCompra.length === 0) {
+                e.preventDefault();
+                alert('Debe agregar al menos un producto a la compra');
+                return false;
+            }
+
+            // Validar proveedor
+            const proveedorId = parseInt(document.querySelector('[name="Compra.Id_Proveedor"]').value) || 0;
+            if (proveedorId <= 0) {
+                e.preventDefault();
+                alert('Debe seleccionar un proveedor');
+                return false;
+            }
+
+            // Serializar productos - Asegurar que las propiedades coincidan
+            const productosParaEnviar = productosCompra.map(p => ({
+                codigo: p.codigo,
+                nombre: p.nombre,
+                cantidad: p.cantidad,
+                costoUnitario: p.costoUnitario,
+                porcentajeDescuento: p.porcentajeDescuento,
+                montoDescuento: p.montoDescuento,
+                porcentajeImpuesto: p.porcentajeImpuesto
+            }));
+            
+            const productosJson = JSON.stringify(productosParaEnviar);
+            document.getElementById('productosJson').value = productosJson;
+            
+            // Debug
+            console.log('Productos a enviar:', productosParaEnviar);
+            console.log('JSON productos:', productosJson);
+            
+            // Deshabilitar botón de envío para evitar doble clic
+            const btnGuardar = document.getElementById('btnGuardar');
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+            
+            return true;
+        });
+
+        // Inicializar cuando la página esté completamente cargada
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar productos existentes si es edición
+            cargarProductosExistentes();
+            
+            // Mostrar mensaje inicial si no hay productos
+            if (productosCompra.length === 0) {
+                const noProductsMessage = document.getElementById('noProductsMessage');
+                if (noProductsMessage) {
+                    noProductsMessage.style.display = 'block';
+                }
+            }
+        });
+    </script>
+}

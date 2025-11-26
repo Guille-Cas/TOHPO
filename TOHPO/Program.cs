@@ -1,12 +1,19 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
-using Microsoft.Extensions.DependencyInjection; // Asegúrate de tener esta directiva
+using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages()
+    .AddJsonOptions(options =>
+    {
+        // Configurar para manejar ciclos de referencia
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // Configurar EF Core con SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>

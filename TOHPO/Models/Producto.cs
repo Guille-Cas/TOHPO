@@ -52,5 +52,6 @@ namespace TOHPO.Models
         public int Id_Impuesto { get; set; }
         public Impuesto Impuesto { get; set; }
 
+        public Inventario Inventario { get; set; }
     }
 }

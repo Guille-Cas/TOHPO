@@ -1,0 +1,267 @@
+﻿@page
+@model TOHPO.Pages.Operaciones.Inventario.UpsertModel
+@{
+    ViewData["Title"] = Model.Inventario.Id == 0 ? "Crear Inventario" : "Editar Inventario";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas @(Model.Inventario.Id == 0 ? "fa-plus" : "fa-edit") me-2"></i>
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Index" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Volver al Listado
+                        </a>
+                    </div>
+                </div>
+                <form method="post">
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <input type="hidden" asp-for="Inventario.Id" />
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Inventario.Codigo_Producto" class="form-label">Producto</label>
+                                    <select asp-for="Inventario.Codigo_Producto" 
+                                            asp-items="Model.ProductosList" 
+                                            class="form-select">
+                                        <option value="">-- Seleccionar Producto --</option>
+                                    </select>
+                                    <span asp-validation-for="Inventario.Codigo_Producto" class="text-danger"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Inventario.Cantidad" class="form-label"></label>
+                                    <input asp-for="Inventario.Cantidad" class="form-control" type="number" min="0" />
+                                    <span asp-validation-for="Inventario.Cantidad" class="text-danger"></span>
+                                    <small class="form-text text-muted">Cantidad inicial en inventario</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Inventario.Existencia" class="form-label"></label>
+                                    <input asp-for="Inventario.Existencia" class="form-control" type="number" min="0" />
+                                    <span asp-validation-for="Inventario.Existencia" class="text-danger"></span>
+                                    <small class="form-text text-muted">Existencia actual disponible</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" asp-for="Inventario.Estado" id="estadoSwitch">
+                                        <label class="form-check-label" for="estadoSwitch" asp-for="Inventario.Estado"></label>
+                                    </div>
+                                    <small class="form-text text-muted">Marque para activar este registro de inventario</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sección de precios -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-dollar-sign me-2"></i>
+                                    Información de Precios
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label asp-for="Inventario.Precio_Compra" class="form-label"></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">₡</span>
+                                                <input asp-for="Inventario.Precio_Compra" 
+                                                       class="form-control" 
+                                                       type="number" 
+                                                       min="0" 
+                                                       step="0.01" 
+                                                       placeholder="0.00" />
+                                            </div>
+                                            <span asp-validation-for="Inventario.Precio_Compra" class="text-danger"></span>
+                                            <small class="form-text text-muted">Precio de compra del producto</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label asp-for="Inventario.Precio_Venta" class="form-label"></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">₡</span>
+                                                <input asp-for="Inventario.Precio_Venta" 
+                                                       class="form-control" 
+                                                       type="number" 
+                                                       min="0.01" 
+                                                       step="0.01" 
+                                                       placeholder="0.00"
+                                                       required />
+                                            </div>
+                                            <span asp-validation-for="Inventario.Precio_Venta" class="text-danger"></span>
+                                            <small class="form-text text-muted">Precio de venta al público</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Cálculo de margen de ganancia -->
+                                <div class="row" id="margenCalculado" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-calculator me-2"></i>Cálculo de Margen</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <strong>Ganancia Unitaria:</strong>
+                                                    <span id="gananciaUnitaria">₡0.00</span>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <strong>Margen de Ganancia:</strong>
+                                                    <span id="margenPorcentaje">0.00%</span>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <strong>Markup:</strong>
+                                                    <span id="markup">0.00%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if (Model.Inventario.Id > 0)
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Información:</strong> Está editando un registro existente de inventario.
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas @(Model.Inventario.Id == 0 ? "fa-save" : "fa-sync-alt") me-1"></i>
+                                    @(Model.Inventario.Id == 0 ? "Crear" : "Actualizar")
+                                </button>
+                                <a asp-page="./Index" class="btn btn-secondary ms-2">
+                                    <i class="fas fa-times me-1"></i>
+                                    Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Validación personalizada
+            $('form').on('submit', function(e) {
+                var cantidad = $('#Inventario_Cantidad').val();
+                var existencia = $('#Inventario_Existencia').val();
+                var producto = $('#Inventario_Codigo_Producto').val();
+                var precioVenta = $('#Inventario_Precio_Venta').val();
+                
+                if (!producto) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un producto');
+                    $('#Inventario_Codigo_Producto').focus();
+                    return false;
+                }
+                
+                if (cantidad < 0) {
+                    e.preventDefault();
+                    alert('La cantidad no puede ser negativa');
+                    $('#Inventario_Cantidad').focus();
+                    return false;
+                }
+
+                if (existencia < 0) {
+                    e.preventDefault();
+                    alert('La existencia no puede ser negativa');
+                    $('#Inventario_Existencia').focus();
+                    return false;
+                }
+
+                if (!precioVenta || precioVenta <= 0) {
+                    e.preventDefault();
+                    alert('Debe ingresar un precio de venta válido mayor a 0');
+                    $('#Inventario_Precio_Venta').focus();
+                    return false;
+                }
+            });
+
+            // Calcular margen de ganancia en tiempo real
+            function calcularMargen() {
+                var precioCompra = parseFloat($('#Inventario_Precio_Compra').val()) || 0;
+                var precioVenta = parseFloat($('#Inventario_Precio_Venta').val()) || 0;
+
+                if (precioCompra > 0 && precioVenta > 0) {
+                    var gananciaUnitaria = precioVenta - precioCompra;
+                    var margenPorcentaje = ((gananciaUnitaria / precioVenta) * 100);
+                    var markup = precioCompra > 0 ? ((gananciaUnitaria / precioCompra) * 100) : 0;
+
+                    $('#gananciaUnitaria').text('₡' + gananciaUnitaria.toFixed(2));
+                    $('#margenPorcentaje').text(margenPorcentaje.toFixed(2) + '%');
+                    $('#markup').text(markup.toFixed(2) + '%');
+
+                    // Mostrar el cálculo
+                    $('#margenCalculado').show();
+
+                    // Cambiar color según el margen
+                    if (margenPorcentaje < 10) {
+                        $('#margenCalculado .alert').removeClass('alert-info alert-success alert-warning').addClass('alert-warning');
+                    } else if (margenPorcentaje >= 30) {
+                        $('#margenCalculado .alert').removeClass('alert-info alert-warning alert-success').addClass('alert-success');
+                    } else {
+                        $('#margenCalculado .alert').removeClass('alert-warning alert-success alert-info').addClass('alert-info');
+                    }
+                } else {
+                    $('#margenCalculado').hide();
+                }
+            }
+
+            // Eventos para calcular margen
+            $('#Inventario_Precio_Compra, #Inventario_Precio_Venta').on('input change', calcularMargen);
+
+            // Calcular margen al cargar la página si hay valores
+            calcularMargen();
+
+            // Auto-completar existencia con cantidad si está vacía
+            $('#Inventario_Cantidad').on('change', function() {
+                var existencia = $('#Inventario_Existencia').val();
+                if (!existencia || existencia == 0) {
+                    $('#Inventario_Existencia').val($(this).val());
+                }
+            });
+
+            // Mostrar información del producto seleccionado
+            $('#Inventario_Codigo_Producto').on('change', function() {
+                var selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    console.log('Producto seleccionado:', selectedOption.text());
+                }
+            });
+        });
+    </script>
+}

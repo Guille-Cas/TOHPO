@@ -1,0 +1,245 @@
+@page
+@model TOHPO.Pages.Operaciones.Productos.UpsertModel
+@{
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Producto.CodigoReferencia) ? "Crear Producto" : "Editar Producto";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas @(string.IsNullOrEmpty(Model.Producto.CodigoReferencia) ? "fa-plus" : "fa-edit") me-2"></i>
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Index" class="btn btn-secondary btn-sm">
+                            Volver al Listado
+                        </a>
+                    </div>
+                </div>
+                <form method="post">
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        
+                        <div class="row">
+                            <!-- Información básica del producto -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.CodigoReferencia" class="form-label"></label>
+                                    <input asp-for="Producto.CodigoReferencia" class="form-control" />
+                                    <span asp-validation-for="Producto.CodigoReferencia" class="text-danger"></span>
+                                    <small class="form-text text-muted">Código único del producto</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Codigo_Barra" class="form-label"></label>
+                                    <input asp-for="Producto.Codigo_Barra" class="form-control" />
+                                    <span asp-validation-for="Producto.Codigo_Barra" class="text-danger"></span>
+                                    <small class="form-text text-muted">Código de barras (opcional)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Descripcion" class="form-label"></label>
+                                    <textarea asp-for="Producto.Descripcion" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Producto.Descripcion" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Categoría -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Id_Categoria" class="form-label">Categoría</label>
+                                    <select asp-for="Producto.Id_Categoria" 
+                                            asp-items="Model.CategoriasList" 
+                                            class="form-select">
+                                        <option value="">-- Seleccionar Categoría --</option>
+                                    </select>
+                                    <span asp-validation-for="Producto.Id_Categoria" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Impuesto -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Id_Impuesto" class="form-label">Impuesto</label>
+                                    <select asp-for="Producto.Id_Impuesto" 
+                                            asp-items="Model.ImpuestosList" 
+                                            class="form-select">
+                                        <option value="">-- Seleccionar Impuesto --</option>
+                                    </select>
+                                    <span asp-validation-for="Producto.Id_Impuesto" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Materia Prima -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Id_Materia_Prima" class="form-label">Materia Prima</label>
+                                    <select asp-for="Producto.Id_Materia_Prima" 
+                                            asp-items="Model.MateriaPrimasList" 
+                                            class="form-select">
+                                        <option value="">-- Seleccionar Materia Prima --</option>
+                                    </select>
+                                    <span asp-validation-for="Producto.Id_Materia_Prima" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Presentación -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Id_Presentacion" class="form-label">Presentación</label>
+                                    <select asp-for="Producto.Id_Presentacion" 
+                                            asp-items="Model.PresentacionesList" 
+                                            class="form-select">
+                                        <option value="">-- Seleccionar Presentación --</option>
+                                    </select>
+                                    <span asp-validation-for="Producto.Id_Presentacion" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Unidad de Medida -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Unidad_Medida" class="form-label"></label>
+                                    <select asp-for="Producto.Unidad_Medida" class="form-select">
+                                        <option value="0">Unidad</option>
+                                        <option value="1">Kilogramo</option>
+                                        <option value="2">Gramo</option>
+                                        <option value="3">Litro</option>
+                                        <option value="4">Mililitro</option>
+                                        <option value="5">Metro</option>
+                                        <option value="6">Centímetro</option>
+                                        <option value="7">Caja</option>
+                                        <option value="8">Paquete</option>
+                                    </select>
+                                    <span asp-validation-for="Producto.Unidad_Medida" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Tiempo de Vida -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Producto.Tiempo_De_Vida" class="form-label"></label>
+                                    <input asp-for="Producto.Tiempo_De_Vida" class="form-control" type="number" min="0" />
+                                    <span asp-validation-for="Producto.Tiempo_De_Vida" class="text-danger"></span>
+                                    <small class="form-text text-muted">Días de vida útil del producto</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkboxes para características especiales -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title mb-0">Características del Producto</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input asp-for="Producto.Es_Materia_Prima" class="form-check-input" type="checkbox" />
+                                                    <label asp-for="Producto.Es_Materia_Prima" class="form-check-label">Materia Prima</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input asp-for="Producto.Es_De_Terceros" class="form-check-input" type="checkbox" />
+                                                    <label asp-for="Producto.Es_De_Terceros" class="form-check-label">De Terceros</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check">
+                                                    <input asp-for="Producto.Estado" class="form-check-input" type="checkbox" />
+                                                    <label asp-for="Producto.Estado" class="form-check-label">Activo</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Producto.CodigoReferencia))
+                        {
+                            <div class="alert alert-info mt-3">
+                                <strong>Información:</strong> Está editando un producto existente.
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-success">
+                                    @(string.IsNullOrEmpty(Model.Producto.CodigoReferencia) ? "Crear" : "Actualizar")
+                                </button>
+                                <a asp-page="./Index" class="btn btn-secondary ms-2">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Validación personalizada
+            $('form').on('submit', function(e) {
+                var codigo = $('#Producto_CodigoReferencia').val();
+                var descripcion = $('#Producto_Descripcion').val();
+                
+                if (!codigo.trim()) {
+                    e.preventDefault();
+                    alert('El código de referencia es obligatorio');
+                    $('#Producto_CodigoReferencia').focus();
+                    return false;
+                }
+                
+                if (!descripcion.trim()) {
+                    e.preventDefault();
+                    alert('La descripción es obligatoria');
+                    $('#Producto_Descripcion').focus();
+                    return false;
+                }
+            });
+
+            // Actualizar vista previa cuando cambian los valores
+            $('#Producto_Id_Impuesto').on('change', function() {
+                var selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    console.log('Impuesto seleccionado:', selectedOption.text());
+                }
+            });
+
+            // Mostrar información adicional del impuesto seleccionado
+            $('#Producto_Id_Impuesto').on('change', function() {
+                var selectedText = $(this).find('option:selected').text();
+                if (selectedText && selectedText !== '-- Seleccionar Impuesto --') {
+                    console.log('Impuesto aplicado:', selectedText);
+                }
+            });
+        });
+    </script>
+}

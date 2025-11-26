@@ -1,0 +1,653 @@
+﻿@page
+@model TOHPO.Pages.Operaciones.Ventas.UpsertModel
+@{
+    ViewData["Title"] = Model.Venta.Id == 0 ? "Nueva Venta - Caja Registradora" : "Editar Venta";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h3 class="card-title">
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Index" class="btn btn-light btn-sm">
+                            Volver al Listado
+                        </a>
+                    </div>
+                </div>
+
+                <form method="post" id="ventaForm">
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <!-- Información de la venta -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="Venta.Fecha" class="form-label">Fecha</label>
+                                    <input asp-for="Venta.Fecha" class="form-control" type="date" />
+                                    <span asp-validation-for="Venta.Fecha" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="Venta.Hora" class="form-label">Hora</label>
+                                    <input asp-for="Venta.Hora" class="form-control" type="time" 
+                                           value="@Model.Venta.Hora.ToString("HH:mm")" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="Venta.Id_Cliente" class="form-label">Cliente</label>
+                                    <select asp-for="Venta.Id_Cliente" asp-items="Model.ClientesList" class="form-select">
+                                        <option value="">-- Seleccionar Cliente --</option>
+                                    </select>
+                                    <span asp-validation-for="Venta.Id_Cliente" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">Agente de Ventas</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="text" id="agenteDescripcion" class="form-control" value="@Model.AgenteSeleccionado" readonly placeholder="Seleccionar agente..." />
+                                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalAgentes">
+                                            Seleccionar
+                                        </button>
+                                    </div>
+                                    <input type="hidden" asp-for="Venta.Id_Agente_Ventas" />
+                                    <span asp-validation-for="Venta.Id_Agente_Ventas" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label asp-for="Venta.Concepto" class="form-label">Concepto (Opcional)</label>
+                                    <input asp-for="Venta.Concepto" value="Venta de Productos" class="form-control" placeholder="Descripción adicional de la venta..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de agregar productos -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    Agregar Productos
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Buscar Producto</label>
+                                            <div class="input-group">
+                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Código o nombre del producto..." />
+                                                <button type="button" class="btn btn-outline-secondary" id="btnBuscarProducto">
+                                                    Buscar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">Cantidad</label>
+                                            <input type="number" id="inputCantidad" class="form-control" value="1" min="1" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">Precio Unit.</label>
+                                            <input type="number" id="inputPrecioUnitario" class="form-control" step="0.01" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">Desc. %</label>
+                                            <input type="number" id="inputDescuento" class="form-control" value="0" min="0" max="100" step="0.01" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">&nbsp;</label>
+                                            <div class="d-grid">
+                                                <button type="button" class="btn btn-success" id="btnAgregarProducto">
+                                                    Agregar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de productos -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-shopping-cart me-2"></i>
+                                    Productos en la Venta
+                                </h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0" id="productosTable">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cant.</th>
+                                                <th>P. Unit.</th>
+                                                <th>Desc. %</th>
+                                                <th>Desc. ₡</th>
+                                                <th>IVA</th>
+                                                <th>Subtotal</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productosBody">
+                                            <!-- Los productos se agregan dinámicamente aquí -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="emptyProductsMessage" class="text-center py-4">
+                                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No hay productos agregados</h5>
+                                    <p class="text-muted">Comience agregando productos usando el buscador de arriba</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Totales -->
+                        <div class="row">
+                            <div class="col-md-8"></div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Resumen de Venta</h5>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Subtotal:</span>
+                                            <span id="subtotalDisplay">₡0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Descuentos:</span>
+                                            <span id="descuentosDisplay">₡0.00</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>IVA:</span>
+                                            <span id="ivaDisplay">₡0.00</span>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>TOTAL:</strong>
+                                            <strong class="text-success fs-4" id="totalDisplay">₡0.00</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos para los detalles -->
+                        <div id="hiddenFields"></div>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-md-12 text-end">
+                                <button type="submit" class="btn btn-success btn-lg me-2" id="guardarBtn">
+                                    @(Model.Venta.Id == 0 ? "Procesar Venta" : "Actualizar Venta")
+                                </button>
+                                <a asp-page="./Index" class="btn btn-secondary">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de selección de agente -->
+<div class="modal fade" id="modalAgentes" tabindex="-1" aria-labelledby="modalAgentesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAgentesLabel">Seleccionar Agente de Ventas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered" id="tablaModalAgentes">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Correo</th>
+                            <th>Proveedor</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.AgentesVentas.Any())
+                        {
+                            @foreach (var agente in Model.AgentesVentas)
+                            {
+                                <tr>
+                                    <td>@agente.Id</td>
+                                    <td>@agente.Nombre</td>
+                                    <td>@agente.Telefono</td>
+                                    <td>@agente.Correo_Electronico</td>
+                                    <td>@(agente.Proveedor?.Nombre ?? "Sin proveedor")</td>
+                                    <td>
+                                        <button type="button" class="btn btn-success btnSeleccionarAgente" 
+                                                data-id="@agente.Id" 
+                                                data-nombre="@agente.Nombre" 
+                                                data-bs-dismiss="modal">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    No hay agentes de ventas activos disponibles
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a asp-page="/Configuracion/Agentes_ventas/Upsert" class="btn btn-primary" target="_blank">
+                    Crear Nuevo Agente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Variables globales
+        let productos = @Html.Raw(Json.Serialize(Model.DetallesVenta));
+        let productosDisponibles = @Html.Raw(Json.Serialize(Model.ProductosDisponibles.Select(p => new { 
+            codigo = p.CodigoReferencia, 
+            nombre = p.Descripcion,
+            porcentajeImpuesto = p.Impuesto != null ? p.Impuesto.Porcentaje : 0
+        })));
+        let contadorProductos = productos.length;
+
+        // Función para reiniciar el botón de guardar
+        function reiniciarBotonGuardar() {
+            const guardarBtn = $('#guardarBtn');
+            const esNuevaVenta = @Json.Serialize(Model.Venta.Id == 0);
+            const textoOriginal = esNuevaVenta ? 'Procesar Venta' : 'Actualizar Venta';
+            
+            guardarBtn.prop('disabled', false).html(textoOriginal);
+        }
+
+        // Event listener para selección de agente
+        $(document).ready(function() {
+            // Reiniciar botón al cargar la página (en caso de error del servidor)
+            reiniciarBotonGuardar();
+
+            $(document).on('click', '.btnSeleccionarAgente', function () {
+                var id = $(this).data('id');
+                var nombre = $(this).data('nombre');
+                $('input[name="Venta.Id_Agente_Ventas"]').val(id);
+                $('#agenteDescripcion').val(nombre);
+            });
+
+            // Configurar la hora inicial sin segundos (mejorado)
+            const horaInput = $('#Venta_Hora');
+            if (horaInput.length) {
+                // Si no hay valor o si queremos una nueva venta, establecer hora actual
+                if (horaInput.val() === '' || @Json.Serialize(Model.Venta.Id == 0)) {
+                    const now = new Date();
+                    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                                      now.getMinutes().toString().padStart(2, '0');
+                    horaInput.val(timeString);
+                } else {
+                    // Para edición, asegurar formato HH:mm
+                    const currentValue = horaInput.val();
+                    if (currentValue.length > 5) {
+                        horaInput.val(currentValue.substring(0, 5));
+                    }
+                }
+                
+                // Evento para formatear la hora cuando cambie
+                horaInput.on('change', function() {
+                    const value = $(this).val();
+                    if (value && value.length > 5) {
+                        $(this).val(value.substring(0, 5));
+                    }
+                });
+            }
+        });
+
+        // Objeto para manejar las funciones de ventas
+        const VentaManager = {
+            // Función para buscar productos
+            buscarProducto: function() {
+                const busqueda = $('#inputBuscarProducto').val().toLowerCase();
+                
+                if (!busqueda) {
+                    alert('Ingrese un código o nombre de producto');
+                    return;
+                }
+
+                // Buscar por código
+                let producto = productosDisponibles.find(p => p.codigo.toLowerCase() === busqueda);
+                
+                // Si no encuentra por código, buscar por nombre
+                if (!producto) {
+                    producto = productosDisponibles.find(p => p.nombre.toLowerCase().includes(busqueda));
+                }
+
+                if (producto) {
+                    // Obtener información adicional del producto
+                    $.get(`/Operaciones/Ventas/Upsert?handler=ProductoInfo&codigo=${producto.codigo}`)
+                        .done(function(data) {
+                            if (data.success) {
+                                $('#inputPrecioUnitario').val(data.producto.precio);
+                                $('#inputBuscarProducto').val(`${data.producto.codigo} - ${data.producto.nombre}`).data('codigo', data.producto.codigo);
+                                $('#inputCantidad').focus();
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .fail(function() {
+                            alert('Error al obtener información del producto');
+                        });
+                } else {
+                    alert('Producto no encontrado');
+                    $('#inputBuscarProducto').focus();
+                }
+            },
+
+            // Función para agregar productos
+            agregarProducto: function() {
+                const codigoBusqueda = $('#inputBuscarProducto').data('codigo') || $('#inputBuscarProducto').val().split(' - ')[0];
+                const cantidad = parseInt($('#inputCantidad').val()) || 1;
+                const precioUnitario = parseFloat($('#inputPrecioUnitario').val()) || 0;
+                const porcentajeDescuento = parseFloat($('#inputDescuento').val()) || 0;
+
+                if (!codigoBusqueda) {
+                    alert('Seleccione un producto válido');
+                    return;
+                }
+
+                if (precioUnitario <= 0) {
+                    alert('El precio unitario debe ser mayor a 0');
+                    return;
+                }
+
+                const producto = productosDisponibles.find(p => p.codigo === codigoBusqueda);
+                if (!producto) {
+                    alert('Producto no válido');
+                    return;
+                }
+
+                // Verificar si el producto ya está en la lista
+                const existeIndex = productos.findIndex(p => p.codigoProducto === producto.codigo);
+                
+                if (existeIndex >= 0) {
+                    // Actualizar cantidad del producto existente
+                    productos[existeIndex].cantidad += cantidad;
+                    productos[existeIndex].precioUnitario = precioUnitario;
+                    productos[existeIndex].porcentajeDescuento = porcentajeDescuento;
+                } else {
+                    // Agregar nuevo producto
+                    productos.push({
+                        id: 0,
+                        codigoProducto: producto.codigo,
+                        nombreProducto: producto.nombre,
+                        cantidad: cantidad,
+                        precioUnitario: precioUnitario,
+                        porcentajeDescuento: porcentajeDescuento,
+                        montoDescuento: 0,
+                        montoImpuesto: 0,
+                        subtotal: 0,
+                        porcentajeImpuesto: producto.porcentajeImpuesto
+                    });
+                }
+
+                // Limpiar campos
+                $('#inputBuscarProducto').val('').removeData('codigo');
+                $('#inputCantidad').val(1);
+                $('#inputPrecioUnitario').val('');
+                $('#inputDescuento').val(0);
+
+                this.actualizarVistaProductos();
+                this.calcularTotales();
+                $('#inputBuscarProducto').focus();
+            },
+
+            // Función para eliminar productos
+            eliminarProducto: function(index) {
+                if (confirm('¿Está seguro de eliminar este producto?')) {
+                    productos.splice(index, 1);
+                    this.actualizarVistaProductos();
+                    this.calcularTotales();
+                }
+            },
+
+            // Función para editar cantidad
+            editarCantidad: function(index, nuevaCantidad) {
+                if (nuevaCantidad > 0) {
+                    productos[index].cantidad = parseInt(nuevaCantidad);
+                    this.calcularTotales();
+                }
+            },
+
+            // Función para editar precio
+            editarPrecio: function(index, nuevoPrecio) {
+                if (nuevoPrecio > 0) {
+                    productos[index].precioUnitario = parseFloat(nuevoPrecio);
+                    this.calcularTotales();
+                }
+            },
+
+            // Función para editar descuento
+            editarDescuento: function(index, nuevoDescuento) {
+                if (nuevoDescuento >= 0 && nuevoDescuento <= 100) {
+                    productos[index].porcentajeDescuento = parseFloat(nuevoDescuento);
+                    this.calcularTotales();
+                }
+            },
+
+            // Función para actualizar vista de productos
+            actualizarVistaProductos: function() {
+                const tbody = $('#productosBody');
+                tbody.empty();
+
+                if (productos.length === 0) {
+                    $('#emptyProductsMessage').show();
+                    return;
+                }
+
+                $('#emptyProductsMessage').hide();
+
+                productos.forEach((producto, index) => {
+                    const row = `
+                        <tr>
+                            <td>
+                                <strong>${producto.nombreProducto}</strong><br>
+                                <small class="text-muted">${producto.codigoProducto}</small>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       value="${producto.cantidad}" min="1"
+                                       onchange="VentaManager.editarCantidad(${index}, this.value)" />
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       value="${producto.precioUnitario}" min="0" step="0.01"
+                                       onchange="VentaManager.editarPrecio(${index}, this.value)" />
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm" 
+                                       value="${producto.porcentajeDescuento}" min="0" max="100" step="0.01"
+                                       onchange="VentaManager.editarDescuento(${index}, this.value)" />
+                            </td>
+                            <td>₡${producto.montoDescuento.toFixed(2)}</td>
+                            <td>₡${producto.montoImpuesto.toFixed(2)}</td>
+                            <td><strong>₡${producto.subtotal.toFixed(2)}</strong></td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        onclick="VentaManager.eliminarProducto(${index})" title="Eliminar">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+
+                this.actualizarCamposOcultos();
+            },
+
+            // Función para calcular totales
+            calcularTotales: function() {
+                let subtotal = 0;
+                let totalDescuentos = 0;
+                let totalIva = 0;
+                let total = 0;
+
+                productos.forEach(producto => {
+                    // Calcular monto de descuento
+                    producto.montoDescuento = (producto.precioUnitario * producto.cantidad) * (producto.porcentajeDescuento / 100);
+                    
+                    // Subtotal sin impuesto
+                    const subtotalSinImpuesto = (producto.precioUnitario * producto.cantidad) - producto.montoDescuento;
+                    
+                    // Calcular impuesto
+                    producto.montoImpuesto = subtotalSinImpuesto * (producto.porcentajeImpuesto / 100);
+                    
+                    // Subtotal final del producto
+                    producto.subtotal = subtotalSinImpuesto + producto.montoImpuesto;
+
+                    // Acumular
+                    subtotal += subtotalSinImpuesto;
+                    totalDescuentos += producto.montoDescuento;
+                    totalIva += producto.montoImpuesto;
+                    total += producto.subtotal;
+                });
+
+                // Actualizar displays
+                $('#subtotalDisplay').text(`₡${subtotal.toFixed(2)}`);
+                $('#descuentosDisplay').text(`₡${totalDescuentos.toFixed(2)}`);
+                $('#ivaDisplay').text(`₡${totalIva.toFixed(2)}`);
+                $('#totalDisplay').text(`₡${total.toFixed(2)}`);
+
+                // Actualizar vista de productos
+                this.actualizarVistaProductos();
+            },
+
+            // Función para actualizar campos ocultos
+            actualizarCamposOcultos: function() {
+                const container = $('#hiddenFields');
+                container.empty();
+
+                productos.forEach((producto, index) => {
+                    container.append(`
+                        <input type="hidden" name="DetallesVenta[${index}].Id" value="${producto.id}" />
+                        <input type="hidden" name="DetallesVenta[${index}].CodigoProducto" value="${producto.codigoProducto}" />
+                        <input type="hidden" name="DetallesVenta[${index}].NombreProducto" value="${producto.nombreProducto}" />
+                        <input type="hidden" name="DetallesVenta[${index}].Cantidad" value="${producto.cantidad}" />
+                        <input type="hidden" name="DetallesVenta[${index}].PrecioUnitario" value="${producto.precioUnitario}" />
+                        <input type="hidden" name="DetallesVenta[${index}].PorcentajeDescuento" value="${producto.porcentajeDescuento}" />
+                        <input type="hidden" name="DetallesVenta[${index}].MontoDescuento" value="${producto.montoDescuento}" />
+                        <input type="hidden" name="DetallesVenta[${index}].MontoImpuesto" value="${producto.montoImpuesto}" />
+                        <input type="hidden" name="DetallesVenta[${index}].Subtotal" value="${producto.subtotal}" />
+                        <input type="hidden" name="DetallesVenta[${index}].PorcentajeImpuesto" value="${producto.porcentajeImpuesto}" />
+                    `);
+                });
+            }
+        };
+
+        // Inicialización cuando el documento está listo
+        $(document).ready(function() {
+            VentaManager.actualizarVistaProductos();
+            VentaManager.calcularTotales();
+
+            // Event listeners
+            $('#btnBuscarProducto').on('click', function() {
+                VentaManager.buscarProducto();
+            });
+
+            $('#btnAgregarProducto').on('click', function() {
+                VentaManager.agregarProducto();
+            });
+
+            // Configurar búsqueda de productos con Enter
+            $('#inputBuscarProducto').on('keypress', function(e) {
+                if (e.which == 13) {
+                    VentaManager.buscarProducto();
+                    return false;
+                }
+            });
+
+            // Configurar Enter para agregar producto
+            $('#inputCantidad, #inputPrecioUnitario, #inputDescuento').on('keypress', function(e) {
+                if (e.which == 13) {
+                    VentaManager.agregarProducto();
+                    return false;
+                }
+            });
+
+            // Validación antes de enviar con reinicio del botón en caso de fallo
+            $('#ventaForm').on('submit', function(e) {
+                // Primero validar en cliente
+                if (productos.length === 0) {
+                    e.preventDefault();
+                    alert('Debe agregar al menos un producto a la venta');
+                    reiniciarBotonGuardar(); // Reiniciar botón
+                    return false;
+                }
+
+                if (!$('#Venta_Id_Cliente').val()) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un cliente');
+                    $('#Venta_Id_Cliente').focus();
+                    reiniciarBotonGuardar(); // Reiniciar botón
+                    return false;
+                }
+
+                if (!$('input[name="Venta.Id_Agente_Ventas"]').val()) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un agente de ventas');
+                    $('#agenteDescripcion').focus();
+                    reiniciarBotonGuardar(); // Reiniciar botón
+                    return false;
+                }
+
+                // Si pasa las validaciones del cliente, deshabilitar botón
+                $('#guardarBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Procesando...');
+
+                // Establecer un timeout para reiniciar el botón en caso de que algo falle
+                setTimeout(function() {
+                    // Solo reiniciar si todavía está deshabilitado (indica que algo falló)
+                    if ($('#guardarBtn').prop('disabled')) {
+                        reiniciarBotonGuardar();
+                    }
+                }, 5000); // 10 segundos de timeout
+            });
+
+            // Detectar si hay errores de validación del servidor y reiniciar botón
+            if ($('.alert-danger').length > 0 || $('.text-danger').is(':visible')) {
+                reiniciarBotonGuardar();
+            }
+        });
+    </script>
+}

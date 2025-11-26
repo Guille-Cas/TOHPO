@@ -92,12 +92,13 @@
             <div class="menu-rect flex-fill w-100">
                 <div class="menu-title">Operaciones</div>
                 <div class="menu-buttons">
-                    <button class="btn btn-outline-success">Venta</button>
-                    <button class="btn btn-outline-success">Compra</button>
+                    <a class="btn btn-outline-success" asp-page="/Operaciones/Ventas/Index">Ventas</a>
+                    <a class="btn btn-outline-success" asp-page="/Operaciones/Compras/Index">Compra</a>
                     <button class="btn btn-outline-success">Producción</button>
                     <button class="btn btn-outline-success">Pedido</button>
-                    <button class="btn btn-outline-success">Inventario</button>
-                    <a class="btn btn-outline-primary" asp-page="/Recordatorios/Index">Recordatorio</a>
+                    <a class="btn btn-outline-success" asp-page="/Operaciones/Productos/Index">Productos</a>
+                    <a class="btn btn-outline-success" asp-page="/Operaciones/Inventario/Index">Inventario</a>
+                    <a class="btn btn-outline-success" asp-page="/Recordatorios/Index">Recordatorio</a>
                     <button class="btn btn-outline-success">Pedido</button>
                 </div>
             </div>

@@ -2,7 +2,7 @@
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Agentes_ventas.UpsertModel
 @{
-    var isEdit = Model.AgenteVentas != null;
+    var isEdit = Model.AgenteVentas?.Id > 0;
 }
 
 <h2>@(isEdit ? "Editar Agente de Ventas" : "Crear Agente de Ventas")</h2>
@@ -29,7 +29,7 @@
     </div>
     <div class="mb-3 d-flex align-items-center gap-2">
         <label class="form-label">Proveedor</label>
-        <input type="text" class="form-control" value="@Model.ProveedorDescripcion" readonly style="max-width:300px;" />
+        <input type="text" id="proveedorDescripcion" class="form-control" value="@Model.ProveedorDescripcion" readonly style="max-width:300px;" />
         <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalProveedores">Seleccionar</button>
         <input type="hidden" asp-for="AgenteVentas.Id_Proveedor" />
     </div>
@@ -78,13 +78,14 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/Configuracion/agentes_ventas.js" asp-append-version="true"></script>
     <script>
-        $(document).on('click', '.btnSeleccionarProveedor', function () {
-            var id = $(this).data('id');
-            var nombre = $(this).data('nombre');
-            $('input[name="AgenteVentas.Id_Proveedor"]').val(id);
-            $('input[readonly][value]').val(nombre);
+        $(document).ready(function() {
+            $(document).on('click', '.btnSeleccionarProveedor', function () {
+                var id = $(this).data('id');
+                var nombre = $(this).data('nombre');
+                $('input[name="AgenteVentas.Id_Proveedor"]').val(id);
+                $('#proveedorDescripcion').val(nombre);
+            });
         });
     </script>
 }

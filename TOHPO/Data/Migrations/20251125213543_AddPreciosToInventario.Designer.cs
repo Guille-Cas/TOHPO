@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TOHPO.Data;
 
@@ -11,9 +12,11 @@ using TOHPO.Data;
 namespace TOHPO.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251125213543_AddPreciosToInventario")]
+    partial class AddPreciosToInventario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,8 +251,7 @@ namespace TOHPO.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Id_Proveedor")
-                        .HasDatabaseName("IX_Agente_Ventas_Proveedor");
+                    b.HasIndex("Id_Proveedor");
 
                     b.ToTable("Agente_Ventas");
                 });
@@ -1028,11 +1030,9 @@ namespace TOHPO.Data.Migrations
                     b.HasIndex("Fecha")
                         .HasDatabaseName("IX_Venta_Fecha");
 
-                    b.HasIndex("Id_Agente_Ventas")
-                        .HasDatabaseName("IX_Venta_Agente_Ventas");
+                    b.HasIndex("Id_Agente_Ventas");
 
-                    b.HasIndex("Id_Cliente")
-                        .HasDatabaseName("IX_Venta_Cliente");
+                    b.HasIndex("Id_Cliente");
 
                     b.ToTable("Venta");
                 });
@@ -1119,7 +1119,7 @@ namespace TOHPO.Data.Migrations
                     b.HasOne("TOHPO.Models.Proveedor", "Proveedor")
                         .WithMany()
                         .HasForeignKey("Id_Proveedor")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Proveedor");
@@ -1378,13 +1378,13 @@ namespace TOHPO.Data.Migrations
                     b.HasOne("TOHPO.Models.Agente_Ventas", "Agente_Ventas")
                         .WithMany()
                         .HasForeignKey("Id_Agente_Ventas")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TOHPO.Models.Cliente", "Cliente")
                         .WithMany()
                         .HasForeignKey("Id_Cliente")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Agente_Ventas");

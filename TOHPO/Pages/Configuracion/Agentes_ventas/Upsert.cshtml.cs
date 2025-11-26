@@ -35,6 +35,7 @@ namespace TOHPO.Pages.Configuracion.Agentes_ventas
         public async Task<IActionResult> OnPostAsync()
         {
             Proveedores = await _context.Proveedor.ToListAsync();
+            ModelState.Remove("AgenteVentas.Proveedor");
             if (!ModelState.IsValid) return Page();
             if (AgenteVentas.Id > 0)
             {

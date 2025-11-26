@@ -1,0 +1,116 @@
+@page
+@model TOHPO.Pages.Operaciones.Inventario.IndexModel
+@{
+    ViewData["Title"] = "Inventario";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        
+                        Gestión de Inventario
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Upsert" class="btn btn-primary btn-sm">
+                            Nuevo Registro
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="inventarioTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Código</th>
+                                    <th>Cantidad</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Inventario != null)
+                                {
+                                    @foreach (var item in Model.Inventario)
+                                    {
+                                        <tr>
+                                            <td>@Html.DisplayFor(modelItem => item.Producto.Descripcion)</td>
+                                            <td>@Html.DisplayFor(modelItem => item.Codigo_Producto)</td>
+                                            <td>
+                                                <span class="@(item.Cantidad > 10 ? "text-black" : item.Cantidad > 5 ? "text-warning" : "text-danger")">
+                                                    @Html.DisplayFor(modelItem => item.Cantidad)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="@(item.Estado ? "text-black" : "text-secondary")">
+                                                    @(item.Estado ? "Activo" : "Inactivo")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-page="./Upsert" asp-route-id="@item.Id" class="btn btn-warning btn-sm me-2 rounded" title="Editar">
+                                                        Editar
+                                                    </a>
+                                                    <button type="button" class="btn btn-info btn-sm me-2 rounded" data-toggle="modal" data-target="#detailModal" 
+                                                            onclick="showDetails(@item.Id)" title="Ver Detalles">
+                                                        Detalles
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#inventarioTable').DataTable({
+                "language": {
+                    "decimal": "",
+                    "emptyTable": "No hay datos disponibles en la tabla",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                    "infoPostFix": "",
+                    "thousands": ",",
+                    "lengthMenu": "Mostrar _MENU_ registros",
+                    "loadingRecords": "Cargando...",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encontraron registros coincidentes",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    },
+                    "aria": {
+                        "sortAscending": ": activar para ordenar la columna de manera ascendente",
+                        "sortDescending": ": activar para ordenar la columna de manera descendente"
+                    }
+                },
+                "order": [[0, "asc"]],
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 }
+                ],
+                "pageLength": 10,
+                "responsive": true
+            });
+        });
+
+        function showDetails(id) {
+            // Implementar modal de detalles si es necesario
+        }
+    </script>
+}

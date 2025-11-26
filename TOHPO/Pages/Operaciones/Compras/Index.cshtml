@@ -1,0 +1,194 @@
+@page
+@model TOHPO.Pages.Operaciones.Compras.IndexModel
+@{
+    ViewData["Title"] = "Gestión de Compras";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Upsert" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Nueva Compra
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <form method="post" asp-page-handler="Filtrar">
+                    <div class="card-body border-bottom">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
+                                    <input asp-for="FechaInicio" class="form-control" type="date" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
+                                    <input asp-for="FechaFin" class="form-control" type="date" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="BuscarProveedor" class="form-label">Buscar Proveedor</label>
+                                    <input asp-for="BuscarProveedor" class="form-control" placeholder="Nombre del proveedor..." />
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search me-1"></i>
+                                            Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Lista de Compras -->
+                <div class="card-body">
+                    @if (Model.Compras.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>N° Factura</th>
+                                        <th>Proveedor</th>
+                                        <th>Total</th>
+                                        <th>IVA</th>
+                                        <th>Gran Total</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var compra in Model.Compras)
+                                    {
+                                        <tr>
+                                            <td>@compra.Fecha.ToString("dd/MM/yyyy")</td>
+                                            <td>@compra.Numero_Factura</td>
+                                            <td>@compra.Proveedor?.Nombre</td>
+                                            <td>@compra.Total.ToString("C")</td>
+                                            <td>@compra.Iva.ToString("C")</td>
+                                            <td><strong>@compra.Gran_Total.ToString("C")</strong></td>
+                                            <td>
+                                                @if (compra.Estado)
+                                                {
+                                                    <span class="badge bg-success">Procesada</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">Pendiente</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-page="./Upsert" asp-route-id="@compra.Id" 
+                                                       class="btn btn-outline-primary btn-sm" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a asp-page="./Details" asp-route-id="@compra.Id" 
+                                                       class="btn btn-outline-info btn-sm" title="Ver Detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    @if (!compra.Estado)
+                                                    {
+                                                        <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                                onclick="eliminarCompra(@compra.Id)" title="Eliminar">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-outline-success btn-sm" 
+                                                                onclick="procesarCompra(@compra.Id)" title="Procesar Compra">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No se encontraron compras</h5>
+                            <p class="text-muted">Crea tu primera compra haciendo clic en el botón "Nueva Compra"</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Confirmar Acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let compraId = 0;
+        let accionTipo = '';
+
+        function eliminarCompra(id) {
+            compraId = id;
+            accionTipo = 'eliminar';
+            document.getElementById('modalTitle').textContent = 'Eliminar Compra';
+            document.getElementById('modalBody').innerHTML = '¿Está seguro que desea eliminar esta compra? Esta acción no se puede deshacer.';
+            document.getElementById('confirmBtn').textContent = 'Eliminar';
+            document.getElementById('confirmBtn').className = 'btn btn-danger';
+            new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        }
+
+        function procesarCompra(id) {
+            compraId = id;
+            accionTipo = 'procesar';
+            document.getElementById('modalTitle').textContent = 'Procesar Compra';
+            document.getElementById('modalBody').innerHTML = '¿Está seguro que desea procesar esta compra? Una vez procesada, se actualizará el inventario y no podrá modificarse.';
+            document.getElementById('confirmBtn').textContent = 'Procesar';
+            document.getElementById('confirmBtn').className = 'btn btn-success';
+            new bootstrap.Modal(document.getElementById('confirmModal')).show();
+        }
+
+        document.getElementById('confirmBtn').addEventListener('click', function() {
+            if (accionTipo === 'eliminar') {
+                window.location.href = `/Operaciones/Compras/Index?handler=Delete&id=${compraId}`;
+            } else if (accionTipo === 'procesar') {
+                window.location.href = `/Operaciones/Compras/Index?handler=Procesar&id=${compraId}`;
+            }
+        });
+    </script>
+}
