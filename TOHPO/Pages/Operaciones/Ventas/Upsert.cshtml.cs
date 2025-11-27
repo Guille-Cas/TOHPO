@@ -112,7 +112,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 bool esNueva = Venta.Id == 0;
 
                 // Validar inventario disponible antes de procesar la venta
-                var validacionInventario = await ValidarInventarioDisponible();
+                var validacionInventario = await ValidarInventarioDisponibleParaEdicion();
                 if (!validacionInventario.esValido)
                 {
                     ModelState.AddModelError("", validacionInventario.mensaje);
@@ -225,33 +225,84 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
         private async Task ActualizarVentaExistente()
         {
-            // Obtener los detalles originales para revertir el inventario
+            // Obtener los detalles originales
             var detallesOriginales = await _context.Detalle_Venta
                 .Where(dv => dv.Id_Venta == Venta.Id)
                 .ToListAsync();
 
-            // Revertir inventario de los detalles originales
+            // Crear un diccionario para manejar las diferencias
+            var cambiosInventario = new Dictionary<string, int>();
+
+            // Procesar productos originales
             foreach (var detalleOriginal in detallesOriginales)
             {
-                var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalleOriginal.Codigo_Producto);
-
-                if (inventario != null)
+                if (!cambiosInventario.ContainsKey(detalleOriginal.Codigo_Producto))
                 {
-                    // Devolver al inventario la cantidad original
-                    inventario.Cantidad += detalleOriginal.Cantidad;
-                    inventario.Existencia = inventario.Cantidad;
-                    _context.Inventario.Update(inventario);
+                    cambiosInventario[detalleOriginal.Codigo_Producto] = 0;
+                }
+                
+                // Sumar la cantidad original (la devolvemos al inventario)
+                cambiosInventario[detalleOriginal.Codigo_Producto] += detalleOriginal.Cantidad;
+            }
 
-                    // Registrar movimiento de reversión
-                    var movimientoReversion = new Movimiento_Inventario
+            // Procesar productos nuevos/actualizados
+            foreach (var detalleNuevo in DetallesVenta)
+            {
+                if (!cambiosInventario.ContainsKey(detalleNuevo.CodigoProducto))
+                {
+                    cambiosInventario[detalleNuevo.CodigoProducto] = 0;
+                }
+                
+                // Restar la nueva cantidad (la sacamos del inventario)
+                cambiosInventario[detalleNuevo.CodigoProducto] -= detalleNuevo.Cantidad;
+            }
+
+            // Aplicar cambios al inventario solo donde hay diferencias
+            foreach (var cambio in cambiosInventario)
+            {
+                if (cambio.Value != 0) // Solo procesar si hay diferencia real
+                {
+                    var inventario = await _context.Inventario
+                        .Include(i => i.Producto)
+                        .FirstOrDefaultAsync(i => i.Codigo_Producto == cambio.Key);
+
+                    if (inventario != null)
                     {
-                        Id_Inventario = inventario.Id,
-                        Cantidad = detalleOriginal.Cantidad, // Positivo porque es una devolución
-                        Motivo = $"Reversión por edición de venta #{Venta.Id}",
-                        Fecha = DateTime.Now
-                    };
-                    _context.Movimiento_Inventario.Add(movimientoReversion);
+                        // Verificar que el cambio no deje el inventario en negativo
+                        var nuevaCantidad = inventario.Cantidad + cambio.Value;
+                        var nuevaExistencia = inventario.Existencia + cambio.Value;
+                        
+                        if (nuevaCantidad < 0 || nuevaExistencia < 0)
+                        {
+                            throw new Exception($"Stock insuficiente para {inventario.Producto.Descripcion}. " +
+                                              $"Disponible: {inventario.Existencia}, cambio requerido: {cambio.Value * -1}");
+                        }
+
+                        // Aplicar el cambio
+                        inventario.Cantidad = nuevaCantidad;
+                        inventario.Existencia = nuevaExistencia;
+                        _context.Inventario.Update(inventario);
+
+                        // Registrar movimiento
+                        string motivo;
+                        if (cambio.Value > 0)
+                        {
+                            motivo = $"Ajuste positivo por edición de venta #{Venta.Id} (+{cambio.Value})";
+                        }
+                        else
+                        {
+                            motivo = $"Ajuste negativo por edición de venta #{Venta.Id} ({cambio.Value})";
+                        }
+
+                        var movimiento = new Movimiento_Inventario
+                        {
+                            Id_Inventario = inventario.Id,
+                            Cantidad = cambio.Value,
+                            Motivo = motivo,
+                            Fecha = DateTime.Now
+                        };
+                        _context.Movimiento_Inventario.Add(movimiento);
+                    }
                 }
             }
 
@@ -261,7 +312,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
             // Actualizar venta
             _context.Venta.Update(Venta);
 
-            // Crear nuevos detalles y actualizar inventario
+            // Crear nuevos detalles
             foreach (var detalle in DetallesVenta)
             {
                 var detalleVenta = new Detalle_Venta
@@ -276,10 +327,66 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     Subtotal = detalle.Subtotal
                 };
                 _context.Detalle_Venta.Add(detalleVenta);
-
-                // Actualizar inventario con las nuevas cantidades
-                await ActualizarInventario(detalle.CodigoProducto, detalle.Cantidad, $"Venta actualizada #{Venta.Id}");
             }
+        }
+
+        private async Task<(bool esValido, string mensaje)> ValidarInventarioDisponibleParaEdicion()
+        {
+            if (Venta.Id == 0) // Nueva venta
+            {
+                return await ValidarInventarioDisponible();
+            }
+
+            // Para edición, validar considerando las diferencias
+            var detallesOriginales = await _context.Detalle_Venta
+                .Where(dv => dv.Id_Venta == Venta.Id)
+                .ToListAsync();
+
+            var cambiosInventario = new Dictionary<string, int>();
+
+            // Calcular diferencias
+            foreach (var detalleOriginal in detallesOriginales)
+            {
+                if (!cambiosInventario.ContainsKey(detalleOriginal.Codigo_Producto))
+                {
+                    cambiosInventario[detalleOriginal.Codigo_Producto] = 0;
+                }
+                cambiosInventario[detalleOriginal.Codigo_Producto] += detalleOriginal.Cantidad;
+            }
+
+            foreach (var detalleNuevo in DetallesVenta)
+            {
+                if (!cambiosInventario.ContainsKey(detalleNuevo.CodigoProducto))
+                {
+                    cambiosInventario[detalleNuevo.CodigoProducto] = 0;
+                }
+                cambiosInventario[detalleNuevo.CodigoProducto] -= detalleNuevo.Cantidad;
+            }
+
+            // Validar cada cambio
+            foreach (var cambio in cambiosInventario)
+            {
+                if (cambio.Value < 0) // Solo validar si se necesita más inventario
+                {
+                    var inventario = await _context.Inventario
+                        .Include(i => i.Producto)
+                        .FirstOrDefaultAsync(i => i.Codigo_Producto == cambio.Key);
+
+                    if (inventario == null)
+                    {
+                        return (false, $"No se encontró inventario para el producto {cambio.Key}");
+                    }
+
+                    var cantidadNecesaria = Math.Abs(cambio.Value);
+                    if (inventario.Existencia < cantidadNecesaria)
+                    {
+                        return (false, $"Stock insuficiente para {inventario.Producto.Descripcion}. " +
+                                      $"Disponible: {inventario.Existencia}, necesario: {cantidadNecesaria}");
+                    }
+                }
+            }
+
+            return (true, "");
         }
 
         private void CalcularTotales()

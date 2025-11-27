@@ -2,8 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using TOHPO.Data;
 using TOHPO.Models;
 
@@ -19,427 +17,493 @@ namespace TOHPO.Pages.Operaciones.Compras
         }
 
         [BindProperty]
-        public Compra Compra { get; set; } = default!;
+        public Compra Compra { get; set; } = new Compra();
 
         [BindProperty]
-        public string ProductosJson { get; set; } = string.Empty;
+        public List<DetalleCompraViewModel> DetallesCompra { get; set; } = new List<DetalleCompraViewModel>();
 
-        public SelectList ProveedoresSelectList { get; set; } = default!;
-        public List<ProductoViewModel> Productos { get; set; } = default!;
+        public SelectList ProveedoresList { get; set; } = default!;
+        public List<Producto> ProductosDisponibles { get; set; } = new List<Producto>();
+
+        public class DetalleCompraViewModel
+        {
+            public int Id { get; set; }
+            public string CodigoProducto { get; set; } = string.Empty;
+            public string NombreProducto { get; set; } = string.Empty;
+            public int Cantidad { get; set; } = 1;
+            public decimal CostoUnitario { get; set; }
+            public decimal PorcentajeDescuento { get; set; }
+            public decimal MontoDescuento { get; set; }
+            public decimal MontoImpuesto { get; set; }
+            public decimal Subtotal { get; set; }
+            public decimal PorcentajeImpuesto { get; set; }
+        }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            await CargarDatosComunes();
+            await CargarDatos();
 
-            if (id == null || id <= 0)
-            {
-                Compra = new Compra
-                {
-                    Fecha = DateTime.Now,
-                    Estado = false,
-                    Total = 0,
-                    Iva = 0,
-                    Gran_Total = 0
-                };
-                return Page();
-            }
-
-            try
+            if (id.HasValue)
             {
                 var compra = await _context.Compra
-                    .Include(c => c.Proveedor)
                     .Include(c => c.Compra_Detalles)
                         .ThenInclude(cd => cd.Producto)
                             .ThenInclude(p => p.Impuesto)
-                    .FirstOrDefaultAsync(m => m.Id == id);
+                    .FirstOrDefaultAsync(c => c.Id == id.Value);
 
                 if (compra == null)
                 {
-                    TempData["Error"] = "La compra no fue encontrada.";
+                    TempData["ErrorMessage"] = "Compra no encontrada";
                     return RedirectToPage("./Index");
                 }
 
-                if (compra.Estado)
-                {
-                    TempData["Warning"] = "Esta compra ya ha sido procesada y solo puede visualizarse.";
-                }
-
-                // Debug: Verificar que los datos se cargaron correctamente
-                System.Diagnostics.Debug.WriteLine($"Compra cargada - ID: {compra.Id}, Detalles: {compra.Compra_Detalles?.Count ?? 0}");
-                
-                foreach (var detalle in compra.Compra_Detalles ?? new List<Compra_Detalle>())
-                {
-                    System.Diagnostics.Debug.WriteLine($"Detalle: {detalle.Codigo_Producto}, Producto: {detalle.Producto?.Descripcion ?? "NULL"}");
-                }
-
                 Compra = compra;
-                return Page();
+
+                DetallesCompra = compra.Compra_Detalles.Select(cd => new DetalleCompraViewModel
+                {
+                    Id = cd.Id,
+                    CodigoProducto = cd.Codigo_Producto,
+                    NombreProducto = cd.Producto.Descripcion,
+                    Cantidad = cd.Cantidad,
+                    CostoUnitario = cd.Costo_Unitario,
+                    PorcentajeDescuento = cd.Porcentaje_Descuento,
+                    MontoDescuento = cd.Monto_Descuento,
+                    MontoImpuesto = cd.Monto_Impuesto,
+                    Subtotal = cd.Subtotal,
+                    PorcentajeImpuesto = cd.Producto.Impuesto?.Porcentaje ?? 0
+                }).ToList();
             }
-            catch (Exception ex)
+            else
             {
-                System.Diagnostics.Debug.WriteLine($"Error cargando compra: {ex.Message}");
-                TempData["Error"] = $"Error al cargar la compra: {ex.Message}";
-                return RedirectToPage("./Index");
+                // Nueva compra
+                Compra.Fecha = DateTime.Now.Date;
+                Compra.Hora = DateTime.Now;
             }
+
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Debug del JSON recibido
-            if (!string.IsNullOrEmpty(ProductosJson))
-            {
-                System.Diagnostics.Debug.WriteLine($"ProductosJson recibido: {ProductosJson}");
-            }
-
-            // Configurar opciones para deserialización con camelCase
-            var options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                PropertyNameCaseInsensitive = true
-            };
-
-            // Procesar productos desde JSON
-            var productos = new List<ProductoCompra>();
-            if (!string.IsNullOrEmpty(ProductosJson))
-            {
-                try
-                {
-                    productos = JsonSerializer.Deserialize<List<ProductoCompra>>(ProductosJson, options) ?? new List<ProductoCompra>();
-                    System.Diagnostics.Debug.WriteLine($"Productos deserializados: {productos.Count}");
-                    
-                    foreach (var prod in productos)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Producto: {prod.Codigo}, Cantidad: {prod.Cantidad}, Costo: {prod.CostoUnitario}");
-                    }
-                }
-                catch (JsonException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error deserialización: {ex.Message}");
-                    ModelState.AddModelError(string.Empty, $"Error al procesar los productos: {ex.Message}");
-                    await CargarDatosComunes();
-                    return Page();
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine("ProductosJson está vacío");
-            }
-
-            // Validaciones básicas
-            if (productos.Count == 0)
-            {
-                ModelState.AddModelError(string.Empty, "Debe agregar al menos un producto a la compra.");
-            }
-
-            if (Compra.Id_Proveedor <= 0)
-            {
-                ModelState.AddModelError("Compra.Id_Proveedor", "Debe seleccionar un proveedor.");
-            }
-
-            // Validar que exista el proveedor
-            if (Compra.Id_Proveedor > 0)
-            {
-                var proveedorExiste = await _context.Proveedor
-                    .AnyAsync(p => p.Id == Compra.Id_Proveedor);
-
-                if (!proveedorExiste)
-                {
-                    ModelState.AddModelError("Compra.Id_Proveedor", "El proveedor seleccionado no es válido o está inactivo.");
-                }
-            }
-
-            // Validar productos y verificar que tengan impuesto asociado
-            var productosValidos = new List<ProductoCompra>();
-            foreach (var prod in productos)
-            {
-                if (string.IsNullOrEmpty(prod.Codigo))
-                {
-                    ModelState.AddModelError(string.Empty, "Todos los productos deben tener un código válido.");
-                    continue;
-                }
-
-                var producto = await _context.Producto
-                    .Include(p => p.Impuesto)
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == prod.Codigo && p.Estado);
-
-                if (producto == null)
-                {
-                    ModelState.AddModelError(string.Empty, $"El producto {prod.Codigo} no existe o está inactivo.");
-                    continue;
-                }
-
-                if (producto.Impuesto == null)
-                {
-                    ModelState.AddModelError(string.Empty, $"El producto {prod.Codigo} no tiene un impuesto asociado.");
-                    continue;
-                }
-
-                if (prod.Cantidad <= 0)
-                {
-                    ModelState.AddModelError(string.Empty, $"La cantidad del producto {prod.Codigo} debe ser mayor a 0.");
-                    continue;
-                }
-
-                if (prod.CostoUnitario <= 0)
-                {
-                    ModelState.AddModelError(string.Empty, $"El costo unitario del producto {prod.Codigo} debe ser mayor a 0.");
-                    continue;
-                }
-
-                if (prod.PorcentajeDescuento < 0 || prod.PorcentajeDescuento > 100)
-                {
-                    ModelState.AddModelError(string.Empty, $"El porcentaje de descuento del producto {prod.Codigo} debe estar entre 0 y 100.");
-                    continue;
-                }
-
-                // Si pasa todas las validaciones, agregarlo a la lista de productos válidos
-                prod.PorcentajeImpuesto = producto.Impuesto.Porcentaje;
-                productosValidos.Add(prod);
-            }
-
-            System.Diagnostics.Debug.WriteLine($"Productos válidos: {productosValidos.Count}");
-
-            // Recalcular totales con productos válidos ANTES de la validación del modelo
-            if (productosValidos.Count > 0)
-            {
-                decimal subtotal = 0;
-                decimal descuentoTotal = 0;
-                decimal ivaTotal = 0;
-
-                foreach (var prod in productosValidos)
-                {
-                    decimal subtotalProducto = prod.CostoUnitario * prod.Cantidad;
-                    decimal subtotalConDescuento = subtotalProducto - prod.MontoDescuento;
-                    
-                    subtotal += subtotalProducto;
-                    descuentoTotal += prod.MontoDescuento;
-                    
-                    // Calcular IVA basado en el porcentaje de impuesto del producto
-                    decimal ivaProducto = subtotalConDescuento * (prod.PorcentajeImpuesto / 100);
-                    ivaTotal += ivaProducto;
-                }
-
-                decimal totalGravado = subtotal - descuentoTotal;
-                decimal granTotal = totalGravado + ivaTotal;
-
-                // Asignar los valores calculados a la compra
-                Compra.Total = totalGravado;
-                Compra.Iva = ivaTotal;
-                Compra.Gran_Total = granTotal;
-
-                // CRUCIAL: Limpiar los errores de validación de estos campos calculados
-                ModelState.Remove("Compra.Total");
-                ModelState.Remove("Compra.Iva");
-                ModelState.Remove("Compra.Gran_Total");
-
-                System.Diagnostics.Debug.WriteLine($"Totales calculados - Total: {totalGravado}, IVA: {ivaTotal}, Gran Total: {granTotal}");
-            }
-            else if (productos.Count > 0)
-            {
-                // Si hay productos pero ninguno es válido, establecer totales en 0
-                Compra.Total = 0;
-                Compra.Iva = 0;
-                Compra.Gran_Total = 0;
-                
-                // Limpiar errores de validación
-                ModelState.Remove("Compra.Total");
-                ModelState.Remove("Compra.Iva");
-                ModelState.Remove("Compra.Gran_Total");
-            }
-
-            // Validar campos requeridos del modelo
-            if (string.IsNullOrEmpty(Compra.Numero_Factura))
-            {
-                ModelState.AddModelError("Compra.Numero_Factura", "El número de factura es obligatorio.");
-            }
-
-            // Debug: Verificar el estado del ModelState después de limpiar
-            System.Diagnostics.Debug.WriteLine($"ModelState.IsValid después de limpiar: {ModelState.IsValid}");
-
+            ModelState.Remove("Compra.Proveedor");
+            ModelState.Remove("Compra.Concepto");
+            
             if (!ModelState.IsValid)
             {
-                await CargarDatosComunes();
+                await CargarDatos();
+                return Page();
+            }
+
+            if (!DetallesCompra.Any())
+            {
+                ModelState.AddModelError("", "Debe agregar al menos un producto a la compra");
+                await CargarDatos();
                 return Page();
             }
 
             try
             {
-                if (Compra.Id == 0)
+                bool esNueva = Compra.Id == 0;
+
+                // Validar que todos los productos estén registrados
+                var validacionProductos = await ValidarProductosRegistrados();
+                if (!validacionProductos.esValido)
                 {
-                    // Nueva compra
+                    ModelState.AddModelError("", validacionProductos.mensaje);
+                    await CargarDatos();
+                    return Page();
+                }
+
+                // Calcular totales
+                CalcularTotales();
+
+                if (esNueva)
+                {
                     _context.Compra.Add(Compra);
                     await _context.SaveChangesAsync();
-                    
-                    System.Diagnostics.Debug.WriteLine($"Compra guardada con ID: {Compra.Id}");
 
-                    // Agregar detalles
-                    foreach (var prod in productosValidos)
+                    // Crear detalles y actualizar inventario
+                    foreach (var detalle in DetallesCompra)
                     {
-                        var detalle = new Compra_Detalle
+                        var detalleCompra = new Compra_Detalle
                         {
                             Id_Compra = Compra.Id,
-                            Codigo_Producto = prod.Codigo,
-                            Cantidad = prod.Cantidad,
-                            Costo_Unitario = prod.CostoUnitario,
-                            Porcentaje_Descuento = prod.PorcentajeDescuento,
-                            Monto_Descuento = prod.MontoDescuento
+                            Codigo_Producto = detalle.CodigoProducto,
+                            Cantidad = detalle.Cantidad,
+                            Costo_Unitario = detalle.CostoUnitario,
+                            Porcentaje_Descuento = detalle.PorcentajeDescuento,
+                            Monto_Descuento = detalle.MontoDescuento,
+                            Monto_Impuesto = detalle.MontoImpuesto,
+                            Subtotal = detalle.Subtotal
                         };
-                        _context.Compra_Detalle.Add(detalle);
-                        System.Diagnostics.Debug.WriteLine($"Detalle agregado: {prod.Codigo}");
+                        _context.Compra_Detalle.Add(detalleCompra);
+
+                        // Actualizar inventario
+                        await ActualizarInventario(detalle.CodigoProducto, detalle.Cantidad, "ENTRADA", $"Compra #{Compra.Id}");
                     }
 
-                    TempData["Success"] = "La compra ha sido creada correctamente.";
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Compra registrada exitosamente";
                 }
                 else
                 {
-                    // Editar compra existente
-                    var compraExistente = await _context.Compra
-                        .Include(c => c.Compra_Detalles)
-                        .FirstOrDefaultAsync(c => c.Id == Compra.Id);
-
-                    if (compraExistente == null)
-                    {
-                        return NotFound();
-                    }
-
-                    if (compraExistente.Estado)
-                    {
-                        TempData["Error"] = "No se puede modificar una compra que ya ha sido procesada.";
-                        return RedirectToPage("./Index");
-                    }
-
-                    // Actualizar datos de la compra
-                    compraExistente.Fecha = Compra.Fecha;
-                    compraExistente.Numero_Factura = Compra.Numero_Factura;
-                    compraExistente.Id_Proveedor = Compra.Id_Proveedor;
-                    compraExistente.Total = Compra.Total;
-                    compraExistente.Iva = Compra.Iva;
-                    compraExistente.Gran_Total = Compra.Gran_Total;
-
-                    // Eliminar detalles existentes
-                    _context.Compra_Detalle.RemoveRange(compraExistente.Compra_Detalles);
-
-                    // Agregar nuevos detalles
-                    foreach (var prod in productosValidos)
-                    {
-                        var detalle = new Compra_Detalle
-                        {
-                            Id_Compra = Compra.Id,
-                            Codigo_Producto = prod.Codigo,
-                            Cantidad = prod.Cantidad,
-                            Costo_Unitario = prod.CostoUnitario,
-                            Porcentaje_Descuento = prod.PorcentajeDescuento,
-                            Monto_Descuento = prod.MontoDescuento
-                        };
-                        _context.Compra_Detalle.Add(detalle);
-                    }
-
-                    TempData["Success"] = "La compra ha sido actualizada correctamente.";
+                    // Editar compra existente usando el método diferencial
+                    await ActualizarCompraExistente();
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Compra actualizada exitosamente";
                 }
 
-                await _context.SaveChangesAsync();
-                System.Diagnostics.Debug.WriteLine("Cambios guardados en la base de datos");
                 return RedirectToPage("./Index");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al guardar: {ex.Message}");
-                ModelState.AddModelError(string.Empty, $"Error al procesar la compra: {ex.Message}");
-                await CargarDatosComunes();
+                ModelState.AddModelError("", $"Error al procesar la compra: {ex.Message}");
+                await CargarDatos();
                 return Page();
             }
         }
 
-        private async Task CargarDatosComunes()
+        public async Task<JsonResult> OnGetProductoInfoAsync(string codigo)
         {
+            if (string.IsNullOrEmpty(codigo))
+            {
+                return new JsonResult(new { success = false, message = "Código de producto no válido" });
+            }
+
             try
             {
-                // Cargar proveedores activos
-                var proveedores = await _context.Proveedor
-                    .OrderBy(p => p.Nombre)
-                    .Select(p => new { p.Id, p.Nombre })
-                    .ToListAsync();
-
-                ProveedoresSelectList = new SelectList(proveedores, "Id", "Nombre");
-
-                // Obtener todos los productos activos con su impuesto
-                var productosQuery = await _context.Producto
+                var producto = await _context.Producto
                     .Include(p => p.Impuesto)
-                    .Where(p => p.Estado)
-                    .OrderBy(p => p.Descripcion)
-                    .ToListAsync();
+                    .Include(p => p.Inventario) // Incluir inventario para obtener precio de compra
+                    .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo);
 
-                if (productosQuery.Count == 0)
+                if (producto == null)
                 {
-                    Productos = new List<ProductoViewModel>();
-                    return;
+                    return new JsonResult(new { success = false, message = "Producto no encontrado en el catálogo" });
                 }
 
-                // Obtener los códigos de los productos
-                var codigos = productosQuery.Select(p => p.CodigoReferencia).ToList();
+                // Verificar si el producto tiene inventario registrado
+                var inventario = await _context.Inventario
+                    .FirstOrDefaultAsync(i => i.Codigo_Producto == codigo);
 
-                // Obtener los inventarios relacionados
-                var inventarios = await _context.Inventario
-                    .Where(i => codigos.Contains(i.Codigo_Producto))
-                    .ToListAsync();
-
-                // Mapear los productos con su inventario e impuesto
-                Productos = productosQuery.Select(p =>
+                if (inventario == null)
                 {
-                    var inventario = inventarios.FirstOrDefault(i => i.Codigo_Producto == p.CodigoReferencia);
-                    return new ProductoViewModel
+                    return new JsonResult(new 
+                    { 
+                        success = false, 
+                        message = "El producto no tiene inventario registrado. Debe crear primero un registro de inventario para este producto." 
+                    });
+                }
+
+                // Determinar el costo unitario sugerido
+                decimal costoUnitarioSugerido = 0;
+                
+                // Prioridad 1: Precio de compra actual en inventario (si existe y es mayor a 0)
+                if (inventario.Precio_Compra > 0)
+                {
+                    costoUnitarioSugerido = inventario.Precio_Compra;
+                }
+                // Prioridad 2: Buscar la última compra de este producto
+                else
+                {
+                    var ultimaCompra = await _context.Compra_Detalle
+                        .Where(cd => cd.Codigo_Producto == codigo)
+                        .Include(cd => cd.Compra)
+                        .OrderByDescending(cd => cd.Compra.Fecha)
+                        .ThenByDescending(cd => cd.Compra.Hora)
+                        .FirstOrDefaultAsync();
+
+                    if (ultimaCompra != null)
                     {
-                        Codigo = p.CodigoReferencia,
-                        Nombre = p.Descripcion,
-                        Precio_Compra = inventario?.Precio_Compra ?? 0,
-                        Stock = inventario?.Existencia ?? 0,
-                        PorcentajeImpuesto = p.Impuesto?.Porcentaje ?? 0,
-                        DescripcionImpuesto = p.Impuesto?.Descripcion ?? "Sin impuesto"
-                    };
-                }).ToList();
+                        costoUnitarioSugerido = ultimaCompra.Costo_Unitario;
+                    }
+                    // Si no hay histórico, dejar en 0 para que el usuario ingrese el precio
+                }
+
+                var productoInfo = new
+                {
+                    codigo = producto.CodigoReferencia,
+                    nombre = producto.Descripcion,
+                    porcentajeImpuesto = producto.Impuesto?.Porcentaje ?? 0,
+                    cantidadTotal = inventario.Cantidad,
+                    existenciaDisponible = inventario.Existencia,
+                    costoUnitarioSugerido = costoUnitarioSugerido,
+                    precioCompraActual = inventario.Precio_Compra,
+                    tieneHistorialCompras = costoUnitarioSugerido > 0
+                };
+
+                return new JsonResult(new { success = true, producto = productoInfo });
             }
             catch (Exception ex)
             {
-                // Log del error
-                Productos = new List<ProductoViewModel>();
-                ProveedoresSelectList = new SelectList(new List<object>(), "Id", "Nombre");
-                
-                ModelState.AddModelError(string.Empty, $"Error al cargar datos: {ex.Message}");
+                return new JsonResult(new { success = false, message = $"Error al obtener información del producto: {ex.Message}" });
             }
         }
-    }
 
-    public class ProductoCompra
-    {
-        [JsonPropertyName("codigo")]
-        public string Codigo { get; set; } = string.Empty;
-        
-        [JsonPropertyName("nombre")]
-        public string Nombre { get; set; } = string.Empty;
-        
-        [JsonPropertyName("cantidad")]
-        public int Cantidad { get; set; }
-        
-        [JsonPropertyName("costoUnitario")]
-        public decimal CostoUnitario { get; set; }
-        
-        [JsonPropertyName("porcentajeDescuento")]
-        public decimal PorcentajeDescuento { get; set; }
-        
-        [JsonPropertyName("montoDescuento")]
-        public decimal MontoDescuento { get; set; }
-        
-        [JsonPropertyName("porcentajeImpuesto")]
-        public decimal PorcentajeImpuesto { get; set; }
-    }
+        private async Task CargarDatos()
+        {
+            // Cargar proveedores activos
+            var proveedores = await _context.Proveedor
+                .OrderBy(p => p.Nombre)
+                .ToListAsync();
 
-    public class ProductoViewModel
-    {
-        public string Codigo { get; set; } = string.Empty;
-        public string Nombre { get; set; } = string.Empty;
-        public decimal Precio_Compra { get; set; }
-        public int Stock { get; set; }
-        public decimal PorcentajeImpuesto { get; set; }
-        public string DescripcionImpuesto { get; set; } = string.Empty;
+            ProveedoresList = new SelectList(proveedores, "Id", "Nombre");
+
+            // Cargar productos disponibles
+            ProductosDisponibles = await _context.Producto
+                .Include(p => p.Impuesto)
+                .Where(p => p.Estado == true)
+                .OrderBy(p => p.Descripcion)
+                .ToListAsync();
+        }
+
+        private async Task<(bool esValido, string mensaje)> ValidarProductosRegistrados()
+        {
+            foreach (var detalle in DetallesCompra)
+            {
+                var producto = await _context.Producto
+                    .FirstOrDefaultAsync(p => p.CodigoReferencia == detalle.CodigoProducto);
+
+                if (producto == null)
+                {
+                    return (false, $"El producto con código {detalle.CodigoProducto} no está registrado en el catálogo.");
+                }
+
+                // Verificar que el producto tenga inventario registrado
+                var inventario = await _context.Inventario
+                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
+
+                if (inventario == null)
+                {
+                    return (false, $"El producto {producto.Descripcion} no tiene inventario registrado. Debe crear primero un registro de inventario.");
+                }
+            }
+
+            return (true, "");
+        }
+
+        private void CalcularTotales()
+        {
+            decimal subtotal = 0;
+            decimal totalDescuentos = 0;
+            decimal totalIva = 0;
+
+            foreach (var detalle in DetallesCompra)
+            {
+                // Calcular monto de descuento
+                detalle.MontoDescuento = (detalle.CostoUnitario * detalle.Cantidad) * (detalle.PorcentajeDescuento / 100);
+
+                // Subtotal sin impuesto
+                decimal subtotalSinImpuesto = (detalle.CostoUnitario * detalle.Cantidad) - detalle.MontoDescuento;
+
+                // Calcular impuesto
+                detalle.MontoImpuesto = subtotalSinImpuesto * (detalle.PorcentajeImpuesto / 100);
+
+                // Subtotal final del producto
+                detalle.Subtotal = subtotalSinImpuesto + detalle.MontoImpuesto;
+
+                // Acumular
+                subtotal += subtotalSinImpuesto;
+                totalDescuentos += detalle.MontoDescuento;
+                totalIva += detalle.MontoImpuesto;
+            }
+
+            Compra.Costo_Total_Grabado = subtotal;
+            Compra.Iva = totalIva;
+            Compra.Total = subtotal + totalIva;
+        }
+
+        private async Task ActualizarInventario(string codigoProducto, int cantidad, string tipoMovimiento, string concepto)
+        {
+            try
+            {
+                // Buscar el inventario del producto
+                var inventario = await _context.Inventario
+                    .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
+
+                if (inventario == null)
+                {
+                    throw new Exception($"No se encontró inventario para el producto {codigoProducto}");
+                }
+
+                // Actualizar tanto Cantidad como Existencia de manera coherente
+                // Para compras (ENTRADA): se aumentan ambos valores
+                if (tipoMovimiento == "ENTRADA")
+                {
+                    inventario.Cantidad += cantidad;      // Cantidad total acumulada
+                    inventario.Existencia += cantidad;    // Existencia disponible actual
+                }
+                else if (tipoMovimiento == "SALIDA")
+                {
+                    inventario.Cantidad -= cantidad;      // Cantidad total
+                    inventario.Existencia -= cantidad;    // Existencia disponible
+
+                    // Validar que no queden valores negativos
+                    if (inventario.Cantidad < 0)
+                    {
+                        throw new Exception($"La cantidad total del producto {codigoProducto} no puede ser negativa.");
+                    }
+                    
+                    if (inventario.Existencia < 0)
+                    {
+                        throw new Exception($"La existencia del producto {codigoProducto} no puede ser negativa.");
+                    }
+                }
+
+                // Actualizar precio de compra si es una entrada
+                if (tipoMovimiento == "ENTRADA" && cantidad > 0)
+                {
+                    // Buscar el detalle de compra para obtener el costo unitario
+                    var detalleCompra = DetallesCompra.FirstOrDefault(d => d.CodigoProducto == codigoProducto);
+                    if (detalleCompra != null)
+                    {
+                        inventario.Precio_Compra = detalleCompra.CostoUnitario;
+                    }
+                }
+
+                // Crear movimiento de inventario para auditoría
+                var movimiento = new Movimiento_Inventario
+                {
+                    Id_Inventario = inventario.Id,
+                    Cantidad = cantidad,
+                    Motivo = concepto,
+                    Fecha = DateTime.Now
+                };
+
+                _context.Movimiento_Inventario.Add(movimiento);
+                _context.Update(inventario);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al actualizar inventario para producto {codigoProducto}: {ex.Message}");
+            }
+        }
+
+        private async Task ActualizarCompraExistente()
+        {
+            // Obtener los detalles originales
+            var detallesOriginales = await _context.Compra_Detalle
+                .Where(cd => cd.Id_Compra == Compra.Id)
+                .ToListAsync();
+
+            // Crear un diccionario para manejar las diferencias
+            var cambiosInventario = new Dictionary<string, (int cantidad, decimal costoUnitario)>();
+
+            // Procesar productos originales (los restamos porque los "devolvemos" del inventario)
+            foreach (var detalleOriginal in detallesOriginales)
+            {
+                if (!cambiosInventario.ContainsKey(detalleOriginal.Codigo_Producto))
+                {
+                    cambiosInventario[detalleOriginal.Codigo_Producto] = (0, 0);
+                }
+                
+                // Restar la cantidad original (la sacamos del inventario)
+                var actual = cambiosInventario[detalleOriginal.Codigo_Producto];
+                cambiosInventario[detalleOriginal.Codigo_Producto] = (actual.cantidad - detalleOriginal.Cantidad, actual.costoUnitario);
+            }
+
+            // Procesar productos nuevos/actualizados (los sumamos al inventario)
+            foreach (var detalleNuevo in DetallesCompra)
+            {
+                if (!cambiosInventario.ContainsKey(detalleNuevo.CodigoProducto))
+                {
+                    cambiosInventario[detalleNuevo.CodigoProducto] = (0, 0);
+                }
+                
+                // Sumar la nueva cantidad (la agregamos al inventario)
+                var actual = cambiosInventario[detalleNuevo.CodigoProducto];
+                cambiosInventario[detalleNuevo.CodigoProducto] = (actual.cantidad + detalleNuevo.Cantidad, detalleNuevo.CostoUnitario);
+            }
+
+            // Aplicar cambios al inventario solo donde hay diferencias
+            foreach (var cambio in cambiosInventario)
+            {
+                if (cambio.Value.cantidad != 0) // Solo procesar si hay diferencia real
+                {
+                    var inventario = await _context.Inventario
+                        .Include(i => i.Producto)
+                        .FirstOrDefaultAsync(i => i.Codigo_Producto == cambio.Key);
+
+                    if (inventario != null)
+                    {
+                        // Verificar que el cambio no deje el inventario en negativo
+                        var nuevaCantidad = inventario.Cantidad + cambio.Value.cantidad;
+                        var nuevaExistencia = inventario.Existencia + cambio.Value.cantidad;
+                        
+                        if (nuevaCantidad < 0 || nuevaExistencia < 0)
+                        {
+                            throw new Exception($"No se puede reducir el inventario de {inventario.Producto.Descripcion}. " +
+                                              $"Disponible: {inventario.Existencia}, reducción requerida: {Math.Abs(cambio.Value.cantidad)}");
+                        }
+
+                        // Aplicar el cambio
+                        inventario.Cantidad = nuevaCantidad;
+                        inventario.Existencia = nuevaExistencia;
+                        
+                        // Actualizar precio de compra si hay cantidad positiva
+                        if (cambio.Value.cantidad > 0 && cambio.Value.costoUnitario > 0)
+                        {
+                            inventario.Precio_Compra = cambio.Value.costoUnitario;
+                        }
+                        
+                        _context.Inventario.Update(inventario);
+
+                        // Registrar movimiento
+                        string motivo;
+                        
+                        if (cambio.Value.cantidad > 0)
+                        {
+                            motivo = $"Ajuste positivo por edición de compra #{Compra.Id} (+{cambio.Value.cantidad})";
+                        }
+                        else
+                        {
+                            motivo = $"Ajuste negativo por edición de compra #{Compra.Id} ({cambio.Value.cantidad})";
+                        }
+
+                        var movimiento = new Movimiento_Inventario
+                        {
+                            Id_Inventario = inventario.Id,
+                            Cantidad = Math.Abs(cambio.Value.cantidad),
+                            Motivo = motivo,
+                            Fecha = DateTime.Now
+                        };
+                        _context.Movimiento_Inventario.Add(movimiento);
+                    }
+                }
+            }
+
+            // Actualizar propiedades de la compra
+            var compraExistente = await _context.Compra.FirstOrDefaultAsync(c => c.Id == Compra.Id);
+            if (compraExistente != null)
+            {
+                compraExistente.Fecha = Compra.Fecha;
+                compraExistente.Hora = Compra.Hora;
+                compraExistente.Id_Proveedor = Compra.Id_Proveedor;
+                compraExistente.Concepto = Compra.Concepto;
+                compraExistente.Costo_Total_Grabado = Compra.Costo_Total_Grabado;
+                compraExistente.Iva = Compra.Iva;
+                compraExistente.Total = Compra.Total;
+            }
+
+            // Eliminar detalles originales
+            _context.Compra_Detalle.RemoveRange(detallesOriginales);
+
+            // Crear nuevos detalles
+            foreach (var detalle in DetallesCompra)
+            {
+                var detalleCompra = new Compra_Detalle
+                {
+                    Id_Compra = Compra.Id,
+                    Codigo_Producto = detalle.CodigoProducto,
+                    Cantidad = detalle.Cantidad,
+                    Costo_Unitario = detalle.CostoUnitario,
+                    Porcentaje_Descuento = detalle.PorcentajeDescuento,
+                    Monto_Descuento = detalle.MontoDescuento,
+                    Monto_Impuesto = detalle.MontoImpuesto,
+                    Subtotal = detalle.Subtotal
+                };
+                _context.Compra_Detalle.Add(detalleCompra);
+            }
+        }
     }
 }

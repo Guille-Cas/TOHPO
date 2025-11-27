@@ -26,6 +26,14 @@ namespace TOHPO.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Monto_Descuento { get; set; }
 
+        [DisplayName("Monto impuesto")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Monto_Impuesto { get; set; }
+
+        [DisplayName("Subtotal")]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Subtotal { get; set; }
+
         // Relaciones
         [ForeignKey("Compra")]
         public int Id_Compra { get; set; }

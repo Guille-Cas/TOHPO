@@ -11,38 +11,38 @@ namespace TOHPO.Models
 
         [Required(ErrorMessage = "La fecha es obligatoria")]
         [DisplayName("Fecha")]
-        public DateTime Fecha { get; set; }
+        public DateTime Fecha { get; set; } = DateTime.Now.Date;
 
-        [Required(ErrorMessage = "El número de factura es obligatorio")]
-        [DisplayName("Número de factura")]
-        [StringLength(50)]
-        public string Numero_Factura { get; set; }
+        [Required(ErrorMessage = "La hora es obligatoria")]
+        [DisplayName("Hora")]
+        public DateTime Hora { get; set; } = DateTime.Now;
 
-        [DisplayName("Total")]
+        [DisplayName("Concepto")]
+        [StringLength(500, ErrorMessage = "El concepto no puede exceder 500 caracteres")]
+        public string? Concepto { get; set; }
+
+        [Required(ErrorMessage = "El costo total grabado es obligatorio")]
+        [DisplayName("Costo Total Grabado")]
         [Column(TypeName = "decimal(18,2)")]
-        [Range(0, double.MaxValue, ErrorMessage = "El total debe ser mayor o igual a 0")]
-        public decimal Total { get; set; }
+        public decimal Costo_Total_Grabado { get; set; }
 
+        [Required(ErrorMessage = "El IVA es obligatorio")]
         [DisplayName("IVA")]
         [Column(TypeName = "decimal(18,2)")]
-        [Range(0, double.MaxValue, ErrorMessage = "El IVA debe ser mayor o igual a 0")]
         public decimal Iva { get; set; }
 
-        [DisplayName("Gran total")]
+        [Required(ErrorMessage = "El total es obligatorio")]
+        [DisplayName("Total")]
         [Column(TypeName = "decimal(18,2)")]
-        [Range(0, double.MaxValue, ErrorMessage = "El gran total debe ser mayor o igual a 0")]
-        public decimal Gran_Total { get; set; }
-
-        public bool Estado { get; set; }
+        public decimal Total { get; set; }
 
         // Relaciones
-        [Required(ErrorMessage = "Debe seleccionar un proveedor")]
-        [DisplayName("Proveedor")]
+        [Required(ErrorMessage = "El proveedor es obligatorio")]
         [ForeignKey("Proveedor")]
         public int Id_Proveedor { get; set; }
-        public Proveedor? Proveedor { get; set; }
+        public Proveedor Proveedor { get; set; }
 
-        // Navegación
+        // Colecciones de navegación
         public ICollection<Compra_Detalle> Compra_Detalles { get; set; } = new List<Compra_Detalle>();
         public ICollection<Compra_Metodo_Pago> Compra_Metodo_Pagos { get; set; } = new List<Compra_Metodo_Pago>();
     }

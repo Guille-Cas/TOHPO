@@ -37,152 +37,151 @@ namespace TOHPO.Pages.Operaciones.Compras
             return Page();
         }
 
-        public async Task<IActionResult> OnGetDeleteAsync(int id)
+        private async Task CargarCompras()
         {
-            var compra = await _context.Compra
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (compra == null)
+            if (_context.Compra != null)
             {
-                TempData["Error"] = "La compra no fue encontrada.";
-                return RedirectToPage("./Index");
-            }
+                var query = _context.Compra
+                    .Include(c => c.Proveedor)
+                    .Include(c => c.Compra_Detalles)
+                        .ThenInclude(cd => cd.Producto)
+                    .AsQueryable();
 
-            if (compra.Estado)
-            {
-                TempData["Error"] = "No se puede eliminar una compra que ya ha sido procesada.";
-                return RedirectToPage("./Index");
-            }
+                // Filtros
+                if (FechaInicio.HasValue)
+                {
+                    query = query.Where(c => c.Fecha >= FechaInicio.Value);
+                }
 
-            try
-            {
-                // Eliminar detalles de compra
-                var detalles = await _context.Compra_Detalle
-                    .Where(d => d.Id_Compra == id)
+                if (FechaFin.HasValue)
+                {
+                    query = query.Where(c => c.Fecha <= FechaFin.Value);
+                }
+
+                if (!string.IsNullOrEmpty(BuscarProveedor))
+                {
+                    query = query.Where(c => c.Proveedor.Nombre.Contains(BuscarProveedor) ||
+                                           c.Proveedor.Correo_Electronico.Contains(BuscarProveedor));
+                }
+
+                Compras = await query
+                    .OrderByDescending(c => c.Fecha)
+                    .ThenByDescending(c => c.Hora)
                     .ToListAsync();
-                _context.Compra_Detalle.RemoveRange(detalles);
-
-                // Eliminar métodos de pago
-                var metodosPago = await _context.Compra_Metodo_Pago
-                    .Where(mp => mp.Id_Compra == id)
-                    .ToListAsync();
-                _context.Compra_Metodo_Pago.RemoveRange(metodosPago);
-
-                // Eliminar compra
-                _context.Compra.Remove(compra);
-                await _context.SaveChangesAsync();
-
-                TempData["Success"] = "La compra ha sido eliminada correctamente.";
             }
-            catch (Exception ex)
-            {
-                TempData["Error"] = $"Error al eliminar la compra: {ex.Message}";
-            }
-
-            return RedirectToPage("./Index");
         }
 
-        public async Task<IActionResult> OnGetProcesarAsync(int id)
+        public async Task<IActionResult> OnGetEliminarAsync(int id)
         {
+            if (id <= 0)
+            {
+                TempData["ErrorMessage"] = "ID de compra no válido";
+                return RedirectToPage();
+            }
+
             var compra = await _context.Compra
                 .Include(c => c.Compra_Detalles)
-                    .ThenInclude(cd => cd.Producto)
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .Include(c => c.Compra_Metodo_Pagos)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
             if (compra == null)
             {
-                TempData["Error"] = "La compra no fue encontrada.";
-                return RedirectToPage("./Index");
-            }
-
-            if (compra.Estado)
-            {
-                TempData["Error"] = "Esta compra ya ha sido procesada.";
-                return RedirectToPage("./Index");
+                TempData["ErrorMessage"] = "Compra no encontrada";
+                return RedirectToPage();
             }
 
             try
             {
-                // Validar inventario y actualizar stock
+                // IMPORTANTE: NO afectamos el inventario al eliminar registros de compra
+                // La eliminación de registros es solo administrativa/contable
+                // El inventario se mantiene tal como estaba
+
+                // Registrar la eliminación en los movimientos para auditoría (opcional)
                 foreach (var detalle in compra.Compra_Detalles)
                 {
                     var inventario = await _context.Inventario
                         .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.Codigo_Producto);
 
-                    if (inventario == null)
+                    if (inventario != null)
                     {
-                        // Crear nuevo registro de inventario si no existe
-                        inventario = new TOHPO.Models.Inventario
-                        {
-                            Codigo_Producto = detalle.Codigo_Producto,
-                            Cantidad = detalle.Cantidad,
-                            Existencia = detalle.Cantidad,
-                            Precio_Compra = detalle.Costo_Unitario,
-                            Precio_Venta = detalle.Costo_Unitario * 1.3m, // Margen del 30%
-                            Estado = true
-                        };
-                        _context.Inventario.Add(inventario);
-                        await _context.SaveChangesAsync(); // Guardar para obtener el Id
-                    }
-                    else
-                    {
-                        // Actualizar inventario existente
-                        inventario.Cantidad += detalle.Cantidad;
-                        inventario.Existencia += detalle.Cantidad;
-                        inventario.Precio_Compra = detalle.Costo_Unitario;
-                    }
-
-                    // Crear movimiento de inventario solo si el inventario tiene Id
-                    if (inventario.Id > 0)
-                    {
+                        // Solo registrar el movimiento para auditoría, sin cambiar cantidades
                         var movimiento = new Movimiento_Inventario
                         {
                             Id_Inventario = inventario.Id,
-                            Cantidad = detalle.Cantidad,
-                            Fecha = DateTime.Now,
-                            Motivo = $"Compra #{compra.Numero_Factura}",
+                            Cantidad = 0, // Cantidad 0 indica que es solo informativo
+                            Motivo = $"Eliminación de registro - Compra #{compra.Id} (Sin afectar inventario)",
+                            Fecha = DateTime.Now
                         };
                         _context.Movimiento_Inventario.Add(movimiento);
                     }
                 }
 
-                // Marcar compra como procesada
-                compra.Estado = true;
+                // Eliminar detalles de compra
+                if (compra.Compra_Detalles.Any())
+                {
+                    _context.Compra_Detalle.RemoveRange(compra.Compra_Detalles);
+                }
+
+                // Eliminar métodos de pago
+                if (compra.Compra_Metodo_Pagos.Any())
+                {
+                    _context.Compra_Metodo_Pago.RemoveRange(compra.Compra_Metodo_Pagos);
+                }
+
+                // Eliminar la compra
+                _context.Compra.Remove(compra);
                 await _context.SaveChangesAsync();
 
-                TempData["Success"] = "La compra ha sido procesada correctamente y el inventario ha sido actualizado.";
+                TempData["SuccessMessage"] = "Registro de compra eliminado exitosamente. El inventario no se ha visto afectado.";
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error al procesar la compra: {ex.Message}";
+                TempData["ErrorMessage"] = "Error al eliminar el registro de compra: " + ex.Message;
             }
 
-            return RedirectToPage("./Index");
+            return RedirectToPage();
         }
 
-        private async Task CargarCompras()
+        public async Task<JsonResult> OnGetDetalleCompraAsync(int id)
         {
-            var query = _context.Compra
+            var compra = await _context.Compra
                 .Include(c => c.Proveedor)
-                .AsQueryable();
+                .Include(c => c.Compra_Detalles)
+                    .ThenInclude(cd => cd.Producto)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
-            // Aplicar filtros
-            if (FechaInicio.HasValue)
+            if (compra == null)
             {
-                query = query.Where(c => c.Fecha >= FechaInicio.Value);
+                return new JsonResult(new { success = false, message = "Compra no encontrada" });
             }
 
-            if (FechaFin.HasValue)
+            var detalle = new
             {
-                query = query.Where(c => c.Fecha <= FechaFin.Value);
-            }
+                success = true,
+                compra = new
+                {
+                    id = compra.Id,
+                    fecha = compra.Fecha.ToString("dd/MM/yyyy"),
+                    hora = compra.Hora.ToString("HH:mm"),
+                    proveedor = compra.Proveedor.Nombre,
+                    concepto = compra.Concepto,
+                    costoTotalGravado = compra.Costo_Total_Grabado,
+                    iva = compra.Iva,
+                    total = compra.Total,
+                    productos = compra.Compra_Detalles.Select(cd => new
+                    {
+                        producto = cd.Producto.Descripcion,
+                        cantidad = cd.Cantidad,
+                        costoUnitario = cd.Costo_Unitario,
+                        porcentajeDescuento = cd.Porcentaje_Descuento,
+                        montoDescuento = cd.Monto_Descuento,
+                        montoImpuesto = cd.Monto_Impuesto,
+                        subtotal = cd.Subtotal
+                    }).ToList()
+                }
+            };
 
-            if (!string.IsNullOrEmpty(BuscarProveedor))
-            {
-                query = query.Where(c => c.Proveedor.Nombre.Contains(BuscarProveedor));
-            }
-
-            Compras = await query.OrderByDescending(c => c.Fecha).ToListAsync();
+            return new JsonResult(detalle);
         }
     }
 }

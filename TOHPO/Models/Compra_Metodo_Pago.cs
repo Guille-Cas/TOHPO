@@ -9,6 +9,7 @@ namespace TOHPO.Models
         [Key]
         public int Id { get; set; }
 
+        [Required(ErrorMessage = "El monto es obligatorio")]
         [DisplayName("Monto")]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Monto { get; set; }

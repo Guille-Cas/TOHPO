@@ -90,7 +90,7 @@ namespace TOHPO.Data
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Compra>()
-                .Property(c => c.Gran_Total)
+                .Property(c => c.Costo_Total_Grabado)
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<Compra_Detalle>()
