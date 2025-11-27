@@ -11,7 +11,7 @@ namespace TOHPO.Models
         public string Descripcion { get; set; }
         [Required(ErrorMessage = "El rendimiento es obligatorio")]
         public double Rendimiento { get; set; }
-        [Required(ErrorMessage = "Las instrucciones son obligatoria")]
+        [Required(ErrorMessage = "Las instrucciones son obligatorias")]
         public string Instrucciones { get; set; }
         public string Detalle { get; set; }
         public double Cantidad_Empaque { get; set; }
@@ -21,5 +21,8 @@ namespace TOHPO.Models
         [ForeignKey("Producto")]
         public string Codigo_Producto { get; set; }
         public Producto Producto { get; set; }
+
+        // Colección de materias primas
+        public ICollection<Receta_Materia_Prima> Receta_Materias_Primas { get; set; } = new List<Receta_Materia_Prima>();
     }
 }

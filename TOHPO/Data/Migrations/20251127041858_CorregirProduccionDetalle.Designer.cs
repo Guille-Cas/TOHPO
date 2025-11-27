@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TOHPO.Data;
 
@@ -11,9 +12,11 @@ using TOHPO.Data;
 namespace TOHPO.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251127041858_CorregirProduccionDetalle")]
+    partial class CorregirProduccionDetalle
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -975,45 +978,6 @@ namespace TOHPO.Data.Migrations
                     b.ToTable("Receta");
                 });
 
-            modelBuilder.Entity("TOHPO.Models.Receta_Materia_Prima", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Cantidad_Requerida")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<bool>("Estado")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Id_Materia_Prima")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Id_Receta")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Observaciones")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("Unidad_Medida")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Id_Materia_Prima")
-                        .HasDatabaseName("IX_Receta_Materia_Prima_Materia_Prima");
-
-                    b.HasIndex("Id_Receta")
-                        .HasDatabaseName("IX_Receta_Materia_Prima_Receta");
-
-                    b.ToTable("Receta_Materia_Prima");
-                });
-
             modelBuilder.Entity("TOHPO.Models.Recordatorio", b =>
                 {
                     b.Property<int>("Id")
@@ -1433,25 +1397,6 @@ namespace TOHPO.Data.Migrations
                     b.Navigation("Producto");
                 });
 
-            modelBuilder.Entity("TOHPO.Models.Receta_Materia_Prima", b =>
-                {
-                    b.HasOne("TOHPO.Models.Materia_Prima", "Materia_Prima")
-                        .WithMany()
-                        .HasForeignKey("Id_Materia_Prima")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("TOHPO.Models.Receta", "Receta")
-                        .WithMany("Receta_Materias_Primas")
-                        .HasForeignKey("Id_Receta")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Materia_Prima");
-
-                    b.Navigation("Receta");
-                });
-
             modelBuilder.Entity("TOHPO.Models.Recordatorio", b =>
                 {
                     b.HasOne("TOHPO.Models.Cliente", "Cliente")
@@ -1546,11 +1491,6 @@ namespace TOHPO.Data.Migrations
                 {
                     b.Navigation("Inventario")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("TOHPO.Models.Receta", b =>
-                {
-                    b.Navigation("Receta_Materias_Primas");
                 });
 
             modelBuilder.Entity("TOHPO.Models.Recordatorio", b =>

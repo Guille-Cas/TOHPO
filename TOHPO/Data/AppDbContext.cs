@@ -24,7 +24,7 @@ namespace TOHPO.Data
         public DbSet<Receta> Receta { get; set; }
         public DbSet<Recordatorio> Recordatorio { get; set; }
 
-        // Nuevos modelos para producción
+        // Modelos para producción y operaciones
         public DbSet<Pedido> Pedido { get; set; }
         public DbSet<Pedido_Detalle> Pedido_Detalle { get; set; }
         public DbSet<Venta> Venta { get; set; }
@@ -38,6 +38,9 @@ namespace TOHPO.Data
         public DbSet<Movimiento_Inventario> Movimiento_Inventario { get; set; }
         public DbSet<Produccion> Produccion { get; set; }
         public DbSet<Produccion_Detalle> Produccion_Detalle { get; set; }
+
+        // NUEVO: Modelo para materias primas de recetas
+        public DbSet<Receta_Materia_Prima> Receta_Materia_Prima { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -112,6 +115,20 @@ namespace TOHPO.Data
             modelBuilder.Entity<Inventario>()
                 .Property(i => i.Precio_Compra)
                 .HasPrecision(18, 2);
+
+            // Configuraciones de precisión decimal para Produccion_Detalle
+            modelBuilder.Entity<Produccion_Detalle>()
+                .Property(pd => pd.Cantidad_Programada)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Produccion_Detalle>()
+                .Property(pd => pd.Cantidad_Producida)
+                .HasPrecision(18, 2);
+
+            // NUEVO: Configuración para Receta_Materia_Prima
+            modelBuilder.Entity<Receta_Materia_Prima>()
+                .Property(rmp => rmp.Cantidad_Requerida)
+                .HasPrecision(18, 3);
 
             // Configuraciones de relaciones
             
@@ -220,6 +237,7 @@ namespace TOHPO.Data
                 .HasForeignKey(mi => mi.Id_Inventario)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Configuraciones para Produccion_Detalle
             modelBuilder.Entity<Produccion_Detalle>()
                 .HasOne(pd => pd.Produccion)
                 .WithMany(p => p.Produccion_Detalles)
@@ -227,9 +245,28 @@ namespace TOHPO.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Produccion_Detalle>()
+                .HasOne(pd => pd.Receta)
+                .WithMany()
+                .HasForeignKey(pd => pd.Id_Receta)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Produccion_Detalle>()
                 .HasOne(pd => pd.Producto)
                 .WithMany()
                 .HasForeignKey(pd => pd.Codigo_Producto)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // NUEVO: Configuraciones para Receta_Materia_Prima
+            modelBuilder.Entity<Receta_Materia_Prima>()
+                .HasOne(rmp => rmp.Receta)
+                .WithMany(r => r.Receta_Materias_Primas)
+                .HasForeignKey(rmp => rmp.Id_Receta)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Receta_Materia_Prima>()
+                .HasOne(rmp => rmp.Materia_Prima)
+                .WithMany()
+                .HasForeignKey(rmp => rmp.Id_Materia_Prima)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Índices para optimización
@@ -270,6 +307,23 @@ namespace TOHPO.Data
             modelBuilder.Entity<Inventario>()
                 .HasIndex(i => i.Codigo_Producto)
                 .HasDatabaseName("IX_Inventario_Producto");
+
+            modelBuilder.Entity<Produccion_Detalle>()
+                .HasIndex(pd => pd.Id_Receta)
+                .HasDatabaseName("IX_Produccion_Detalle_Receta");
+
+            modelBuilder.Entity<Produccion_Detalle>()
+                .HasIndex(pd => pd.Codigo_Producto)
+                .HasDatabaseName("IX_Produccion_Detalle_Producto");
+
+            // NUEVO: Índices para Receta_Materia_Prima
+            modelBuilder.Entity<Receta_Materia_Prima>()
+                .HasIndex(rmp => rmp.Id_Receta)
+                .HasDatabaseName("IX_Receta_Materia_Prima_Receta");
+
+            modelBuilder.Entity<Receta_Materia_Prima>()
+                .HasIndex(rmp => rmp.Id_Materia_Prima)
+                .HasDatabaseName("IX_Receta_Materia_Prima_Materia_Prima");
         }
     }
 }

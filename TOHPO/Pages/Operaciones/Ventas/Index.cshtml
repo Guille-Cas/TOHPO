@@ -10,12 +10,10 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-cash-register me-2"></i>
                         @ViewData["Title"]
                     </h3>
                     <div class="card-tools">
                         <a asp-page="./Upsert" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus me-1"></i>
                             Nueva Venta
                         </a>
                     </div>
@@ -48,7 +46,6 @@
                                     <label class="form-label">&nbsp;</label>
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search me-1"></i>
                                             Filtrar
                                         </button>
                                     </div>
@@ -62,7 +59,6 @@
                     @if (TempData["SuccessMessage"] != null)
                     {
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>
                             @TempData["SuccessMessage"]
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
@@ -71,7 +67,6 @@
                     @if (TempData["ErrorMessage"] != null)
                     {
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i>
                             @TempData["ErrorMessage"]
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
@@ -150,11 +145,9 @@
                                     <tr>
                                         <td colspan="10" class="text-center py-4">
                                             <div class="d-flex flex-column align-items-center">
-                                                <i class="fas fa-cash-register fa-3x text-muted mb-3"></i>
                                                 <h5 class="text-muted">No hay ventas registradas</h5>
                                                 <p class="text-muted">Comience registrando su primera venta</p>
                                                 <a asp-page="./Upsert" class="btn btn-success">
-                                                    <i class="fas fa-plus me-1"></i>
                                                     Nueva Venta
                                                 </a>
                                             </div>
@@ -176,9 +169,6 @@
                                                 <h6>Total Ventas</h6>
                                                 <h4>@Model.Ventas.Count</h4>
                                             </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-receipt fa-2x"></i>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -190,9 +180,6 @@
                                             <div>
                                                 <h6>Total Facturado</h6>
                                                 <h4>₡@Model.Ventas.Sum(v => v.Total).ToString("N2")</h4>
-                                            </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-dollar-sign fa-2x"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -206,9 +193,6 @@
                                                 <h6>IVA Total</h6>
                                                 <h4>₡@Model.Ventas.Sum(v => v.Iva).ToString("N2")</h4>
                                             </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-percentage fa-2x"></i>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -220,9 +204,6 @@
                                             <div>
                                                 <h6>Items Vendidos</h6>
                                                 <h4>@Model.Ventas.SelectMany(v => v.Detalle_Ventas).Sum(dv => dv.Cantidad)</h4>
-                                            </div>
-                                            <div class="align-self-center">
-                                                <i class="fas fa-box fa-2x"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -242,7 +223,6 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="detalleVentaModalLabel">
-                    <i class="fas fa-receipt me-2"></i>
                     Detalle de Venta
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -257,7 +237,6 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-primary" onclick="imprimirDetalle()">
-                    <i class="fas fa-print me-1"></i>
                     Imprimir
                 </button>
             </div>
@@ -329,7 +308,6 @@
                     } else {
                         $('#detalleVentaContent').html(`
                             <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
                                 ${data.message}
                             </div>
                         `);
@@ -338,7 +316,6 @@
                 .fail(function() {
                     $('#detalleVentaContent').html(`
                         <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
                             Error al cargar el detalle de la venta
                         </div>
                     `);
