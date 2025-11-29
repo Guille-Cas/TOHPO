@@ -2,50 +2,120 @@
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Clientes.UpsertModel
 @{
-    var isEdit = Model.Cliente != null;
+    // Detectar si estamos editando
+    var isEdit = Model.Cliente != null && Model.Cliente.Id > 0;
+
+    // Título dinámico correcto
+    ViewData["Title"] = isEdit ? "Editar Cliente" : "Crear Cliente";
 }
 
-<h2>@(isEdit ? "Editar Cliente" : "Crear Cliente")</h2>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
 
-<form method="post">
-    @Html.AntiForgeryToken()
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="Cliente.Id" />
-    }
-    <div class="mb-3">
-        <label asp-for="Cliente.Cedula" class="form-label"></label>
-        <input asp-for="Cliente.Cedula" class="form-control" />
-        <span asp-validation-for="Cliente.Cedula" class="text-danger"></span>
+            <div class="card">
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">@ViewData["Title"]</h3>
+
+                    <div class="card-tools">
+                        <a asp-page="/Configuracion/Clientes/Index" class="btn btn-secondary">
+                            Regresar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DESCRIPCIÓN -->
+                <div class="card-body border-bottom">
+                    <p class="mb-0 text-muted">
+                        @(isEdit
+                                                ? "Actualice la información del cliente y guarde los cambios para mantener sus datos al día."
+                                                : "Complete la información del nuevo cliente y guarde el registro para que quede disponible en el sistema.")
+                    </p>
+                </div>
+
+                <!-- FORMULARIO -->
+                <div class="card-body">
+
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="Cliente.Id" />
+                        }
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Cedula" class="form-label"></label>
+                                    <input asp-for="Cliente.Cedula" class="form-control" />
+                                    <span asp-validation-for="Cliente.Cedula"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Nombre" class="form-label"></label>
+                                    <input asp-for="Cliente.Nombre" class="form-control" />
+                                    <span asp-validation-for="Cliente.Nombre"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Primer_Apellido" class="form-label"></label>
+                                    <input asp-for="Cliente.Primer_Apellido" class="form-control" />
+                                    <span asp-validation-for="Cliente.Primer_Apellido"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Segundo_Apellido" class="form-label"></label>
+                                    <input asp-for="Cliente.Segundo_Apellido" class="form-control" />
+                                    <span asp-validation-for="Cliente.Segundo_Apellido"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Telefono" class="form-label"></label>
+                                    <input asp-for="Cliente.Telefono" class="form-control" />
+                                    <span asp-validation-for="Cliente.Telefono"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cliente.Correo_Electronico" class="form-label"></label>
+                                    <input asp-for="Cliente.Correo_Electronico" class="form-control" />
+                                    <span asp-validation-for="Cliente.Correo_Electronico"
+                                          class="text-danger"></span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-3 gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div> <!-- CARD -->
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="Cliente.Nombre" class="form-label"></label>
-        <input asp-for="Cliente.Nombre" class="form-control" />
-        <span asp-validation-for="Cliente.Nombre" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Cliente.Primer_Apellido" class="form-label"></label>
-        <input asp-for="Cliente.Primer_Apellido" class="form-control" />
-        <span asp-validation-for="Cliente.Primer_Apellido" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Cliente.Segundo_Apellido" class="form-label"></label>
-        <input asp-for="Cliente.Segundo_Apellido" class="form-control" />
-        <span asp-validation-for="Cliente.Segundo_Apellido" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Cliente.Correo_Electronico" class="form-label"></label>
-        <input asp-for="Cliente.Correo_Electronico" class="form-control" />
-        <span asp-validation-for="Cliente.Correo_Electronico" class="text-danger"></span>
-    </div>
-    <div class="mb-3">
-        <label asp-for="Cliente.Telefono" class="form-label"></label>
-        <input asp-for="Cliente.Telefono" class="form-control" />
-        <span asp-validation-for="Cliente.Telefono" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a asp-page="/Configuracion/Clientes/Index" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

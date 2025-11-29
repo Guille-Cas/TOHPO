@@ -4,6 +4,7 @@
             url: '/Configuracion/Clientes/Index?handler=Clientes',
             dataSrc: ''
         },
+
         columns: [
             { data: 'id' },
             { data: 'cedula' },
@@ -17,13 +18,33 @@
                 data: 'id',
                 render: function (data) {
                     return `
-                        <button class="btn btn-info btn-sm btnDetalles" data-id="${data}">Detalles</button>
-                        <button class="btn btn-warning btn-sm btnEditar" data-id="${data}">Editar</button>
-                        <button class="btn btn-danger btn-sm btnEliminar" data-id="${data}">Eliminar</button>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-success btn-sm btnDetalles" data-id="${data}">Detalles</button>
+                            <button class="btn btn-warning btn-sm btnEditar" data-id="${data}">Editar</button>
+                            <button class="btn btn-danger btn-sm btnEliminar" data-id="${data}">Eliminar</button>
+                        </div>
                     `;
                 }
             }
         ],
+
+        /* -------------- AQUI VIENE LA MAGIA ---------------- */
+        columnDefs: [
+            {
+                targets: "_all",      // todas las columnas
+                className: "align-middle"  // centra verticalmente
+            },
+            {
+                targets: [0, 1, 2],   // columnas: id, cedula, nombre
+                className: "text-start" // alineado a la izquierda
+            },
+            {
+                targets: [3],         // columna de acciones
+                className: "text-center" // centrado horizontal
+            }
+        ],
+        /* --------------------------------------------------- */
+
         language: {
             emptyTable: "No hay clientes registrados en el sistema",
             loadingRecords: "Cargando...",
@@ -39,6 +60,8 @@
             }
         }
     });
+
+
 
     $('#tablaClientes').on('click', '.btnEliminar', function () {
         const id = $(this).data('id');
