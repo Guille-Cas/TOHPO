@@ -15,38 +15,6 @@
         </div>
     </div>
 
-    <!-- Resumen de Pedidos -->
-    @if (Model.ResumenPedidos != null)
-    {
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Resumen de Pedidos</h5>
-                        <div class="row text-center">
-                            <div class="col-md-3">
-                                <h3>@Model.ResumenPedidos.PedidosPendientes</h3>
-                                <p>Pedidos Pendientes</p>
-                            </div>
-                            <div class="col-md-3">
-                                <h3>@Model.ResumenPedidos.PedidosCompletados</h3>
-                                <p>Completados Hoy</p>
-                            </div>
-                            <div class="col-md-3">
-                                <h3>₡@Model.ResumenPedidos.TotalPendiente.ToString("N2")</h3>
-                                <p>Total Pendiente</p>
-                            </div>
-                            <div class="col-md-3">
-                                <h3>@Model.ResumenPedidos.PedidosVencidos</h3>
-                                <p>Pedidos Vencidos</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
     <div class="row g-4">
         <!-- Administración -->
         <div class="col-12 col-md-3 d-flex">
@@ -54,7 +22,7 @@
                 <div class="menu-title h5 fw-semibold text-center mb-2">
                     Administración
                 </div>
-                <div class="text-center  main-subtitle mb-4">
+                <div class="text-center main-subtitle mb-4">
                     sección administrativa
                 </div>
                 <div class="menu-buttons d-grid gap-2 w-100">
@@ -68,7 +36,6 @@
                     <a class="btn btn-primary" asp-page="/Operaciones/Productos/Index">Productos</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Proveedores/Index">Proveedores</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Agentes_ventas/Index">Agentes de Ventas</a>
-                    <button class="btn btn-primary">Datos Maestros</button>
                     <button class="btn btn-primary">Configuración</button>
                     <a class="btn btn-primary" asp-page="/Operaciones/Reportes/Index">Reportes</a>
                 </div>
@@ -81,7 +48,7 @@
                 <div class="menu-title h5 fw-semibold text-center mb-2">
                     Operaciones
                 </div>
-                <div class="text-center  main-subtitle mb-4">
+                <div class="text-center main-subtitle mb-4">
                     sección operativa
                 </div>
                 <div class="menu-buttons d-grid gap-2 w-100">
@@ -95,43 +62,313 @@
             </div>
         </div>
 
-        <!-- Pedidos Rápidos -->
+        <!-- Gestión de Pedidos -->
         <div class="col-12 col-md-3 d-flex">
             <div class="card bg-secondary mb-2 menu-card card flex-fill w-100 d-flex flex-column align-items-center py-4 px-3">
                 <div class="menu-title h5 fw-semibold text-center mb-2">
                     Gestión de Pedidos
                 </div>
                 <div class="text-center main-subtitle mb-4">
-                    acceso rápido
+                    acceso rápido y notificaciones
                 </div>
-                <div class="menu-buttons d-grid gap-2 w-100">
-                    <a class="btn btn-success" asp-page="/Operaciones/Pedidos/Upsert">
-                        Nuevo Pedido
-                    </a>
-                    <a class="btn btn-warning" asp-page="/Operaciones/Pedidos/Index" asp-route-estado="false">
-                        Pedidos Pendientes
-                    </a>
-                    <a class="btn btn-info" asp-page="/Operaciones/Pedidos/Index">
-                        Todos los Pedidos
-                    </a>
-                </div>
+
+                <!-- Notificaciones de Pedidos Pendientes -->
+                @if (Model.PedidosPendientes.Any())
+                {
+                    <div class="notifications-section mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="fw-semibold text-warning mb-0 small text-center">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Pedidos Pendientes (@Model.PedidosPendientes.Count)
+                            </h6>
+                        </div>
+                        <div class="notifications-container">
+                            @foreach (var pedido in Model.PedidosPendientes.Take(3))
+                            {
+                                <div class="standard-card @(pedido.EsVencido ? "border-danger" : "border-warning") mb-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold small">@pedido.Cliente</div>
+                                            <div class="text-muted small">
+                                                <i class="fas fa-calendar me-1"></i>@pedido.FechaEntrega.ToString("dd/MM")
+                                                | ₡@pedido.Total.ToString("N0")
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (pedido.EsVencido)
+                                            {
+                                                <span class="badge bg-danger small">Vencido</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-info small">@pedido.DiasRestantes días</span>
+                                            }
+                                            <form method="post" asp-page-handler="CompletarPedido" class="d-inline">
+                                                <input type="hidden" name="pedidoId" value="@pedido.Id" />
+                                                <button type="submit" class="btn btn-success btn-xs" 
+                                                        onclick="return confirm('¿Completar pedido?')"
+                                                        title="Completar pedido">
+                                                    Completar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.PedidosPendientes.Count > 3)
+                            {
+                                <div class="text-center">
+                                    <small class="text-muted">y @(Model.PedidosPendientes.Count - 3) más...</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle fa-2x mb-2 text-muted"></i>
+                        <p class="mb-0 small text-muted">No hay pedidos pendientes</p>
+                    </div>
+                }
             </div>
         </div>
 
-        <!-- Reportes -->
+        <!-- Recordatorios -->
         <div class="col-12 col-md-3 d-flex">
             <div class="card bg-secondary mb-2 menu-card card flex-fill w-100 d-flex flex-column align-items-center py-4 px-3">
                 <div class="menu-title h5 fw-semibold text-center mb-2">
-                    Reportes
+                    Recordatorios
                 </div>
                 <div class="text-center main-subtitle mb-4">
-                    análisis y reportes
+                    próxima semana
                 </div>
-                <div class="menu-info-placeholder d-flex flex-column gap-3 align-items-center w-100 pt-2 text-secondary">
-                    <div class="info-box bg-light rounded-3 w-100"></div>
-                    <div class="info-box bg-light rounded-3 w-100"></div>
-                </div>
+
+                
+                <!-- Eventos Próximos como notificaciones estándar -->
+                @if (Model.EventosProximos.Any())
+                {
+                    <div class="notifications-section w-100">
+                        <div class="section-header mb-2">
+                            <h6 class="fw-semibold text-info mb-0 small text-center">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Eventos Próximos
+                            </h6>
+                        </div>
+                        <div class="notifications-container">
+                            @foreach (var evento in Model.EventosProximos.Take(3))
+                            {
+                                <div class="standard-card border-info mb-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="fw-semibold small">@evento.Titulo</div>
+                                            <div class="text-muted small">
+                                                @if (!string.IsNullOrEmpty(evento.Cliente))
+                                                {
+                                                    <i class="fas fa-user me-1"></i>@evento.Cliente
+                                                }
+                                                <i class="fas fa-calendar me-1"></i>@evento.FechaEvento.ToString("dd/MM HH:mm")
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="text-center">
+                                                <div class="countdown-mini">
+                                                    <div class="countdown-number-mini fw-bold text-primary">@evento.DiasRestantes</div>
+                                                    <div class="countdown-label-mini small text-muted">día@(evento.DiasRestantes != 1 ? "s" : "")</div>
+                                                </div>
+                                            </div>
+                                            <form method="post" asp-page-handler="CompletarRecordatorio" class="d-inline">
+                                                <input type="hidden" name="recordatorioId" value="@evento.Id" />
+                                                <button type="submit" class="btn btn-success btn-xs" 
+                                                        onclick="return confirm('¿Marcar recordatorio como listo?')"
+                                                        title="Marcar como listo">
+                                                    Listo
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.EventosProximos.Count > 3)
+                            {
+                                <div class="text-center">
+                                    <small class="text-muted">y @(Model.EventosProximos.Count - 3) más...</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-check fa-2x mb-2 text-muted"></i>
+                        <p class="mb-0 small text-muted">No hay eventos próximos</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Estilos estandarizados para todas las tarjetas */
+.standard-card {
+    border: 1px solid;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background-color: rgba(255, 255, 255, 0.95);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.standard-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.standard-card.border-danger {
+    border-color: #dc3545 !important;
+    border-left: 4px solid #dc3545;
+}
+
+.standard-card.border-warning {
+    border-color: #ffc107 !important;
+    border-left: 4px solid #ffc107;
+}
+
+.standard-card.border-info {
+    border-color: #0dcaf0 !important;
+    border-left: 4px solid #0dcaf0;
+}
+
+/* Contenedores de notificaciones estandarizados */
+.notifications-container {
+    max-height: 280px;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.notifications-section {
+    margin-bottom: 1rem;
+}
+
+.section-header {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 0.5rem;
+}
+
+/* Estado vacío estandarizado */
+.empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #6c757d;
+}
+
+/* Countdown mini estandarizado */
+.countdown-mini {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border: 2px solid #0d6efd;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.9);
+}
+
+.countdown-number-mini {
+    line-height: 1;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.countdown-label-mini {
+    line-height: 1;
+    margin: 0;
+    font-size: 0.55rem;
+}
+
+/* Botones estandarizados */
+.btn-xs {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+/* Badge estandarizado */
+.badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Scrollbar estandarizada para todos los contenedores */
+.notifications-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.notifications-container::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+}
+
+.notifications-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+}
+
+.notifications-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+/* Asegurar altura consistente en todas las tarjetas principales */
+.menu-card {
+    min-height: 500px;
+}
+
+/* Iconos estandarizados */
+.fas {
+    width: 14px;
+    text-align: center;
+}
+
+/* Espaciado consistente */
+.menu-buttons .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+</style>
+
+@section Scripts {
+    <script>
+        // Auto-refresh de la página cada 5 minutos para actualizar notificaciones
+        setTimeout(function() {
+            location.reload();
+        }, 300000); // 5 minutes
+
+        // Mostrar mensajes de éxito/error
+        @if (TempData["Success"] != null)
+        {
+            <text>
+            setTimeout(function() {
+                alert('@TempData["Success"]');
+            }, 100);
+            </text>
+        }
+
+        @if (TempData["Error"] != null)
+        {
+            <text>
+            setTimeout(function() {
+                alert('@TempData["Error"]');
+            }, 100);
+            </text>
+        }
+
+        // Animación suave para las tarjetas
+        document.querySelectorAll('.standard-card').forEach(function(card, index) {
+            card.style.animationDelay = (index * 0.1) + 's';
+        });
+    </script>
+}
