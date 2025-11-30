@@ -27,36 +27,50 @@ namespace TOHPO.Pages.Operaciones.Productos
 
         public async Task<IActionResult> OnGetAsync(string? id)
         {
-            await LoadSelectListsAsync();
-
-            if (string.IsNullOrEmpty(id))
+            try
             {
-                // Crear nuevo producto
-                Producto = new Producto
+                await LoadSelectListsAsync();
+
+                if (string.IsNullOrEmpty(id))
                 {
-                    Estado = true,
-                    Es_Materia_Prima = false,
-                    Es_De_Terceros = false,
-                    Tiempo_De_Vida = 0,
-                    Unidad_Medida = Unidad_Medida.Unidad
-                };
+                    // Crear nuevo producto
+                    Producto = new Producto
+                    {
+                        Estado = true,
+                        Es_Materia_Prima = false,
+                        Es_De_Terceros = false,
+                        Tiempo_De_Vida = 0,
+                        Unidad_Medida = Unidad_Medida.Unidad
+                    };
+                    return Page();
+                }
+
+                var producto = await _context.Producto
+                    .Include(p => p.Categoria)
+                    .Include(p => p.Impuesto)
+                    .Include(p => p.Materia_Prima)
+                    .Include(p => p.Presentacion)
+                    .AsNoTracking() // Evita conflictos de tracking
+                    .FirstOrDefaultAsync(m => m.CodigoReferencia == id);
+
+                if (producto == null)
+                {
+                    TempData["ErrorMessage"] = "Producto no encontrado";
+                    return RedirectToPage("./Index");
+                }
+
+                Producto = producto;
+                
+                // Recargar SelectLists con el producto actual para seleccionar los valores correctos
+                await LoadSelectListsAsync();
+                
                 return Page();
             }
-
-            var producto = await _context.Producto
-                .Include(p => p.Categoria)
-                .Include(p => p.Impuesto)
-                .Include(p => p.Materia_Prima)
-                .Include(p => p.Presentacion)
-                .FirstOrDefaultAsync(m => m.CodigoReferencia == id);
-
-            if (producto == null)
+            catch (Exception ex)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = $"Error al cargar el producto: {ex.Message}";
+                return RedirectToPage("./Index");
             }
-
-            Producto = producto;
-            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -75,38 +89,46 @@ namespace TOHPO.Pages.Operaciones.Productos
 
             try
             {
-                var isNew = string.IsNullOrEmpty(Producto.CodigoReferencia) || 
-                           !await _context.Producto.AnyAsync(p => p.CodigoReferencia == Producto.CodigoReferencia);
+                // Verificar si es un producto existente
+                var existingProduct = await _context.Producto
+                    .FirstOrDefaultAsync(p => p.CodigoReferencia == Producto.CodigoReferencia);
 
-                if (isNew)
+                if (existingProduct != null)
                 {
-                    // Verificar que el código no exista
-                    var existingProduct = await _context.Producto
-                        .FirstOrDefaultAsync(p => p.CodigoReferencia == Producto.CodigoReferencia);
+                    // Actualizar producto existente
+                    existingProduct.Descripcion = Producto.Descripcion;
+                    existingProduct.Id_Categoria = Producto.Id_Categoria;
+                    existingProduct.Id_Impuesto = Producto.Id_Impuesto;
+                    existingProduct.Id_Materia_Prima = Producto.Id_Materia_Prima;
+                    existingProduct.Id_Presentacion = Producto.Id_Presentacion;
+                    existingProduct.Es_Materia_Prima = Producto.Es_Materia_Prima;
+                    existingProduct.Es_De_Terceros = Producto.Es_De_Terceros;
+                    existingProduct.Tiempo_De_Vida = Producto.Tiempo_De_Vida;
+                    existingProduct.Unidad_Medida = Producto.Unidad_Medida;
+                    existingProduct.Estado = Producto.Estado;
 
-                    if (existingProduct != null)
-                    {
-                        ModelState.AddModelError("Producto.CodigoReferencia", 
-                            "Ya existe un producto con este código de referencia.");
-                        await LoadSelectListsAsync();
-                        return Page();
-                    }
-
-                    _context.Producto.Add(Producto);
-                    TempData["SuccessMessage"] = "Producto creado exitosamente.";
+                    _context.Producto.Update(existingProduct);
+                    TempData["SuccessMessage"] = "Producto actualizado exitosamente.";
                 }
                 else
                 {
-                    _context.Producto.Update(Producto);
-                    TempData["SuccessMessage"] = "Producto actualizado exitosamente.";
+                    // Crear nuevo producto
+                    _context.Producto.Add(Producto);
+                    TempData["SuccessMessage"] = "Producto creado exitosamente.";
                 }
 
                 await _context.SaveChangesAsync();
                 return RedirectToPage("./Index");
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException dbEx)
             {
-                ModelState.AddModelError("", "Error al guardar los cambios: " + ex.Message);
+                ModelState.AddModelError("", $"Error de base de datos: {dbEx.InnerException?.Message ?? dbEx.Message}");
+                await LoadSelectListsAsync();
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error inesperado: {ex.Message}");
                 await LoadSelectListsAsync();
                 return Page();
             }
@@ -114,33 +136,52 @@ namespace TOHPO.Pages.Operaciones.Productos
 
         private async Task LoadSelectListsAsync()
         {
-            // Cargar categorías
-            var categorias = await _context.Categoria
-                .Where(c => c.Estado == true)
-                .OrderBy(c => c.Descripcion)
-                .ToListAsync();
-            CategoriasList = new SelectList(categorias, "Id", "Descripcion", Producto?.Id_Categoria);
+            try
+            {
+                // Cargar categorías
+                var categorias = await _context.Categoria
+                    .Where(c => c.Estado == true)
+                    .OrderBy(c => c.Descripcion)
+                    .AsNoTracking()
+                    .ToListAsync();
+                CategoriasList = new SelectList(categorias, "Id", "Descripcion", Producto?.Id_Categoria);
 
-            // Cargar impuestos
-            var impuestos = await _context.Impuesto
-                .Where(i => i.Estado == true)
-                .OrderBy(i => i.Descripcion)
-                .ToListAsync();
-            ImpuestosList = new SelectList(impuestos, "Id", "Descripcion", Producto?.Id_Impuesto);
+                // Cargar impuestos
+                var impuestos = await _context.Impuesto
+                    .Where(i => i.Estado == true)
+                    .OrderBy(i => i.Descripcion)
+                    .AsNoTracking()
+                    .ToListAsync();
+                ImpuestosList = new SelectList(impuestos, "Id", "Descripcion", Producto?.Id_Impuesto);
 
-            // Cargar materias primas
-            var materiasPrimas = await _context.Materia_Prima
-                .Where(mp => mp.Estado == true)
-                .OrderBy(mp => mp.Descripcion)
-                .ToListAsync();
-            MateriaPrimasList = new SelectList(materiasPrimas, "Id", "Descripcion", Producto?.Id_Materia_Prima);
+                // Cargar materias primas
+                var materiasPrimas = await _context.Materia_Prima
+                    .Where(mp => mp.Estado == true)
+                    .OrderBy(mp => mp.Descripcion)
+                    .AsNoTracking()
+                    .ToListAsync();
+                MateriaPrimasList = new SelectList(materiasPrimas, "Id", "Descripcion", Producto?.Id_Materia_Prima);
 
-            // Cargar presentaciones
-            var presentaciones = await _context.Presentacion
-                .Where(p => p.Estado == true)
-                .OrderBy(p => p.Cantidad)
-                .ToListAsync();
-            PresentacionesList = new SelectList(presentaciones, "Id", "Cantidad", Producto?.Id_Presentacion);
+                // Cargar presentaciones con descripción completa
+                var presentaciones = await _context.Presentacion
+                    .Where(p => p.Estado == true)
+                    .OrderBy(p => p.Cantidad)
+                    .AsNoTracking()
+                    .Select(p => new { 
+                        p.Id, 
+                        Descripcion = $"{p.Cantidad} {p.Unidad_Medida}" 
+                    })
+                    .ToListAsync();
+                PresentacionesList = new SelectList(presentaciones, "Id", "Descripcion", Producto?.Id_Presentacion);
+            }
+            catch (Exception ex)
+            {
+                // Log error pero continúa con listas vacías
+                CategoriasList = new SelectList(new List<object>(), "Id", "Descripcion");
+                ImpuestosList = new SelectList(new List<object>(), "Id", "Descripcion");
+                MateriaPrimasList = new SelectList(new List<object>(), "Id", "Descripcion");
+                PresentacionesList = new SelectList(new List<object>(), "Id", "Descripcion");
+            }
         }
     }
 }

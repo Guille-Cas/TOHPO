@@ -46,7 +46,6 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             {
                 var query = _context.Pedido
                     .Include(p => p.Cliente)
-                    .Include(p => p.Agente_Ventas)
                     .Include(p => p.Pedido_Detalles)
                         .ThenInclude(pd => pd.Producto)
                     .AsQueryable();

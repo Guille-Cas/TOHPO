@@ -24,7 +24,6 @@ namespace TOHPO.Pages.Operaciones.Pedidos
         public List<PedidoDetalleDto> DetallesPedido { get; set; } = new List<PedidoDetalleDto>();
 
         public SelectList ClientesList { get; set; } = default!;
-        public SelectList AgentesList { get; set; } = default!;
         public List<ProductoInventarioDto> ProductosDisponibles { get; set; } = default!;
 
         public async Task<IActionResult> OnGetAsync(int? id)
@@ -41,14 +40,13 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                     Estado = false,
                     Abono = 0,
                     Saldo = 0,
-                    Total = 0
+                    Total = 0,
                 };
                 return Page();
             }
 
             var pedido = await _context.Pedido
                 .Include(p => p.Cliente)
-                .Include(p => p.Agente_Ventas)
                 .Include(p => p.Pedido_Detalles)
                     .ThenInclude(pd => pd.Producto)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -79,6 +77,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             // Remover validaciones de propiedades de navegación que no se envían desde el formulario
             ModelState.Remove("Pedido.Cliente");
             ModelState.Remove("Pedido.Agente_Ventas");
+            
             
             // Remover validaciones de propiedades calculadas/navegación en detalles
             for (int i = 0; i < (DetallesPedido?.Count ?? 0); i++)
@@ -261,16 +260,6 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                 .ToListAsync();
 
             ClientesList = new SelectList(clientes, "Id", "NombreCompleto");
-
-            // Cargar agentes de ventas con nombre completo
-            var agentes = await _context.Agente_Ventas
-                .Select(a => new { 
-                    a.Id, 
-                    NombreCompleto = $"{a.Nombre}"
-                })
-                .ToListAsync();
-
-            AgentesList = new SelectList(agentes, "Id", "NombreCompleto");
 
             ProductosDisponibles = await _context.Inventario
                 .Include(i => i.Producto)

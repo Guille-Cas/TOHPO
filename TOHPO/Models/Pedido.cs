@@ -36,10 +36,6 @@ namespace TOHPO.Models
         public int Id_Cliente { get; set; }
         public Cliente Cliente { get; set; }
 
-        [ForeignKey("Agente_Ventas")]
-        public int Id_Agente_Ventas { get; set; }
-        public Agente_Ventas Agente_Ventas { get; set; }
-
         // Navegación
         public ICollection<Pedido_Detalle> Pedido_Detalles { get; set; } = new List<Pedido_Detalle>();
     }

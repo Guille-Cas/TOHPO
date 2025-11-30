@@ -14,7 +14,7 @@
                     </h3>
                     <div class="card-tools">
                         <a asp-page="./Upsert" class="btn btn-success btn-sm">
-                            Nueva Venta  
+                            Nueva Venta 
                         </a>
                     </div>
                 </div>
@@ -80,7 +80,6 @@
                                     <th>Fecha</th>
                                     <th>Hora</th>
                                     <th>Cliente</th>
-                                    <th>Agente</th>
                                     <th>Total Items</th>
                                     <th>Subtotal</th>
                                     <th>IVA</th>
@@ -106,7 +105,6 @@
                                                     <small class="text-muted">@venta.Cliente.Cedula</small>
                                                 </div>
                                             </td>
-                                            <td>@venta.Agente_Ventas.Nombre</td>
                                             <td>
                                                 <span class="badge bg-info">@venta.Detalle_Ventas.Sum(dv => dv.Cantidad) items</span>
                                             </td>
@@ -261,7 +259,6 @@
                                     <p><strong>Fecha:</strong> ${venta.fecha}</p>
                                     <p><strong>Hora:</strong> ${venta.hora}</p>
                                     <p><strong>Cliente:</strong> ${venta.cliente}</p>
-                                    <p><strong>Agente:</strong> ${venta.agente}</p>
                                     ${venta.concepto ? `<p><strong>Concepto:</strong> ${venta.concepto}</p>` : ''}
                                 </div>
                                 <div class="col-md-6">

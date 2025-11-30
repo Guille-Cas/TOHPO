@@ -43,7 +43,6 @@ namespace TOHPO.Pages.Operaciones.Ventas
             {
                 var query = _context.Venta
                     .Include(v => v.Cliente)
-                    .Include(v => v.Agente_Ventas)
                     .Include(v => v.Detalle_Ventas)
                         .ThenInclude(dv => dv.Producto)
                     .AsQueryable();
@@ -124,7 +123,6 @@ namespace TOHPO.Pages.Operaciones.Ventas
         {
             var venta = await _context.Venta
                 .Include(v => v.Cliente)
-                .Include(v => v.Agente_Ventas)
                 .Include(v => v.Detalle_Ventas)
                     .ThenInclude(dv => dv.Producto)
                 .FirstOrDefaultAsync(v => v.Id == id);
@@ -143,7 +141,6 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     fecha = venta.Fecha.ToString("dd/MM/yyyy"),
                     hora = venta.Hora.ToString("HH:mm"),
                     cliente = $"{venta.Cliente.Nombre} {venta.Cliente.Primer_Apellido}",
-                    agente = venta.Agente_Ventas.Nombre,
                     concepto = venta.Concepto,
                     costoTotalGravado = venta.Costo_Total_Gravado,
                     iva = venta.Iva,

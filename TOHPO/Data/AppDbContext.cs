@@ -174,12 +174,6 @@ namespace TOHPO.Data
                 .HasForeignKey(v => v.Id_Cliente)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Relación Venta - Agente_Ventas
-            modelBuilder.Entity<Venta>()
-                .HasOne(v => v.Agente_Ventas)
-                .WithMany()
-                .HasForeignKey(v => v.Id_Agente_Ventas)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // Relaciones de Compra
             modelBuilder.Entity<Compra>()
@@ -296,9 +290,6 @@ namespace TOHPO.Data
                 .HasIndex(v => v.Id_Cliente)
                 .HasDatabaseName("IX_Venta_Cliente");
 
-            modelBuilder.Entity<Venta>()
-                .HasIndex(v => v.Id_Agente_Ventas)
-                .HasDatabaseName("IX_Venta_Agente_Ventas");
 
             modelBuilder.Entity<Compra>()
                 .HasIndex(c => c.Id_Proveedor)

@@ -48,19 +48,7 @@
                                     <span asp-validation-for="Venta.Id_Cliente" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label class="form-label">Agente de Ventas</label>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="text" id="agenteDescripcion" class="form-control" value="@Model.AgenteSeleccionado" readonly placeholder="Seleccionar agente..." />
-                                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#modalAgentes">
-                                            Seleccionar
-                                        </button>
-                                    </div>
-                                    <input type="hidden" asp-for="Venta.Id_Agente_Ventas" />
-                                    <span asp-validation-for="Venta.Id_Agente_Ventas" class="text-danger"></span>
-                                </div>
-                            </div>
+                            
                         </div>
 
                         <div class="row mb-4">
@@ -146,6 +134,7 @@
                                                 <th>Acciones</th>
                                             </tr>
                                         </thead>
+                                        </thead>
                                         <tbody id="productosBody">
                                             <!-- Los productos se agregan dinámicamente aquí -->
                                         </tbody>
@@ -209,69 +198,6 @@
     </div>
 </div>
 
-<!-- Modal de selección de agente -->
-<div class="modal fade" id="modalAgentes" tabindex="-1" aria-labelledby="modalAgentesLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalAgentesLabel">Seleccionar Agente de Ventas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-                <table class="table table-bordered" id="tablaModalAgentes">
-                    <thead>
-                        <tr>
-                            <th>Id</th>
-                            <th>Nombre</th>
-                            <th>Teléfono</th>
-                            <th>Correo</th>
-                            <th>Proveedor</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.AgentesVentas.Any())
-                        {
-                            @foreach (var agente in Model.AgentesVentas)
-                            {
-                                <tr>
-                                    <td>@agente.Id</td>
-                                    <td>@agente.Nombre</td>
-                                    <td>@agente.Telefono</td>
-                                    <td>@agente.Correo_Electronico</td>
-                                    <td>@(agente.Proveedor?.Nombre ?? "Sin proveedor")</td>
-                                    <td>
-                                        <button type="button" class="btn btn-success btnSeleccionarAgente" 
-                                                data-id="@agente.Id" 
-                                                data-nombre="@agente.Nombre" 
-                                                data-bs-dismiss="modal">
-                                            Seleccionar
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">
-                                    No hay agentes de ventas activos disponibles
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <a asp-page="/Configuracion/Agentes_ventas/Upsert" class="btn btn-primary" target="_blank">
-                    Crear Nuevo Agente
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
@@ -298,13 +224,6 @@
         $(document).ready(function() {
             // Reiniciar botón al cargar la página (en caso de error del servidor)
             reiniciarBotonGuardar();
-
-            $(document).on('click', '.btnSeleccionarAgente', function () {
-                var id = $(this).data('id');
-                var nombre = $(this).data('nombre');
-                $('input[name="Venta.Id_Agente_Ventas"]').val(id);
-                $('#agenteDescripcion').val(nombre);
-            });
 
             // Configurar la hora inicial sin segundos (mejorado)
             const horaInput = $('#Venta_Hora');
@@ -618,14 +537,6 @@
                     e.preventDefault();
                     alert('Debe seleccionar un cliente');
                     $('#Venta_Id_Cliente').focus();
-                    reiniciarBotonGuardar(); // Reiniciar botón
-                    return false;
-                }
-
-                if (!$('input[name="Venta.Id_Agente_Ventas"]').val()) {
-                    e.preventDefault();
-                    alert('Debe seleccionar un agente de ventas');
-                    $('#agenteDescripcion').focus();
                     reiniciarBotonGuardar(); // Reiniciar botón
                     return false;
                 }

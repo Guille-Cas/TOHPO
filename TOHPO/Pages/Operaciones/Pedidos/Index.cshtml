@@ -121,7 +121,6 @@
                                             <td>@pedido.Fecha_Creacion.ToString("dd/MM/yyyy")</td>
                                             <td>@pedido.Fecha_Entrega.ToString("dd/MM/yyyy")</td>
                                             <td>@pedido.Cliente.Nombre @pedido.Cliente.Primer_Apellido</td>
-                                            <td>@pedido.Agente_Ventas.Nombre</td>
                                             <td>
                                                 <span class="badge bg-info">
                                                     @pedido.Pedido_Detalles.Sum(d => d.Cantidad)
@@ -209,9 +208,6 @@
                         <div class="row mb-3">
                             <div class="col-6">
                                 <strong>Cliente:</strong> @pedido.Cliente.Nombre @pedido.Cliente.Primer_Apellido @pedido.Cliente.Segundo_Apellido
-                            </div>
-                            <div class="col-6">
-                                <strong>Agente:</strong> @pedido.Agente_Ventas.Nombre
                             </div>
                         </div>
                         <div class="row mb-3">
