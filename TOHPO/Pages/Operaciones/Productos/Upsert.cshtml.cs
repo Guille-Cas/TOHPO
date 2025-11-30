@@ -29,8 +29,6 @@ namespace TOHPO.Pages.Operaciones.Productos
         {
             try
             {
-                await LoadSelectListsAsync();
-
                 if (string.IsNullOrEmpty(id))
                 {
                     // Crear nuevo producto
@@ -42,32 +40,34 @@ namespace TOHPO.Pages.Operaciones.Productos
                         Tiempo_De_Vida = 0,
                         Unidad_Medida = Unidad_Medida.Unidad
                     };
-                    return Page();
                 }
-
-                var producto = await _context.Producto
-                    .Include(p => p.Categoria)
-                    .Include(p => p.Impuesto)
-                    .Include(p => p.Materia_Prima)
-                    .Include(p => p.Presentacion)
-                    .AsNoTracking() // Evita conflictos de tracking
-                    .FirstOrDefaultAsync(m => m.CodigoReferencia == id);
-
-                if (producto == null)
+                else
                 {
-                    TempData["ErrorMessage"] = "Producto no encontrado";
-                    return RedirectToPage("./Index");
-                }
+                    var producto = await _context.Producto
+                        .Include(p => p.Categoria)
+                        .Include(p => p.Impuesto)
+                        .Include(p => p.Materia_Prima)
+                        .Include(p => p.Presentacion)
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(m => m.CodigoReferencia == id);
 
-                Producto = producto;
+                    if (producto == null)
+                    {
+                        TempData["ErrorMessage"] = "Producto no encontrado";
+                        return RedirectToPage("./Index");
+                    }
+
+                    Producto = producto;
+                }
                 
-                // Recargar SelectLists con el producto actual para seleccionar los valores correctos
+                // Cargar las listas DESPUÉS de asignar el producto
                 await LoadSelectListsAsync();
                 
                 return Page();
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error en OnGetAsync: {ex.Message}");
                 TempData["ErrorMessage"] = $"Error al cargar el producto: {ex.Message}";
                 return RedirectToPage("./Index");
             }
@@ -80,6 +80,7 @@ namespace TOHPO.Pages.Operaciones.Productos
             ModelState.Remove("Producto.Impuesto");
             ModelState.Remove("Producto.Materia_Prima");
             ModelState.Remove("Producto.Presentacion");
+            ModelState.Remove("Producto.Inventario");
 
             if (!ModelState.IsValid)
             {
@@ -140,7 +141,6 @@ namespace TOHPO.Pages.Operaciones.Productos
             {
                 // Cargar categorías
                 var categorias = await _context.Categoria
-                    .Where(c => c.Estado == true)
                     .OrderBy(c => c.Descripcion)
                     .AsNoTracking()
                     .ToListAsync();
@@ -148,7 +148,6 @@ namespace TOHPO.Pages.Operaciones.Productos
 
                 // Cargar impuestos
                 var impuestos = await _context.Impuesto
-                    .Where(i => i.Estado == true)
                     .OrderBy(i => i.Descripcion)
                     .AsNoTracking()
                     .ToListAsync();
@@ -156,7 +155,6 @@ namespace TOHPO.Pages.Operaciones.Productos
 
                 // Cargar materias primas
                 var materiasPrimas = await _context.Materia_Prima
-                    .Where(mp => mp.Estado == true)
                     .OrderBy(mp => mp.Descripcion)
                     .AsNoTracking()
                     .ToListAsync();
@@ -164,7 +162,6 @@ namespace TOHPO.Pages.Operaciones.Productos
 
                 // Cargar presentaciones con descripción completa
                 var presentaciones = await _context.Presentacion
-                    .Where(p => p.Estado == true)
                     .OrderBy(p => p.Cantidad)
                     .AsNoTracking()
                     .Select(p => new { 
