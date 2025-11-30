@@ -11,10 +11,41 @@
                 <h3 class="fs-3 main-subtitle">
                    Menú Principal
                 </h3>
-
             </div>
         </div>
     </div>
+
+    <!-- Resumen de Pedidos -->
+    @if (Model.ResumenPedidos != null)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Resumen de Pedidos</h5>
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h3>@Model.ResumenPedidos.PedidosPendientes</h3>
+                                <p>Pedidos Pendientes</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3>@Model.ResumenPedidos.PedidosCompletados</h3>
+                                <p>Completados Hoy</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3>₡@Model.ResumenPedidos.TotalPendiente.ToString("N2")</h3>
+                                <p>Total Pendiente</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h3>@Model.ResumenPedidos.PedidosVencidos</h3>
+                                <p>Pedidos Vencidos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="row g-4">
         <!-- Administración -->
@@ -56,44 +87,47 @@
                     <a class="btn btn-primary" asp-page="/Operaciones/Ventas/Index">Ventas</a>
                     <a class="btn btn-primary" asp-page="/Operaciones/Compras/Index">Compras</a>
                     <a class="btn btn-primary" asp-page="/Operaciones/Produccion/Index">Producción</a>
-                    <button class="btn btn-primary">Pedidos</button>
+                    <a class="btn btn-primary" asp-page="/Operaciones/Pedidos/Index">Pedidos</a>
                     <a class="btn btn-primary" asp-page="/Operaciones/Inventario/Index">Inventario</a>
                     <a class="btn btn-primary" asp-page="/Recordatorios/Index">Recordatorios</a>
                 </div>
             </div>
         </div>
 
-        <!-- Pedidos -->
+        <!-- Pedidos Rápidos -->
         <div class="col-12 col-md-3 d-flex">
             <div class="card bg-secondary mb-2 menu-card card flex-fill w-100 d-flex flex-column align-items-center py-4 px-3">
-                <div class="menu-title h5 fw-semibold text-center mb-">
-                    Pedidos
+                <div class="menu-title h5 fw-semibold text-center mb-2">
+                    Gestión de Pedidos
                 </div>
-                <div class="text-center  main-subtitle mb-3">
-                    sección administrativa
+                <div class="text-center main-subtitle mb-4">
+                    acceso rápido
                 </div>
-                <div class="menu-info-placeholder d-flex flex-column gap-3 align-items-center w-100 pt-2 text-secondary">
-           
-                    <div class="info-box bg-light rounded-3 w-100"></div>
-                    <div class="info-box bg-light rounded-3 w-100"></div>
+                <div class="menu-buttons d-grid gap-2 w-100">
+                    <a class="btn btn-success" asp-page="/Operaciones/Pedidos/Upsert">
+                        <i class="fas fa-plus"></i> Nuevo Pedido
+                    </a>
+                    <a class="btn btn-warning" asp-page="/Operaciones/Pedidos/Index" asp-route-estado="false">
+                        <i class="fas fa-clock"></i> Pedidos Pendientes
+                    </a>
+                    <a class="btn btn-info" asp-page="/Operaciones/Pedidos/Index">
+                        <i class="fas fa-list"></i> Todos los Pedidos
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Recordatorios -->
+        <!-- Reportes -->
         <div class="col-12 col-md-3 d-flex">
-            <div class="card bg-secondary mb-5 menu-card card flex-fill w-100 d-flex flex-column align-items-center py-4 px-3">
+            <div class="card bg-secondary mb-2 menu-card card flex-fill w-100 d-flex flex-column align-items-center py-4 px-3">
                 <div class="menu-title h5 fw-semibold text-center mb-2">
-                    Recordatorios
+                    Reportes
                 </div>
-                <div class="text-center  main-subtitle mb-3">
-                    sección administrativa
+                <div class="text-center main-subtitle mb-4">
+                    análisis y reportes
                 </div>
                 <div class="menu-info-placeholder d-flex flex-column gap-3 align-items-center w-100 pt-2 text-secondary">
-           
-                    <div class="info-box bg-light rounded-3 w-100 d-flex align-items-center justify-content-center">
-                        
-                    </div>
+                    <div class="info-box bg-light rounded-3 w-100"></div>
                     <div class="info-box bg-light rounded-3 w-100"></div>
                 </div>
             </div>
