@@ -1,0 +1,123 @@
+@page
+@model TOHPO.Pages.Operaciones.Reportes.IndexModel
+@{
+    ViewData["Title"] = "Reportes";
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h4><i class="fas fa-file-pdf"></i> Generar Reportes</h4>
+            </div>
+            <div class="card-body">
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger">
+                        @TempData["Error"]
+                    </div>
+                }
+
+                <form method="post" asp-page-handler="GenerarReporte">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="TipoReporte" class="form-label">Tipo de Reporte</label>
+                                <select asp-for="TipoReporte" class="form-select">
+                                    <option value="ventas">Reporte de Ventas</option>
+                                    <option value="compras">Reporte de Compras</option>
+                                    <option value="inventario">Reporte de Inventario</option>
+                                    <option value="pedidos">Reporte de Pedidos</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
+                                <input asp-for="FechaFin" type="date" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-download"></i> Generar PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Información de Reportes</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chart-line"></i> Reporte de Ventas</h6>
+                        <p class="text-muted">Genera un reporte detallado de todas las ventas realizadas en el período seleccionado, incluyendo totales y estadísticas.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-shopping-cart"></i> Reporte de Compras</h6>
+                        <p class="text-muted">Muestra todas las compras realizadas a proveedores en el rango de fechas especificado.</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-boxes"></i> Reporte de Inventario</h6>
+                        <p class="text-muted">Estado actual del inventario, incluyendo productos con stock bajo destacados en rojo.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-clipboard-list"></i> Reporte de Pedidos</h6>
+                        <p class="text-muted">Listado de todos los pedidos realizados por clientes en el período seleccionado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Validar que la fecha fin no sea menor a la fecha inicio
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const fechaInicio = new Date(document.querySelector('[name="FechaInicio"]').value);
+            const fechaFin = new Date(document.querySelector('[name="FechaFin"]').value);
+            
+            if (fechaFin < fechaInicio) {
+                e.preventDefault();
+                alert('La fecha fin no puede ser menor a la fecha inicio');
+                return false;
+            }
+        });
+
+        // Ocultar campos de fecha para reporte de inventario
+        document.querySelector('[name="TipoReporte"]').addEventListener('change', function() {
+            const fechasDiv = document.querySelectorAll('.col-md-3')[1].parentElement;
+            const tipoReporte = this.value;
+            
+            if (tipoReporte === 'inventario') {
+                document.querySelectorAll('.col-md-3')[1].style.display = 'none';
+                document.querySelectorAll('.col-md-3')[2].style.display = 'none';
+            } else {
+                document.querySelectorAll('.col-md-3')[1].style.display = 'block';
+                document.querySelectorAll('.col-md-3')[2].style.display = 'block';
+            }
+        });
+    </script>
+}

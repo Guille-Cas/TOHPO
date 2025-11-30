@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +19,7 @@ builder.Services.AddRazorPages()
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-//// Configuraci�n de Identity (sin roles)
+//// Configuración de Identity (sin roles)
 //builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 //    options.SignIn.RequireConfirmedAccount = false)
 //    .AddEntityFrameworkStores<AppDbContext>();
@@ -30,15 +30,16 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
