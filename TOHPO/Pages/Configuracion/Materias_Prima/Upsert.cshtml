@@ -2,29 +2,81 @@
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Materias_Prima.UpsertModel
 @{
-    var isEdit = Model.MateriaPrima != null;
+    var isEdit = Model.MateriaPrima != null && Model.MateriaPrima.Id > 0;
+    ViewData["Title"] = isEdit ? "Editar Materia Prima" : "Crear Materia Prima";
 }
 
-<h2>@(isEdit ? "Editar Materia Prima" : "Crear Materia Prima")</h2>
-<form method="post">
-    @Html.AntiForgeryToken()
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="MateriaPrima.Id" />
-    }
-    <div class="mb-3">
-        <label asp-for="MateriaPrima.Descripcion" class="form-label"></label>
-        <input asp-for="MateriaPrima.Descripcion" class="form-control" />
-        <span asp-validation-for="MateriaPrima.Descripcion" class="text-danger"></span>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools d-flex gap-2">
+                        <a asp-page="/Configuracion/Materias_Prima/Index" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Regresar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DESCRIPCIÓN (ALERT) -->
+                <div class="card-body border-bottom">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        @(isEdit
+                                                ? "Actualice la información de la materia prima y guarde los cambios para mantener sus datos al día."
+                                                : "Complete la información de la nueva materia prima y guarde el registro para que quede disponible en el sistema.")
+
+                    </div>
+                </div>
+
+                <!-- FORMULARIO -->
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="MateriaPrima.Id" />
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="MateriaPrima.Descripcion" class="form-label"></label>
+                                    <input asp-for="MateriaPrima.Descripcion" class="form-control" />
+                                    <span asp-validation-for="MateriaPrima.Descripcion" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="MateriaPrima.Unidad_Medida" class="form-label"></label>
+                                    <select asp-for="MateriaPrima.Unidad_Medida"
+                                            class="form-select"
+                                            asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()">
+                                    </select>
+                                    <span asp-validation-for="MateriaPrima.Unidad_Medida" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="MateriaPrima.Unidad_Medida" class="form-label"></label>
-        <select asp-for="MateriaPrima.Unidad_Medida" class="form-select" asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()"></select>
-        <span asp-validation-for="MateriaPrima.Unidad_Medida" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a asp-page="/Configuracion/Materias_Prima/Index" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

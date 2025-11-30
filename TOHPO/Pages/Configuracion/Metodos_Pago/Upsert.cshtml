@@ -2,24 +2,66 @@
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Metodos_Pago.UpsertModel
 @{
-    var isEdit = Model.MetodoPago != null;
+    var isEdit = Model.MetodoPago != null && Model.MetodoPago.Id > 0;
+    ViewData["Title"] = isEdit ? "Editar Método de Pago" : "Crear Método de Pago";
 }
 
-<h2>@(isEdit ? "Editar Método de Pago" : "Crear Método de Pago")</h2>
-<form method="post">
-    @Html.AntiForgeryToken()
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="MetodoPago.Id" />
-    }
-    <div class="mb-3">
-        <label asp-for="MetodoPago.Descripcion" class="form-label"></label>
-        <input asp-for="MetodoPago.Descripcion" class="form-control" />
-        <span asp-validation-for="MetodoPago.Descripcion" class="text-danger"></span>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools d-flex gap-2">
+                        <a asp-page="/Configuracion/Metodos_Pago/Index" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Regresar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DESCRIPCIÓN (ALERT) -->
+                <div class="card-body border-bottom">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        @(isEdit
+                                                ? "Actualice la información del método de pago y guarde los cambios para mantener sus datos al día."
+                                                : "Complete la información del nuevo método de pago y guarde el registro para que quede disponible en el sistema.")
+
+                    </div>
+                </div>
+
+                <!-- FORMULARIO -->
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="MetodoPago.Id" />
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="MetodoPago.Descripcion" class="form-label"></label>
+                            <input asp-for="MetodoPago.Descripcion" class="form-control" />
+                            <span asp-validation-for="MetodoPago.Descripcion" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a asp-page="/Configuracion/Metodos_Pago/Index" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

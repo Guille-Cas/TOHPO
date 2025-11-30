@@ -2,29 +2,80 @@
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Presentaciones.UpsertModel
 @{
-    var isEdit = Model.Presentacion != null;
+    var isEdit = Model.Presentacion != null && Model.Presentacion.Id > 0;
+    ViewData["Title"] = isEdit ? "Editar Presentación" : "Crear Presentación";
 }
 
-<h2>@(isEdit ? "Editar Presentación" : "Crear Presentación")</h2>
-<form method="post">
-    @Html.AntiForgeryToken()
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="Presentacion.Id" />
-    }
-    <div class="mb-3">
-        <label asp-for="Presentacion.Cantidad" class="form-label"></label>
-        <input asp-for="Presentacion.Cantidad" class="form-control" />
-        <span asp-validation-for="Presentacion.Cantidad" class="text-danger"></span>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        @ViewData["Title"]
+                    </h3>
+                    <div class="card-tools d-flex gap-2">
+                        <a asp-page="/Configuracion/Presentaciones/Index" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Regresar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- DESCRIPCIÓN (ALERT) -->
+                <div class="card-body border-bottom">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        @(isEdit
+                                                ? "Actualice la información de la presentación y guarde los cambios para mantener sus datos al día."
+                                                : "Complete la información de la nueva presentación y guarde el registro para que quede disponible en el sistema.")
+                    </div>
+                </div>
+
+                <!-- FORMULARIO -->
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        @if (isEdit)
+                        {
+                            <input type="hidden" asp-for="Presentacion.Id" />
+                        }
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Presentacion.Cantidad" class="form-label"></label>
+                                    <input asp-for="Presentacion.Cantidad" class="form-control" />
+                                    <span asp-validation-for="Presentacion.Cantidad" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Presentacion.Unidad_Medida" class="form-label"></label>
+                                    <select asp-for="Presentacion.Unidad_Medida"
+                                            class="form-select"
+                                            asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()">
+                                    </select>
+                                    <span asp-validation-for="Presentacion.Unidad_Medida" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label asp-for="Presentacion.Unidad_Medida" class="form-label"></label>
-        <select asp-for="Presentacion.Unidad_Medida" class="form-select" asp-items="Html.GetEnumSelectList<TOHPO.Models.Enums.Unidad_Medida>()"></select>
-        <span asp-validation-for="Presentacion.Unidad_Medida" class="text-danger"></span>
-    </div>
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a asp-page="/Configuracion/Presentaciones/Index" class="btn btn-secondary">Cancelar</a>
-</form>
+</div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

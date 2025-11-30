@@ -1,36 +1,58 @@
 ﻿@page
 @model TOHPO.Pages.Configuracion.Agentes_ventas.IndexModel
 @{
+    ViewData["Title"] = "Gestión de Agentes de Ventas";
 }
 
 <form method="post">
     @Html.AntiForgeryToken()
 </form>
 
-<div class="container mt-4">
-    <h2>Gestión de Agentes de Ventas</h2>
-    <div class="mb-3">
-        <a asp-page="/Index" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Regresar
-        </a>
-        <a asp-page="/Configuracion/Agentes_ventas/Upsert" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Crear Agente de Ventas
-        </a>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        @ViewData["Title"]
+                    </h3>
+
+                    <div class="card-tools d-flex gap-2">
+                        <a asp-page="/Index" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Regresar
+                        </a>
+                        <a asp-page="/Configuracion/Agentes_ventas/Upsert" class="btn btn-primary text-center">
+                            <i class="bi bi-plus-circle"></i> Crear Agente de Ventas
+                        </a>
+                    </div>
+                </div>
+
+                <!-- CONTENIDO PRINCIPAL -->
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="tablaAgentesVentas" class="table table-striped table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">Id</th>
+                                    <th class="text-center">Nombre</th>
+                                    <th class="text-center">Teléfono</th>
+                                    <th class="text-center">Correo</th>
+                                    <th class="text-center">Proveedor</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
-    <table id="tablaAgentesVentas" class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Id</th>
-                <th>Nombre</th>
-                <th>Teléfono</th>
-                <th>Correo</th>
-                <th>Proveedor</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
 </div>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/Configuracion/agentes_ventas.js" asp-append-version="true"></script>

@@ -19,7 +19,7 @@
                     <h3 class="card-title mb-0">@ViewData["Title"]</h3>
 
                     <div class="card-tools">
-                        <a asp-page="/Configuracion/Clientes/Index" class="btn btn-secondary">
+                        <a asp-page="/Configuracion/Clientes/Index" class="btn btn-light">
                             Regresar
                         </a>
                     </div>
@@ -27,12 +27,14 @@
 
                 <!-- DESCRIPCIÓN -->
                 <div class="card-body border-bottom">
-                    <p class="mb-0 text-muted">
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         @(isEdit
-                                                ? "Actualice la información del cliente y guarde los cambios para mantener sus datos al día."
-                                                : "Complete la información del nuevo cliente y guarde el registro para que quede disponible en el sistema.")
-                    </p>
+                                                ? "Actualice la información de la categoría y guarde los cambios para mantener sus datos al día."
+                                                : "Complete la información de la nueva categoría y guarde el registro para que quede disponible en el sistema.")
+
+                    </div>
                 </div>
+
 
                 <!-- FORMULARIO -->
                 <div class="card-body">
