@@ -16,6 +16,9 @@ namespace TOHPO.Models
         [DisplayName("Existencia")]
         public int Existencia { get; set; }
 
+        [DisplayName("Reservado")]
+        public int Reservado { get; set; } = 0;
+
         [Required(ErrorMessage = "El precio de venta es obligatorio")]
         [DisplayName("Precio de venta")]
         [Column(TypeName = "decimal(18,2)")]
@@ -27,6 +30,11 @@ namespace TOHPO.Models
         public decimal Precio_Compra { get; set; }
 
         public bool Estado { get; set; }
+
+        // Propiedad calculada para stock disponible
+        [NotMapped]
+        [DisplayName("Disponible")]
+        public int Disponible => Existencia - Reservado;
 
         // Relaciones
         [ForeignKey("Producto")]

@@ -42,40 +42,53 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
         private async Task CargarPedidos()
         {
-            if (_context.Pedido != null)
+            try
             {
-                var query = _context.Pedido
-                    .Include(p => p.Cliente)
-                    .Include(p => p.Pedido_Detalles)
-                        .ThenInclude(pd => pd.Producto)
-                    .AsQueryable();
-
-                // Filtros
-                if (FechaInicio.HasValue)
+                if (_context.Pedido != null)
                 {
-                    query = query.Where(p => p.Fecha_Creacion >= FechaInicio.Value);
-                }
+                    var query = _context.Pedido
+                        .Include(p => p.Cliente)
+                        .Include(p => p.Pedido_Detalles)
+                            .ThenInclude(pd => pd.Producto)
+                        .AsQueryable();
 
-                if (FechaFin.HasValue)
+                    // Filtros
+                    if (FechaInicio.HasValue)
+                    {
+                        query = query.Where(p => p.Fecha_Creacion >= FechaInicio.Value);
+                    }
+
+                    if (FechaFin.HasValue)
+                    {
+                        query = query.Where(p => p.Fecha_Entrega <= FechaFin.Value);
+                    }
+
+                    if (!string.IsNullOrEmpty(BuscarCliente))
+                    {
+                        query = query.Where(p => p.Cliente.Nombre.Contains(BuscarCliente) ||
+                                               p.Cliente.Primer_Apellido.Contains(BuscarCliente) ||
+                                               (p.Cliente.Segundo_Apellido != null && p.Cliente.Segundo_Apellido.Contains(BuscarCliente)));
+                    }
+
+                    if (EstadoFiltro.HasValue)
+                    {
+                        query = query.Where(p => p.Estado == EstadoFiltro.Value);
+                    }
+
+                    Pedidos = await query
+                        .OrderByDescending(p => p.Fecha_Creacion)
+                        .ToListAsync();
+                }
+                else
                 {
-                    query = query.Where(p => p.Fecha_Entrega <= FechaFin.Value);
+                    Pedidos = new List<Pedido>();
                 }
-
-                if (!string.IsNullOrEmpty(BuscarCliente))
-                {
-                    query = query.Where(p => p.Cliente.Nombre.Contains(BuscarCliente) ||
-                                           p.Cliente.Primer_Apellido.Contains(BuscarCliente) ||
-                                           p.Cliente.Segundo_Apellido.Contains(BuscarCliente));
-                }
-
-                if (EstadoFiltro.HasValue)
-                {
-                    query = query.Where(p => p.Estado == EstadoFiltro.Value);
-                }
-
-                Pedidos = await query
-                    .OrderByDescending(p => p.Fecha_Creacion)
-                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // Log del error para debugging
+                Console.WriteLine($"Error cargando pedidos: {ex.Message}");
+                Pedidos = new List<Pedido>();
             }
         }
 
@@ -106,17 +119,10 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                     return RedirectToPage();
                 }
 
-                // Devolver productos al inventario antes de eliminar
+                // Liberar reservas antes de eliminar
                 foreach (var detalle in pedido.Pedido_Detalles)
                 {
-                    var inventario = await _context.Inventario
-                        .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.Codigo_Producto);
-
-                    if (inventario != null)
-                    {
-                        inventario.Existencia += detalle.Cantidad;
-                        _context.Update(inventario);
-                    }
+                    await LiberarReserva(detalle.Codigo_Producto, detalle.Cantidad);
                 }
 
                 // Eliminar detalles del pedido
@@ -153,42 +159,29 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             try
             {
-                // Si se está completando el pedido, verificar inventario
+                // Si se está completando el pedido
                 if (!pedido.Estado)
                 {
-                    var validacionInventario = await ValidarInventarioParaPedido(pedido);
+                    // Validar que hay suficiente inventario para completar
+                    var validacionInventario = await ValidarInventarioParaCompletar(pedido);
                     if (!validacionInventario.IsValid)
                     {
                         TempData["ErrorMessage"] = validacionInventario.ErrorMessage;
                         return RedirectToPage();
                     }
 
-                    // Reducir inventario al completar pedido
+                    // COMPLETAR PEDIDO: Liberar reservas y reducir existencia real
                     foreach (var detalle in pedido.Pedido_Detalles)
                     {
-                        var inventario = await _context.Inventario
-                            .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.Codigo_Producto);
-
-                        if (inventario != null)
-                        {
-                            inventario.Existencia -= detalle.Cantidad;
-                            _context.Update(inventario);
-                        }
+                        await CompletarPedidoInventario(detalle.Codigo_Producto, detalle.Cantidad);
                     }
                 }
                 else
                 {
-                    // Si se está cancelando el pedido, devolver productos al inventario
+                    // CANCELAR PEDIDO: Devolver existencia y recrear reservas
                     foreach (var detalle in pedido.Pedido_Detalles)
                     {
-                        var inventario = await _context.Inventario
-                            .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.Codigo_Producto);
-
-                        if (inventario != null)
-                        {
-                            inventario.Existencia += detalle.Cantidad;
-                            _context.Update(inventario);
-                        }
+                        await CancelarPedidoInventario(detalle.Codigo_Producto, detalle.Cantidad);
                     }
                 }
 
@@ -207,7 +200,53 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             return RedirectToPage();
         }
 
-        private async Task<(bool IsValid, string ErrorMessage)> ValidarInventarioParaPedido(Pedido pedido)
+        private async Task CompletarPedidoInventario(string codigoProducto, int cantidad)
+        {
+            var inventario = await _context.Inventario
+                .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
+
+            if (inventario != null)
+            {
+                // Liberar la reserva y reducir la existencia
+                inventario.Reservado -= cantidad;
+                inventario.Existencia -= cantidad;
+                
+                // Asegurar que no haya valores negativos
+                if (inventario.Reservado < 0) inventario.Reservado = 0;
+                if (inventario.Existencia < 0) inventario.Existencia = 0;
+                
+                _context.Update(inventario);
+            }
+        }
+
+        private async Task CancelarPedidoInventario(string codigoProducto, int cantidad)
+        {
+            var inventario = await _context.Inventario
+                .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
+
+            if (inventario != null)
+            {
+                // Devolver la existencia y recrear la reserva
+                inventario.Existencia += cantidad;
+                inventario.Reservado += cantidad;
+                _context.Update(inventario);
+            }
+        }
+
+        private async Task LiberarReserva(string codigoProducto, int cantidad)
+        {
+            var inventario = await _context.Inventario
+                .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
+
+            if (inventario != null)
+            {
+                inventario.Reservado -= cantidad;
+                if (inventario.Reservado < 0) inventario.Reservado = 0;
+                _context.Update(inventario);
+            }
+        }
+
+        private async Task<(bool IsValid, string ErrorMessage)> ValidarInventarioParaCompletar(Pedido pedido)
         {
             foreach (var detalle in pedido.Pedido_Detalles)
             {
@@ -220,9 +259,10 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                     return (false, $"Producto {detalle.Codigo_Producto} no encontrado en inventario");
                 }
 
+                // Verificar que la existencia real sea suficiente
                 if (inventario.Existencia < detalle.Cantidad)
                 {
-                    return (false, $"Stock insuficiente para {inventario.Producto.Descripcion}. Disponible: {inventario.Existencia}, Requerido: {detalle.Cantidad}");
+                    return (false, $"Stock insuficiente para completar el pedido. {inventario.Producto.Descripcion}: Disponible {inventario.Existencia}, Requerido {detalle.Cantidad}");
                 }
             }
 

@@ -100,7 +100,6 @@
                                     <th>Fecha Creación</th>
                                     <th>Fecha Entrega</th>
                                     <th>Cliente</th>
-                                    <th>Agente</th>
                                     <th>Items</th>
                                     <th>Total</th>
                                     <th>Abono</th>
@@ -116,19 +115,28 @@
                                     {
                                         <tr>
                                             <td>
-                                                <span class="badge bg-primary">#@pedido.Id</span>
+                                                <span class="badge bg-primary">#@(pedido.Id)</span>
                                             </td>
-                                            <td>@pedido.Fecha_Creacion.ToString("dd/MM/yyyy")</td>
-                                            <td>@pedido.Fecha_Entrega.ToString("dd/MM/yyyy")</td>
-                                            <td>@pedido.Cliente.Nombre @pedido.Cliente.Primer_Apellido</td>
+                                            <td>@(pedido.Fecha_Creacion.ToString("dd/MM/yyyy"))</td>
+                                            <td>@(pedido.Fecha_Entrega.ToString("dd/MM/yyyy"))</td>
+                                            <td>
+                                                @if (pedido.Cliente != null)
+                                                {
+                                                    @($"{pedido.Cliente.Nombre ?? ""} {pedido.Cliente.Primer_Apellido ?? ""}")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Cliente no disponible</span>
+                                                }
+                                            </td>
                                             <td>
                                                 <span class="badge bg-info">
-                                                    @pedido.Pedido_Detalles.Sum(d => d.Cantidad)
+                                                    @(pedido.Pedido_Detalles?.Sum(d => d.Cantidad) ?? 0)
                                                 </span>
                                             </td>
-                                            <td>₡@pedido.Total.ToString("N2")</td>
-                                            <td>₡@pedido.Abono.ToString("N2")</td>
-                                            <td>₡@pedido.Saldo.ToString("N2")</td>
+                                            <td>₡@(pedido.Total.ToString("N2"))</td>
+                                            <td>₡@(pedido.Abono.ToString("N2"))</td>
+                                            <td>₡@(pedido.Saldo.ToString("N2"))</td>
                                             <td>
                                                 @if (pedido.Estado)
                                                 {
@@ -178,7 +186,7 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="11" class="text-center text-muted">
+                                        <td colspan="10" class="text-center text-muted">
                                             No se encontraron pedidos
                                         </td>
                                     </tr>
@@ -274,14 +282,30 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            $('#pedidosTable').DataTable({
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
-                },
-                "order": [[ 0, "desc" ]],
-                "pageLength": 25,
-                "responsive": true
-            });
+            try {
+                // Verificar si hay datos en la tabla
+                var table = $('#pedidosTable');
+                var hasData = table.find('tbody tr').length > 0 && 
+                             !table.find('tbody tr').first().find('td[colspan]').length;
+                
+                if (hasData) {
+                    $('#pedidosTable').DataTable({
+                        "language": {
+                            "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json"
+                        },
+                        "order": [[ 0, "desc" ]],
+                        "pageLength": 25,
+                        "responsive": true,
+                        "columnDefs": [
+                            { "orderable": false, "targets": 9 } // Columna de acciones no ordenable
+                        ]
+                    });
+                } else {
+                    console.log('No hay datos para inicializar DataTables');
+                }
+            } catch (error) {
+                console.error('Error inicializando DataTables:', error);
+            }
         });
     </script>
 }

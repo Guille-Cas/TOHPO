@@ -78,7 +78,6 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             ModelState.Remove("Pedido.Cliente");
             ModelState.Remove("Pedido.Agente_Ventas");
             
-            
             // Remover validaciones de propiedades calculadas/navegación en detalles
             for (int i = 0; i < (DetallesPedido?.Count ?? 0); i++)
             {
@@ -97,7 +96,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                 return Page();
             }
 
-            // Validar inventario disponible
+            // Validar inventario disponible para reserva
             var validacionInventario = await ValidarInventarioDisponible();
             if (!validacionInventario.IsValid)
             {
@@ -149,8 +148,8 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
                 _context.Pedido_Detalle.Add(pedidoDetalle);
 
-                // Reservar productos en inventario (reducir existencia disponible)
-                await ActualizarInventario(detalle.Codigo_Producto, -detalle.Cantidad);
+                // RESERVAR productos en inventario (no reducir existencia)
+                await ReservarInventario(detalle.Codigo_Producto, detalle.Cantidad);
             }
 
             await _context.SaveChangesAsync();
@@ -158,15 +157,15 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
         private async Task ActualizarPedidoExistente()
         {
-            // Obtener detalles actuales para restaurar inventario
+            // Obtener detalles actuales para liberar reservas
             var detallesActuales = await _context.Pedido_Detalle
                 .Where(pd => pd.Id_Pedido == Pedido.Id)
                 .ToListAsync();
 
-            // Restaurar inventario de los productos actuales
+            // Liberar reservas de los productos actuales
             foreach (var detalle in detallesActuales)
             {
-                await ActualizarInventario(detalle.Codigo_Producto, detalle.Cantidad);
+                await LiberarReserva(detalle.Codigo_Producto, detalle.Cantidad);
             }
 
             // Eliminar detalles actuales
@@ -188,21 +187,36 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
                 _context.Pedido_Detalle.Add(pedidoDetalle);
 
-                // Reservar productos en inventario
-                await ActualizarInventario(detalle.Codigo_Producto, -detalle.Cantidad);
+                // RESERVAR productos en inventario
+                await ReservarInventario(detalle.Codigo_Producto, detalle.Cantidad);
             }
 
             await _context.SaveChangesAsync();
         }
 
-        private async Task ActualizarInventario(string codigoProducto, int cantidadCambio)
+        private async Task ReservarInventario(string codigoProducto, int cantidad)
         {
             var inventario = await _context.Inventario
                 .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
 
             if (inventario != null)
             {
-                inventario.Existencia += cantidadCambio;
+                inventario.Reservado += cantidad;
+                _context.Update(inventario);
+            }
+        }
+
+        private async Task LiberarReserva(string codigoProducto, int cantidad)
+        {
+            var inventario = await _context.Inventario
+                .FirstOrDefaultAsync(i => i.Codigo_Producto == codigoProducto);
+
+            if (inventario != null)
+            {
+                inventario.Reservado -= cantidad;
+                // Asegurar que las reservas no sean negativas
+                if (inventario.Reservado < 0)
+                    inventario.Reservado = 0;
                 _context.Update(inventario);
             }
         }
@@ -220,9 +234,9 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                     return (false, $"Producto {detalle.Codigo_Producto} no encontrado en inventario");
                 }
 
-                var cantidadDisponible = inventario.Existencia;
+                var disponible = inventario.Disponible; // Existencia - Reservado
 
-                // Si estamos editando, sumar la cantidad actual del pedido
+                // Si estamos editando, sumar la cantidad actualmente reservada del pedido
                 if (Pedido.Id > 0)
                 {
                     var detalleActual = await _context.Pedido_Detalle
@@ -230,13 +244,13 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
                     if (detalleActual != null)
                     {
-                        cantidadDisponible += detalleActual.Cantidad;
+                        disponible += detalleActual.Cantidad;
                     }
                 }
 
-                if (cantidadDisponible < detalle.Cantidad)
+                if (disponible < detalle.Cantidad)
                 {
-                    return (false, $"Stock insuficiente para {inventario.Producto.Descripcion}. Disponible: {cantidadDisponible}, Requerido: {detalle.Cantidad}");
+                    return (false, $"Stock insuficiente para {inventario.Producto.Descripcion}. Disponible: {disponible}, Requerido: {detalle.Cantidad}");
                 }
             }
 
@@ -261,14 +275,15 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             ClientesList = new SelectList(clientes, "Id", "NombreCompleto");
 
+            // Mostrar solo productos con stock disponible (Existencia - Reservado > 0)
             ProductosDisponibles = await _context.Inventario
                 .Include(i => i.Producto)
-                .Where(i => i.Estado && i.Existencia > 0)
+                .Where(i => i.Estado && (i.Existencia - i.Reservado) > 0)
                 .Select(i => new ProductoInventarioDto
                 {
                     Codigo = i.Codigo_Producto,
                     Descripcion = i.Producto.Descripcion,
-                    Existencia = i.Existencia,
+                    Existencia = i.Existencia - i.Reservado, // Mostrar solo disponible
                     Precio = i.Precio_Venta
                 })
                 .ToListAsync();
@@ -289,7 +304,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             {
                 codigo = inventario.Codigo_Producto,
                 descripcion = inventario.Producto.Descripcion,
-                existencia = inventario.Existencia,
+                existencia = inventario.Disponible,
                 precio = inventario.Precio_Venta
             };
 
