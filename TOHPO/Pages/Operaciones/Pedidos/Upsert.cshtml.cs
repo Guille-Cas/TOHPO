@@ -310,6 +310,42 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             return new JsonResult(producto);
         }
+
+        public async Task<IActionResult> OnGetProductosInventarioAsync()
+        {
+            try
+            {
+                // Obtener productos con información de inventario
+                var productosConInventario = await _context.Producto
+                    .Include(p => p.Impuesto)
+                    .Where(p => p.Estado == true)
+                    .Select(p => new
+                    {
+                        codigo = p.CodigoReferencia,
+                        nombre = p.Descripcion,
+                        descripcion = p.Descripcion,
+                        precio = _context.Inventario
+                            .Where(i => i.Codigo_Producto == p.CodigoReferencia)
+                            .Select(i => i.Precio_Venta)
+                            .FirstOrDefault() > 0 ? _context.Inventario
+                            .Where(i => i.Codigo_Producto == p.CodigoReferencia)
+                            .Select(i => i.Precio_Venta)
+                            .FirstOrDefault() : 0,
+                        cantidadInventario = _context.Inventario
+                            .Where(i => i.Codigo_Producto == p.CodigoReferencia)
+                            .Sum(i => i.Existencia),
+                        porcentajeImpuesto = p.Impuesto != null ? p.Impuesto.Porcentaje : 0
+                    })
+                    .OrderBy(p => p.nombre)
+                    .ToListAsync();
+
+                return new JsonResult(new { success = true, productos = productosConInventario });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = "Error al cargar productos: " + ex.Message });
+            }
+        }
     }
 
     public class PedidoDetalleDto

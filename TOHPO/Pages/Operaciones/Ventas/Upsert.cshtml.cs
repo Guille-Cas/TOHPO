@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -165,6 +165,34 @@ namespace TOHPO.Pages.Operaciones.Ventas
             }
         }
 
+        // NUEVO: MÃ©todo para obtener productos para el modal
+        public async Task<IActionResult> OnGetProductosInventarioAsync()
+        {
+            try
+            {
+                var productosConInventario = await _context.Inventario
+                    .Include(i => i.Producto)
+                        .ThenInclude(p => p.Impuesto)
+                    .Where(i => i.Estado && i.Existencia > 0)
+                    .Select(i => new
+                    {
+                        codigo = i.Codigo_Producto,
+                        nombre = i.Producto.Descripcion,
+                        cantidadInventario = i.Existencia,
+                        precioUnitario = i.Precio_Venta,
+                        porcentajeImpuesto = i.Producto.Impuesto != null ? i.Producto.Impuesto.Porcentaje : 0
+                    })
+                    .OrderBy(p => p.nombre)
+                    .ToListAsync();
+
+                return new JsonResult(new { success = true, productos = productosConInventario });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = "Error al cargar productos: " + ex.Message });
+            }
+        }
+
         public async Task<IActionResult> OnPostAsync()
         {
             // Remover validaciones que no son necesarias
@@ -186,28 +214,28 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 return Page();
             }
 
-            // Validar que hay métodos de pago
+            // Validar que hay mÃ©todos de pago
             if (MetodosPago == null || !MetodosPago.Any())
             {
-                TempData["ErrorMessage"] = "Debe agregar al menos un método de pago";
+                TempData["ErrorMessage"] = "Debe agregar al menos un mÃ©todo de pago";
                 await CargarDatos();
                 return Page();
             }
 
-            // Calcular totales antes de la validación
+            // Calcular totales antes de la validaciÃ³n
             CalcularTotalesVenta();
 
-            // Validar que los totales de métodos de pago coincidan con el total de la venta
+            // Validar que los totales de mÃ©todos de pago coincidan con el total de la venta
             var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
             var diferencia = Math.Abs(Venta.Total - totalMetodosPago);
             
-            // Usar una tolerancia más pequeña y redondear a 2 decimales
+            // Usar una tolerancia mÃ¡s pequeÃ±a y redondear a 2 decimales
             var totalVentaRedondeado = Math.Round(Venta.Total, 2);
             var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
             
             if (totalVentaRedondeado != totalPagosRedondeado)
             {
-                TempData["ErrorMessage"] = $"El total de los métodos de pago (?{totalPagosRedondeado:F2}) debe coincidir con el total de la venta (?{totalVentaRedondeado:F2}). Diferencia: ?{Math.Abs(totalVentaRedondeado - totalPagosRedondeado):F2}";
+                TempData["ErrorMessage"] = $"El total de los mÃ©todos de pago (â‚¡{totalPagosRedondeado:F2}) debe coincidir con el total de la venta (â‚¡{totalVentaRedondeado:F2}). Diferencia: â‚¡{Math.Abs(totalVentaRedondeado - totalPagosRedondeado):F2}";
                 await CargarDatos();
                 return Page();
             }
@@ -276,7 +304,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 }
             }
 
-            // Agregar métodos de pago
+            // Agregar mÃ©todos de pago
             foreach (var metodoPago in MetodosPago)
             {
                 var ventaMetodoPago = new Venta_Metodo_Pago
@@ -294,7 +322,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
         private async Task ActualizarVentaExistente()
         {
-            // Obtener venta existente con sus detalles y métodos de pago
+            // Obtener venta existente con sus detalles y mÃ©todos de pago
             var ventaExistente = await _context.Venta
                 .Include(v => v.Detalle_Ventas)
                 .Include(v => v.Venta_Metodo_Pagos)
@@ -318,7 +346,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 }
             }
 
-            // Eliminar detalles y métodos de pago existentes
+            // Eliminar detalles y mÃ©todos de pago existentes
             _context.Detalle_Venta.RemoveRange(ventaExistente.Detalle_Ventas);
             _context.Venta_Metodo_Pago.RemoveRange(ventaExistente.Venta_Metodo_Pagos);
 
@@ -365,7 +393,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 }
             }
 
-            // Agregar nuevos métodos de pago
+            // Agregar nuevos mÃ©todos de pago
             foreach (var metodoPago in MetodosPago)
             {
                 var ventaMetodoPago = new Venta_Metodo_Pago

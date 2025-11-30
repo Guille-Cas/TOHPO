@@ -74,11 +74,11 @@
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label">Buscar Producto</label>
+                                            <label class="form-label">Producto Seleccionado</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Código o nombre del producto..." />
+                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Haga clic en 'Seleccionar' para elegir un producto..." readonly />
                                                 <button type="button" class="btn btn-outline-secondary" id="btnBuscarProducto">
-                                                    Buscar
+                                                    <i class="fas fa-search"></i> Seleccionar
                                                 </button>
                                             </div>
                                         </div>
@@ -137,7 +137,6 @@
                                                 <th>Acciones</th>
                                             </tr>
                                         </thead>
-                                        </thead>
                                         <tbody id="productosBody">
                                             <!-- Los productos se agregan dinámicamente aquí -->
                                         </tbody>
@@ -145,7 +144,7 @@
                                 </div>
                                 <div id="emptyProductsMessage" class="text-center py-4">
                                     <h5 class="text-muted">No hay productos agregados</h5>
-                                    <p class="text-muted">Comience agregando productos usando el buscador de arriba</p>
+                                    <p class="text-muted">Comience agregando productos usando el selector de arriba</p>
                                 </div>
                             </div>
                         </div>
@@ -179,7 +178,7 @@
                             </div>
                         </div>
 
-                           <!-- Sección de métodos de pago -->
+                        <!-- Sección de métodos de pago -->
                         <div class="card mb-4">
                             <div class="card-header bg-info text-white">
                                 <h5 class="card-title mb-0">Métodos de Pago</h5>
@@ -258,17 +257,74 @@
     </div>
 </div>
 
+<!-- Modal de Selección de Productos -->
+<div class="modal fade" id="modalSeleccionProductos" tabindex="-1" aria-labelledby="modalSeleccionProductosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalSeleccionProductosLabel">
+                    <i class="fas fa-search"></i> Seleccionar Producto
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="buscarEnModal" class="form-control" placeholder="Buscar producto por nombre o código...">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="filtrarProductos()">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Cantidad en Inventario</th>
+                                <th>Precio Unitario</th>
+                                <th width="120">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaProductosModal">
+                            <!-- Los productos se cargarán dinámicamente aquí -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div id="loadingProductos" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando productos...</p>
+                </div>
+                
+                <div id="noProductosMessage" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-box-open fa-3x text-muted"></i>
+                    <h5 class="text-muted mt-2">No hay productos disponibles</h5>
+                    <p class="text-muted">No se encontraron productos con existencias en inventario</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
         // Variables globales
         let productos = @Html.Raw(Json.Serialize(Model.DetallesVenta));
-        let productosDisponibles = @Html.Raw(Json.Serialize(Model.ProductosDisponibles.Select(p => new { 
-            codigo = p.CodigoReferencia, 
-            nombre = p.Descripcion,
-            porcentajeImpuesto = p.Impuesto != null ? p.Impuesto.Porcentaje : 0
-        })));
+        let productosDisponibles = [];
         let contadorProductos = productos.length;
         let metodosPagoData = [];
 
@@ -327,53 +383,95 @@
 
         // Objeto para manejar las funciones de ventas
         const VentaManager = {
-            // Función para buscar productos
-            buscarProducto: function() {
-                const busqueda = $('#inputBuscarProducto').val().toLowerCase();
-                
-                if (!busqueda) {
-                    alert('Ingrese un código o nombre de producto');
-                    return;
-                }
-
-                // Buscar por código
-                let producto = productosDisponibles.find(p => p.codigo.toLowerCase() === busqueda);
-                
-                // Si no encuentra por código, buscar por nombre
-                if (!producto) {
-                    producto = productosDisponibles.find(p => p.nombre.toLowerCase().includes(busqueda));
-                }
-
-                if (producto) {
-                    // Obtener información adicional del producto
-                    $.get(`/Operaciones/Ventas/Upsert?handler=ProductoInfo&codigo=${producto.codigo}`)
-                        .done(function(data) {
-                            if (data.success) {
-                                $('#inputPrecioUnitario').val(data.producto.precio);
-                                $('#inputBuscarProducto').val(`${data.producto.codigo} - ${data.producto.nombre}`).data('codigo', data.producto.codigo);
-                                $('#inputCantidad').focus();
-                            } else {
-                                alert(data.message);
-                            }
-                        })
-                        .fail(function() {
-                            alert('Error al obtener información del producto');
-                        });
-                } else {
-                    alert('Producto no encontrado');
-                    $('#inputBuscarProducto').focus();
-                }
+            // NUEVA: Función para mostrar el modal de productos
+            mostrarModalProductos: function() {
+                $('#modalSeleccionProductos').modal('show');
+                this.cargarProductosInventario();
             },
 
-            // Función para agregar productos
+            // NUEVA: Función para cargar productos del inventario
+            cargarProductosInventario: function() {
+                $('#loadingProductos').show();
+                $('#noProductosMessage').hide();
+                $('#tablaProductosModal').empty();
+
+                $.get('/Operaciones/Ventas/Upsert?handler=ProductosInventario')
+                    .done(function(response) {
+                        $('#loadingProductos').hide();
+                        
+                        if (response.success && response.productos && response.productos.length > 0) {
+                            productosDisponibles = response.productos;
+                            VentaManager.renderizarTablaProductos(response.productos);
+                        } else {
+                            $('#noProductosMessage').show();
+                        }
+                    })
+                    .fail(function() {
+                        $('#loadingProductos').hide();
+                        $('#noProductosMessage').show();
+                        alert('Error al cargar los productos del inventario');
+                    });
+            },
+
+            // NUEVA: Función para renderizar la tabla de productos en el modal
+            renderizarTablaProductos: function(productos) {
+                const tbody = $('#tablaProductosModal');
+                tbody.empty();
+
+                productos.forEach(producto => {
+                    const row = `
+                        <tr>
+                            <td>
+                                <strong>${producto.nombre}</strong>
+                            </td>
+                            <td>
+                                <small class="text-muted">${producto.codigo}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge ${producto.cantidadInventario > 10 ? 'bg-success' : producto.cantidadInventario > 0 ? 'bg-warning' : 'bg-danger'}">
+                                    ${producto.cantidadInventario}
+                                </span>
+                            </td>
+                            <td class="text-end">₡${producto.precioUnitario.toFixed(2)}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-primary btn-sm w-100" 
+                                        onclick="VentaManager.seleccionarProducto('${producto.codigo}', '${producto.nombre.replace(/'/g, "\\'")}', ${producto.precioUnitario}, ${producto.porcentajeImpuesto})">
+                                    <i class="fas fa-check"></i> Seleccionar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            },
+
+            // NUEVA: Función para seleccionar un producto del modal
+            seleccionarProducto: function(codigo, nombre, precio, porcentajeImpuesto) {
+                // Llenar campos
+                $('#inputBuscarProducto').val(`${codigo} - ${nombre}`).data('codigo', codigo);
+                $('#inputPrecioUnitario').val(precio);
+                
+                // Almacenar porcentaje de impuesto
+                $('#inputBuscarProducto').data('porcentajeImpuesto', porcentajeImpuesto);
+                
+                // Cerrar modal
+                $('#modalSeleccionProductos').modal('hide');
+                
+                // Enfocar cantidad
+                $('#inputCantidad').focus().select();
+            },
+
+            // Función para agregar productos (actualizada)
             agregarProducto: function() {
-                const codigoBusqueda = $('#inputBuscarProducto').data('codigo') || $('#inputBuscarProducto').val().split(' - ')[0];
+                const codigoBusqueda = $('#inputBuscarProducto').data('codigo');
+                const nombreProducto = $('#inputBuscarProducto').val();
                 const cantidad = parseInt($('#inputCantidad').val()) || 1;
                 const precioUnitario = parseFloat($('#inputPrecioUnitario').val()) || 0;
                 const porcentajeDescuento = parseFloat($('#inputDescuento').val()) || 0;
+                const porcentajeImpuesto = $('#inputBuscarProducto').data('porcentajeImpuesto') || 0;
 
-                if (!codigoBusqueda) {
-                    alert('Seleccione un producto válido');
+                if (!codigoBusqueda || !nombreProducto) {
+                    alert('Debe seleccionar un producto válido desde el modal');
                     return;
                 }
 
@@ -382,14 +480,13 @@
                     return;
                 }
 
-                const producto = productosDisponibles.find(p => p.codigo === codigoBusqueda);
-                if (!producto) {
-                    alert('Producto no válido');
+                if (cantidad <= 0) {
+                    alert('La cantidad debe ser mayor a 0');
                     return;
                 }
 
                 // Verificar si el producto ya está en la lista
-                const existeIndex = productos.findIndex(p => p.codigoProducto === producto.codigo);
+                const existeIndex = productos.findIndex(p => p.codigoProducto === codigoBusqueda);
                 
                 if (existeIndex >= 0) {
                     // Actualizar cantidad del producto existente
@@ -400,27 +497,26 @@
                     // Agregar nuevo producto
                     productos.push({
                         id: 0,
-                        codigoProducto: producto.codigo,
-                        nombreProducto: producto.nombre,
+                        codigoProducto: codigoBusqueda,
+                        nombreProducto: nombreProducto.split(' - ')[1] || nombreProducto,
                         cantidad: cantidad,
                         precioUnitario: precioUnitario,
                         porcentajeDescuento: porcentajeDescuento,
                         montoDescuento: 0,
                         montoImpuesto: 0,
                         subtotal: 0,
-                        porcentajeImpuesto: producto.porcentajeImpuesto
+                        porcentajeImpuesto: porcentajeImpuesto
                     });
                 }
 
                 // Limpiar campos
-                $('#inputBuscarProducto').val('').removeData('codigo');
+                $('#inputBuscarProducto').val('').removeData('codigo').removeData('porcentajeImpuesto');
                 $('#inputCantidad').val(1);
                 $('#inputPrecioUnitario').val('');
                 $('#inputDescuento').val(0);
 
                 this.actualizarVistaProductos();
                 this.calcularTotales();
-                $('#inputBuscarProducto').focus();
             },
 
             // Función para eliminar productos
@@ -571,24 +667,44 @@
             }
         };
 
+        // NUEVA: Función para filtrar productos en el modal
+        function filtrarProductos() {
+            const filtro = $('#buscarEnModal').val().toLowerCase();
+            
+            if (!productosDisponibles || productosDisponibles.length === 0) {
+                return;
+            }
+
+            let productosFiltrados = productosDisponibles;
+            
+            if (filtro.trim() !== '') {
+                productosFiltrados = productosDisponibles.filter(producto => 
+                    producto.nombre.toLowerCase().includes(filtro) ||
+                    producto.codigo.toLowerCase().includes(filtro)
+                );
+            }
+
+            VentaManager.renderizarTablaProductos(productosFiltrados);
+        }
+
         // Inicialización cuando el documento está listo
         $(document).ready(function() {
             VentaManager.actualizarVistaProductos();
             VentaManager.calcularTotales();
 
-            // Event listeners
+            // Event listeners actualizados
             $('#btnBuscarProducto').on('click', function() {
-                VentaManager.buscarProducto();
+                VentaManager.mostrarModalProductos();
             });
 
             $('#btnAgregarProducto').on('click', function() {
                 VentaManager.agregarProducto();
             });
 
-            // Configurar búsqueda de productos con Enter
-            $('#inputBuscarProducto').on('keypress', function(e) {
+            // Configurar búsqueda en el modal
+            $('#buscarEnModal').on('keypress', function(e) {
                 if (e.which == 13) {
-                    VentaManager.buscarProducto();
+                    filtrarProductos();
                     return false;
                 }
             });

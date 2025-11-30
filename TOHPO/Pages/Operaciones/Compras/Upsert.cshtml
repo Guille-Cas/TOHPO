@@ -75,9 +75,9 @@
                                         <div class="form-group">
                                             <label class="form-label">Buscar Producto</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Código o nombre del producto..." />
-                                                <button type="button" class="btn btn-outline-secondary" id="btnBuscarProducto">
-                                                    Buscar
+                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Hacer clic en Seleccionar para elegir producto..." readonly />
+                                                <button type="button" class="btn btn-outline-primary" id="btnSeleccionarProducto" data-bs-toggle="modal" data-bs-target="#modalSeleccionarProducto">
+                                                    Seleccionar
                                                 </button>
                                             </div>
                                         </div>
@@ -264,6 +264,52 @@
     </div>
 </div>
 
+<!-- Modal para seleccionar producto -->
+<div class="modal fade" id="modalSeleccionarProducto" tabindex="-1" aria-labelledby="modalSeleccionarProductoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalSeleccionarProductoLabel">Seleccionar Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="filtroProducto" class="form-control" placeholder="Filtrar por nombre o código..." />
+                            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltro">
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="tablaProductosModal">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Código</th>
+                                <th>Cantidad en Inventario</th>
+                                <th>Precio Unitario</th>
+                                <th width="100">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bodyProductosModal">
+                            <!-- Los productos se cargan dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="noProductsMessage" class="text-center py-4" style="display: none;">
+                    <h6 class="text-muted">No se encontraron productos</h6>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
@@ -330,7 +376,91 @@
 
         // Objeto para manejar las funciones de compras
         const CompraManager = {
-            // Función para buscar productos
+            // Variables para el modal de productos
+            productosModalData: [],
+            
+            // Función para cargar productos en el modal
+            cargarProductosModal: function() {
+                // Obtener datos de productos con información de inventario
+                $.get('/Operaciones/Compras/Upsert?handler=ProductosInventario')
+                    .done(function(data) {
+                        if (data.success) {
+                            CompraManager.productosModalData = data.productos;
+                            CompraManager.mostrarProductosModal(CompraManager.productosModalData);
+                        } else {
+                            alert('Error al cargar productos: ' + data.message);
+                        }
+                    })
+                    .fail(function() {
+                        alert('Error al conectar con el servidor');
+                    });
+            },
+
+            // Función para mostrar productos en el modal
+            mostrarProductosModal: function(productos) {
+                const tbody = $('#bodyProductosModal');
+                tbody.empty();
+
+                if (productos.length === 0) {
+                    $('#noProductsMessage').show();
+                    return;
+                }
+
+                $('#noProductsMessage').hide();
+
+                productos.forEach((producto, index) => {
+                    const row = `
+                        <tr>
+                            <td>
+                                <strong>${producto.nombre}</strong>
+                                <br><small class="text-muted">${producto.descripcion || ''}</small>
+                            </td>
+                            <td>${producto.codigo}</td>
+                            <td>
+                                <span class="badge ${producto.cantidadInventario > 0 ? 'bg-success' : 'bg-warning'}">
+                                    ${producto.cantidadInventario} unidades
+                                </span>
+                            </td>
+                            <td>₡${parseFloat(producto.costo || 0).toFixed(2)}</td>
+                            <td>
+                                <button type="button" class="btn btn-primary btn-sm" 
+                                        onclick="CompraManager.seleccionarProducto('${producto.codigo}', '${producto.nombre}', ${producto.costo || 0})"
+                                        data-bs-dismiss="modal">
+                                    Seleccionar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            },
+
+            // Función para seleccionar un producto del modal
+            seleccionarProducto: function(codigo, nombre, costo) {
+                $('#inputBuscarProducto').val(`${codigo} - ${nombre}`).data('codigo', codigo);
+                $('#inputCostoUnitario').val(costo);
+                $('#inputCantidad').focus();
+            },
+
+            // Función para filtrar productos en el modal
+            filtrarProductos: function() {
+                const filtro = $('#filtroProducto').val().toLowerCase();
+                
+                if (!filtro) {
+                    this.mostrarProductosModal(this.productosModalData);
+                    return;
+                }
+
+                const productosFiltrados = this.productosModalData.filter(producto => 
+                    producto.nombre.toLowerCase().includes(filtro) || 
+                    producto.codigo.toLowerCase().includes(filtro) ||
+                    (producto.descripcion && producto.descripcion.toLowerCase().includes(filtro))
+                );
+
+                this.mostrarProductosModal(productosFiltrados);
+            },
+
+            // Función para buscar productos (mantenemos para compatibilidad)
             buscarProducto: function() {
                 const busqueda = $('#inputBuscarProducto').val().toLowerCase();
                 
@@ -668,7 +798,21 @@
             CompraManager.actualizarVistaProductos();
             CompraManager.calcularTotales();
 
-            // Event listeners
+            // Event listeners para el modal
+            $('#modalSeleccionarProducto').on('show.bs.modal', function() {
+                CompraManager.cargarProductosModal();
+            });
+
+            $('#filtroProducto').on('input', function() {
+                CompraManager.filtrarProductos();
+            });
+
+            $('#btnLimpiarFiltro').on('click', function() {
+                $('#filtroProducto').val('');
+                CompraManager.mostrarProductosModal(CompraManager.productosModalData);
+            });
+
+            // Event listeners originales
             $('#btnBuscarProducto').on('click', function() {
                 CompraManager.buscarProducto();
             });
