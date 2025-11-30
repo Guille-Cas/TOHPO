@@ -11,12 +11,15 @@ namespace TOHPO.Models
 
         [Required(ErrorMessage = "La cantidad es obligatoria")]
         [DisplayName("Cantidad")]
+        [Range(0, int.MaxValue, ErrorMessage = "La cantidad no puede ser negativa")]
         public int Cantidad { get; set; }
 
         [DisplayName("Existencia")]
+        [Range(0, int.MaxValue, ErrorMessage = "La existencia no puede ser negativa")]
         public int Existencia { get; set; }
 
         [DisplayName("Reservado")]
+        [Range(0, int.MaxValue, ErrorMessage = "El reservado no puede ser negativo")]
         public int Reservado { get; set; } = 0;
 
         [Required(ErrorMessage = "El precio de venta es obligatorio")]
@@ -27,6 +30,7 @@ namespace TOHPO.Models
 
         [DisplayName("Precio de compra")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El precio de compra no puede ser negativo")]
         public decimal Precio_Compra { get; set; }
 
         public bool Estado { get; set; }

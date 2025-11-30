@@ -11,6 +11,8 @@ namespace TOHPO.Models
 
         [Required(ErrorMessage = "La descripción es obligatoria")]
         [DisplayName("Descripción")]
+        [RegularExpression(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$", ErrorMessage = "La descripción solo debe contener texto, no números ni símbolos")]
+        [StringLength(100, ErrorMessage = "La descripción no puede exceder 100 caracteres")]
         public string Descripcion { get; set; }
 
         [Required(ErrorMessage = "El Porcentaje es obligatorio")]

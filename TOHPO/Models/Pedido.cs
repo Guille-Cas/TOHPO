@@ -19,14 +19,17 @@ namespace TOHPO.Models
 
         [DisplayName("Abono")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El abono no puede ser negativo")]
         public decimal Abono { get; set; }
 
         [DisplayName("Saldo")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El saldo no puede ser negativo")]
         public decimal Saldo { get; set; }
 
         [DisplayName("Total")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El total no puede ser negativo")]
         public decimal Total { get; set; }
 
         public bool Estado { get; set; }

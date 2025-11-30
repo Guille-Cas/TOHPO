@@ -1,5 +1,5 @@
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TOHPO.Models
@@ -19,14 +19,17 @@ namespace TOHPO.Models
 
         [DisplayName("Costo total gravado")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El costo total gravado no puede ser negativo")]
         public decimal Costo_Total_Gravado { get; set; }
 
         [DisplayName("IVA")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El IVA no puede ser negativo")]
         public decimal Iva { get; set; }
 
         [DisplayName("Total")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El total no puede ser negativo")]
         public decimal Total { get; set; }
 
         public DateTime Hora { get; set; }

@@ -1,5 +1,5 @@
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TOHPO.Models
@@ -24,16 +24,19 @@ namespace TOHPO.Models
         [Required(ErrorMessage = "El costo total grabado es obligatorio")]
         [DisplayName("Costo Total Grabado")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El costo total grabado no puede ser negativo")]
         public decimal Costo_Total_Grabado { get; set; }
 
         [Required(ErrorMessage = "El IVA es obligatorio")]
         [DisplayName("IVA")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El IVA no puede ser negativo")]
         public decimal Iva { get; set; }
 
         [Required(ErrorMessage = "El total es obligatorio")]
         [DisplayName("Total")]
         [Column(TypeName = "decimal(18,2)")]
+        [Range(0, double.MaxValue, ErrorMessage = "El total no puede ser negativo")]
         public decimal Total { get; set; }
 
         // Relaciones
