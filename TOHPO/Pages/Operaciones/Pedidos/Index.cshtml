@@ -14,7 +14,7 @@
                     </h3>
                     <div class="card-tools">
                         <a asp-page="./Upsert" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus"></i> Nuevo Pedido
+                            Nuevo Pedido
                         </a>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                                     <label class="form-label">&nbsp;</label>
                                     <div class="d-grid">
                                         <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search"></i> Filtrar
+                                            Filtrar
                                         </button>
                                     </div>
                                 </div>
@@ -66,7 +66,7 @@
                                     <label class="form-label">&nbsp;</label>
                                     <div class="d-grid">
                                         <a href="@Url.Page("Index")" class="btn btn-secondary">
-                                            <i class="fas fa-times"></i>
+                                            Actualizar
                                         </a>
                                     </div>
                                 </div>
@@ -153,29 +153,45 @@
                                                     <button type="button" class="btn btn-info btn-sm" 
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#detalleModal@(pedido.Id)">
-                                                        <i class="fas fa-eye"></i>
+                                                        Detalles
                                                     </button>
                                                     
                                                     <!-- Editar -->
                                                     <a asp-page="./Upsert" asp-route-id="@pedido.Id" 
                                                        class="btn btn-warning btn-sm">
-                                                        <i class="fas fa-edit"></i>
+                                                        Editar
                                                     </a>
                                                     
-                                                    <!-- Cambiar estado -->
-                                                    <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id" 
-                                                       class="btn @(pedido.Estado ? "btn-secondary" : "btn-success") btn-sm"
-                                                       onclick="return confirm('@(pedido.Estado ? "¿Cancelar este pedido?" : "¿Completar este pedido?")')">
-                                                        <i class="fas @(pedido.Estado ? "fa-times" : "fa-check")"></i>
-                                                    </a>
+                                                    <!-- MEJORA: Cambiar estado con botón dinámico -->
+                                                    @if (pedido.Estado)
+                                                    {
+                                                        <!-- Pedido completado - opción para marcar como pendiente -->
+                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id" 
+                                                           class="btn btn-outline-secondary btn-sm"
+                                                           onclick="return confirm('¿Desea marcar este pedido como pendiente nuevamente?')"
+                                                           title="Marcar como pendiente">
+                                                            Reabrir
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <!-- Pedido pendiente - opción para completar -->
+                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id" 
+                                                           class="btn btn-success btn-sm"
+                                                           onclick="return confirm('¿Confirma que desea completar este pedido?')"
+                                                           title="Marcar como completado">
+                                                            Completar
+                                                        </a>
+                                                    }
                                                     
-                                                    <!-- Eliminar -->
+                                                    <!-- Eliminar - solo para pedidos pendientes -->
                                                     @if (!pedido.Estado)
                                                     {
                                                         <a asp-page-handler="Eliminar" asp-route-id="@pedido.Id" 
                                                            class="btn btn-danger btn-sm"
-                                                           onclick="return confirm('¿Está seguro de eliminar este pedido?')">
-                                                            <i class="fas fa-trash"></i>
+                                                           onclick="return confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')"
+                                                           title="Eliminar pedido">
+                                                            Eliminar
                                                         </a>
                                                     }
                                                 </div>
@@ -216,6 +232,17 @@
                         <div class="row mb-3">
                             <div class="col-6">
                                 <strong>Cliente:</strong> @pedido.Cliente.Nombre @pedido.Cliente.Primer_Apellido @pedido.Cliente.Segundo_Apellido
+                            </div>
+                            <div class="col-6">
+                                <strong>Estado:</strong> 
+                                @if (pedido.Estado)
+                                {
+                                    <span class="badge bg-success">Completado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pendiente</span>
+                                }
                             </div>
                         </div>
                         <div class="row mb-3">
