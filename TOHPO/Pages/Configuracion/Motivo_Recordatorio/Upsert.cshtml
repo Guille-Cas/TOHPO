@@ -1,0 +1,55 @@
+@page "{id:int?}"
+@model TOHPO.Pages.Configuracion.Motivo_Recordatorio.UpsertModel
+@{
+    ViewData["Title"] = Model.MotivoRecordatorio.Id == 0 ? "Crear Motivo" : "Editar Motivo";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <!-- ENCABEZADO -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        @ViewData["Title"]
+                    </h3>
+                    <a asp-page="./Index" class="btn btn-light">
+                        <i class="bi bi-arrow-left"></i> Regresar
+                    </a>
+                </div>
+
+                <!-- CONTENIDO -->
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <!-- ID oculto -->
+                        <input asp-for="MotivoRecordatorio.Id" type="hidden" />
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label asp-for="MotivoRecordatorio.Descripcion" class="form-label"></label>
+                            <input asp-for="MotivoRecordatorio.Descripcion" class="form-control" placeholder="Ingrese la descripción del motivo" />
+                            <span asp-validation-for="MotivoRecordatorio.Descripcion" class="text-danger"></span>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a asp-page="./Index" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                @(Model.MotivoRecordatorio.Id == 0 ? "Crear" : "Actualizar")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
