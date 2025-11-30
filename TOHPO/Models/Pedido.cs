@@ -41,5 +41,6 @@ namespace TOHPO.Models
 
         // Navegación
         public ICollection<Pedido_Detalle> Pedido_Detalles { get; set; } = new List<Pedido_Detalle>();
+        public ICollection<Pedido_Metodo_Pago> Pedido_Metodo_Pagos { get; set; } = new List<Pedido_Metodo_Pago>();
     }
 }

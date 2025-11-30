@@ -45,7 +45,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
                 return Page();
             }
 
-            var pedido = await _context.Pedido
+           var pedido = await _context.Pedido
                 .Include(p => p.Cliente)
                 .Include(p => p.Pedido_Detalles)
                     .ThenInclude(pd => pd.Producto)

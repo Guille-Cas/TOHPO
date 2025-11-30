@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +22,11 @@ namespace TOHPO.Pages.Operaciones.Compras
         [BindProperty]
         public List<DetalleCompraViewModel> DetallesCompra { get; set; } = new List<DetalleCompraViewModel>();
 
+        [BindProperty]
+        public List<MetodoPagoViewModel> MetodosPago { get; set; } = new List<MetodoPagoViewModel>();
+
         public SelectList ProveedoresList { get; set; } = default!;
+        public SelectList MetodosPagoList { get; set; } = default!;
         public List<Producto> ProductosDisponibles { get; set; } = new List<Producto>();
 
         public class DetalleCompraViewModel
@@ -39,6 +43,14 @@ namespace TOHPO.Pages.Operaciones.Compras
             public decimal PorcentajeImpuesto { get; set; }
         }
 
+        public class MetodoPagoViewModel
+        {
+            public int Id { get; set; }
+            public int IdMetodoPago { get; set; }
+            public string NombreMetodoPago { get; set; } = string.Empty;
+            public decimal Monto { get; set; }
+        }
+
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             await CargarDatos();
@@ -49,6 +61,8 @@ namespace TOHPO.Pages.Operaciones.Compras
                     .Include(c => c.Compra_Detalles)
                         .ThenInclude(cd => cd.Producto)
                             .ThenInclude(p => p.Impuesto)
+                    .Include(c => c.Compra_Metodo_Pagos)
+                        .ThenInclude(cmp => cmp.Metodo_Pago)
                     .FirstOrDefaultAsync(c => c.Id == id.Value);
 
                 if (compra == null)
@@ -59,6 +73,7 @@ namespace TOHPO.Pages.Operaciones.Compras
 
                 Compra = compra;
 
+                // Cargar detalles para edición
                 DetallesCompra = compra.Compra_Detalles.Select(cd => new DetalleCompraViewModel
                 {
                     Id = cd.Id,
@@ -71,6 +86,15 @@ namespace TOHPO.Pages.Operaciones.Compras
                     MontoImpuesto = cd.Monto_Impuesto,
                     Subtotal = cd.Subtotal,
                     PorcentajeImpuesto = cd.Producto.Impuesto?.Porcentaje ?? 0
+                }).ToList();
+
+                // CORRECCIÓN: Cargar métodos de pago para edición - esta línea estaba correcta
+                MetodosPago = compra.Compra_Metodo_Pagos.Select(cmp => new MetodoPagoViewModel
+                {
+                    Id = cmp.Id,
+                    IdMetodoPago = cmp.Id_Metodo_Pago,
+                    NombreMetodoPago = cmp.Metodo_Pago.Descripcion,
+                    Monto = cmp.Monto
                 }).ToList();
             }
             else
@@ -85,8 +109,10 @@ namespace TOHPO.Pages.Operaciones.Compras
 
         public async Task<IActionResult> OnPostAsync()
         {
+            // Remover validaciones que no son necesarias
             ModelState.Remove("Compra.Proveedor");
-            ModelState.Remove("Compra.Concepto");
+            ModelState.Remove("Compra.Compra_Detalles");
+            ModelState.Remove("Compra.Compra_Metodo_Pagos");
             
             if (!ModelState.IsValid)
             {
@@ -94,70 +120,71 @@ namespace TOHPO.Pages.Operaciones.Compras
                 return Page();
             }
 
-            if (!DetallesCompra.Any())
+            // Validar que hay productos en la compra
+            if (DetallesCompra == null || !DetallesCompra.Any())
             {
-                ModelState.AddModelError("", "Debe agregar al menos un producto a la compra");
+                TempData["ErrorMessage"] = "Debe agregar al menos un producto a la compra";
+                await CargarDatos();
+                return Page();
+            }
+
+            // Validar que hay métodos de pago
+            if (MetodosPago == null || !MetodosPago.Any())
+            {
+                TempData["ErrorMessage"] = "Debe agregar al menos un método de pago";
+                await CargarDatos();
+                return Page();
+            }
+
+            // Calcular totales antes de la validación
+            CalcularTotales();
+
+            // Validar que los totales de métodos de pago coincidan con el total de la compra
+            var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
+            var totalCompraRedondeado = Math.Round(Compra.Total, 2);
+            var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
+            
+            if (totalCompraRedondeado != totalPagosRedondeado)
+            {
+                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) debe coincidir con el total de la compra (₡{totalCompraRedondeado:F2}). Diferencia: ₡{Math.Abs(totalCompraRedondeado - totalPagosRedondeado):F2}";
                 await CargarDatos();
                 return Page();
             }
 
             try
             {
-                bool esNueva = Compra.Id == 0;
-
-                // Validar que todos los productos est�n registrados
+                // Validar que todos los productos estén registrados
                 var validacionProductos = await ValidarProductosRegistrados();
                 if (!validacionProductos.esValido)
                 {
-                    ModelState.AddModelError("", validacionProductos.mensaje);
+                    TempData["ErrorMessage"] = validacionProductos.mensaje;
                     await CargarDatos();
                     return Page();
                 }
 
-                // Calcular totales
-                CalcularTotales();
+                using var transaction = await _context.Database.BeginTransactionAsync();
 
-                if (esNueva)
+                // CORRECCIÓN: Verificar si es nueva o edición basándose en si existe el ID en la base de datos
+                var compraExistente = await _context.Compra.FirstOrDefaultAsync(c => c.Id == Compra.Id);
+                
+                if (compraExistente == null)
                 {
-                    _context.Compra.Add(Compra);
-                    await _context.SaveChangesAsync();
-
-                    // Crear detalles y actualizar inventario
-                    foreach (var detalle in DetallesCompra)
-                    {
-                        var detalleCompra = new Compra_Detalle
-                        {
-                            Id_Compra = Compra.Id,
-                            Codigo_Producto = detalle.CodigoProducto,
-                            Cantidad = detalle.Cantidad,
-                            Costo_Unitario = detalle.CostoUnitario,
-                            Porcentaje_Descuento = detalle.PorcentajeDescuento,
-                            Monto_Descuento = detalle.MontoDescuento,
-                            Monto_Impuesto = detalle.MontoImpuesto,
-                            Subtotal = detalle.Subtotal
-                        };
-                        _context.Compra_Detalle.Add(detalleCompra);
-
-                        // Actualizar inventario
-                        await ActualizarInventario(detalle.CodigoProducto, detalle.Cantidad, "ENTRADA", $"Compra #{Compra.Id}");
-                    }
-
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Compra registrada exitosamente";
+                    // Nueva compra - si no existe en la BD, es nueva
+                    await CrearNuevaCompra();
                 }
                 else
                 {
-                    // Editar compra existente usando el m�todo diferencial
+                    // Actualizar compra existente - si existe en la BD, es edición
                     await ActualizarCompraExistente();
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Compra actualizada exitosamente";
                 }
 
+                await transaction.CommitAsync();
+                TempData["SuccessMessage"] = compraExistente == null ? "Compra creada exitosamente" : "Compra actualizada exitosamente";
                 return RedirectToPage("./Index");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", $"Error al procesar la compra: {ex.Message}");
+                TempData["ErrorMessage"] = "Error al procesar la compra: " + ex.Message;
                 await CargarDatos();
                 return Page();
             }
@@ -167,19 +194,19 @@ namespace TOHPO.Pages.Operaciones.Compras
         {
             if (string.IsNullOrEmpty(codigo))
             {
-                return new JsonResult(new { success = false, message = "C�digo de producto no v�lido" });
+                return new JsonResult(new { success = false, message = "Código de producto no válido" });
             }
 
             try
             {
                 var producto = await _context.Producto
                     .Include(p => p.Impuesto)
-                    .Include(p => p.Inventario) // Incluir inventario para obtener precio de compra
+                    .Include(p => p.Inventario)
                     .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo);
 
                 if (producto == null)
                 {
-                    return new JsonResult(new { success = false, message = "Producto no encontrado en el cat�logo" });
+                    return new JsonResult(new { success = false, message = "Producto no encontrado en el catálogo" });
                 }
 
                 // Verificar si el producto tiene inventario registrado
@@ -198,12 +225,10 @@ namespace TOHPO.Pages.Operaciones.Compras
                 // Determinar el costo unitario sugerido
                 decimal costoUnitarioSugerido = 0;
                 
-                // Prioridad 1: Precio de compra actual en inventario (si existe y es mayor a 0)
                 if (inventario.Precio_Compra > 0)
                 {
                     costoUnitarioSugerido = inventario.Precio_Compra;
                 }
-                // Prioridad 2: Buscar la �ltima compra de este producto
                 else
                 {
                     var ultimaCompra = await _context.Compra_Detalle
@@ -217,27 +242,143 @@ namespace TOHPO.Pages.Operaciones.Compras
                     {
                         costoUnitarioSugerido = ultimaCompra.Costo_Unitario;
                     }
-                    // Si no hay hist�rico, dejar en 0 para que el usuario ingrese el precio
                 }
 
                 var productoInfo = new
                 {
                     codigo = producto.CodigoReferencia,
                     nombre = producto.Descripcion,
-                    porcentajeImpuesto = producto.Impuesto?.Porcentaje ?? 0,
-                    cantidadTotal = inventario.Cantidad,
-                    existenciaDisponible = inventario.Existencia,
-                    costoUnitarioSugerido = costoUnitarioSugerido,
-                    precioCompraActual = inventario.Precio_Compra,
-                    tieneHistorialCompras = costoUnitarioSugerido > 0
+                    costo = costoUnitarioSugerido,
+                    porcentajeImpuesto = producto.Impuesto?.Porcentaje ?? 0
                 };
 
                 return new JsonResult(new { success = true, producto = productoInfo });
             }
             catch (Exception ex)
             {
-                return new JsonResult(new { success = false, message = $"Error al obtener informaci�n del producto: {ex.Message}" });
+                return new JsonResult(new { success = false, message = $"Error al obtener información del producto: {ex.Message}" });
             }
+        }
+
+        private async Task CrearNuevaCompra()
+        {
+            // Calcular totales
+            CalcularTotales();
+
+            // Agregar la compra
+            _context.Compra.Add(Compra);
+            await _context.SaveChangesAsync();
+
+            // Agregar detalles de compra
+            foreach (var detalle in DetallesCompra)
+            {
+                var detalleCompra = new Compra_Detalle
+                {
+                    Id_Compra = Compra.Id,
+                    Codigo_Producto = detalle.CodigoProducto,
+                    Cantidad = detalle.Cantidad,
+                    Costo_Unitario = detalle.CostoUnitario,
+                    Porcentaje_Descuento = detalle.PorcentajeDescuento,
+                    Monto_Descuento = CalcularMontoDescuento(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento),
+                    Monto_Impuesto = CalcularMontoImpuesto(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento, detalle.PorcentajeImpuesto),
+                    Subtotal = CalcularSubtotal(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento)
+                };
+
+                _context.Compra_Detalle.Add(detalleCompra);
+
+                // Actualizar inventario - aumentar existencias
+                await ActualizarInventario(detalle.CodigoProducto, detalle.Cantidad, "ENTRADA", $"Compra #{Compra.Id}");
+            }
+
+            // Agregar métodos de pago
+            foreach (var metodoPago in MetodosPago)
+            {
+                var compraMetodoPago = new Compra_Metodo_Pago
+                {
+                    Id_Compra = Compra.Id,
+                    Id_Metodo_Pago = metodoPago.IdMetodoPago,
+                    Monto = metodoPago.Monto
+                };
+
+                _context.Compra_Metodo_Pago.Add(compraMetodoPago);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task ActualizarCompraExistente()
+        {
+            // Obtener compra existente con sus detalles y métodos de pago
+            var compraExistente = await _context.Compra
+                .Include(c => c.Compra_Detalles)
+                .Include(c => c.Compra_Metodo_Pagos)
+                .FirstOrDefaultAsync(c => c.Id == Compra.Id);
+
+            if (compraExistente == null)
+            {
+                throw new InvalidOperationException("Compra no encontrada");
+            }
+
+            // Restaurar inventario de la compra original
+            foreach (var detalleOriginal in compraExistente.Compra_Detalles)
+            {
+                await ActualizarInventario(detalleOriginal.Codigo_Producto, detalleOriginal.Cantidad, "SALIDA", $"Reversión edición compra #{Compra.Id}");
+            }
+
+            // Eliminar detalles y métodos de pago existentes
+            _context.Compra_Detalle.RemoveRange(compraExistente.Compra_Detalles);
+            _context.Compra_Metodo_Pago.RemoveRange(compraExistente.Compra_Metodo_Pagos);
+
+            // Actualizar datos de la compra
+            compraExistente.Fecha = Compra.Fecha;
+            compraExistente.Hora = Compra.Hora;
+            compraExistente.Id_Proveedor = Compra.Id_Proveedor;
+            compraExistente.Concepto = Compra.Concepto;
+
+            // Calcular nuevos totales
+            CalcularTotales();
+            compraExistente.Costo_Total_Grabado = Compra.Costo_Total_Grabado;
+            compraExistente.Iva = Compra.Iva;
+            compraExistente.Total = Compra.Total;
+
+            _context.Compra.Update(compraExistente);
+            await _context.SaveChangesAsync();
+
+            // Agregar nuevos detalles
+            foreach (var detalle in DetallesCompra)
+            {
+                var detalleCompra = new Compra_Detalle
+                {
+                    Id_Compra = Compra.Id,
+                    Codigo_Producto = detalle.CodigoProducto,
+                    Cantidad = detalle.Cantidad,
+                    Costo_Unitario = detalle.CostoUnitario,
+                    Porcentaje_Descuento = detalle.PorcentajeDescuento,
+                    Monto_Descuento = CalcularMontoDescuento(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento),
+                    Monto_Impuesto = CalcularMontoImpuesto(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento, detalle.PorcentajeImpuesto),
+                    Subtotal = CalcularSubtotal(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento)
+                };
+
+                _context.Compra_Detalle.Add(detalleCompra);
+
+                // Actualizar inventario - aumentar existencias
+                await ActualizarInventario(detalle.CodigoProducto, detalle.Cantidad, "ENTRADA", $"Compra #{Compra.Id}");
+            }
+
+            // Agregar nuevos métodos de pago
+            foreach (var metodoPago in MetodosPago)
+            {
+                var compraMetodoPago = new Compra_Metodo_Pago
+                {
+                    Id_Compra = Compra.Id,
+                    Id_Metodo_Pago = metodoPago.IdMetodoPago,
+                    Monto = metodoPago.Monto
+                };
+
+                _context.Compra_Metodo_Pago.Add(compraMetodoPago);
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task CargarDatos()
@@ -248,6 +389,13 @@ namespace TOHPO.Pages.Operaciones.Compras
                 .ToListAsync();
 
             ProveedoresList = new SelectList(proveedores, "Id", "Nombre");
+
+            // Cargar métodos de pago
+            var metodosPago = await _context.Metodo_Pago
+                .OrderBy(mp => mp.Descripcion)
+                .ToListAsync();
+
+            MetodosPagoList = new SelectList(metodosPago, "Id", "Descripcion");
 
             // Cargar productos disponibles
             ProductosDisponibles = await _context.Producto
@@ -266,7 +414,7 @@ namespace TOHPO.Pages.Operaciones.Compras
 
                 if (producto == null)
                 {
-                    return (false, $"El producto con c�digo {detalle.CodigoProducto} no est� registrado en el cat�logo.");
+                    return (false, $"El producto con código {detalle.CodigoProducto} no está registrado en el catálogo.");
                 }
 
                 // Verificar que el producto tenga inventario registrado
@@ -284,33 +432,46 @@ namespace TOHPO.Pages.Operaciones.Compras
 
         private void CalcularTotales()
         {
-            decimal subtotal = 0;
+            decimal subtotalSinDescuento = 0;
             decimal totalDescuentos = 0;
-            decimal totalIva = 0;
+            decimal totalImpuestos = 0;
 
             foreach (var detalle in DetallesCompra)
             {
-                // Calcular monto de descuento
-                detalle.MontoDescuento = (detalle.CostoUnitario * detalle.Cantidad) * (detalle.PorcentajeDescuento / 100);
+                var subtotalLinea = detalle.CostoUnitario * detalle.Cantidad;
+                var descuentoLinea = CalcularMontoDescuento(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento);
+                var subtotalConDescuento = subtotalLinea - descuentoLinea;
+                var impuestoLinea = CalcularMontoImpuesto(detalle.CostoUnitario, detalle.Cantidad, detalle.PorcentajeDescuento, detalle.PorcentajeImpuesto);
 
-                // Subtotal sin impuesto
-                decimal subtotalSinImpuesto = (detalle.CostoUnitario * detalle.Cantidad) - detalle.MontoDescuento;
-
-                // Calcular impuesto
-                detalle.MontoImpuesto = subtotalSinImpuesto * (detalle.PorcentajeImpuesto / 100);
-
-                // Subtotal final del producto
-                detalle.Subtotal = subtotalSinImpuesto + detalle.MontoImpuesto;
-
-                // Acumular
-                subtotal += subtotalSinImpuesto;
-                totalDescuentos += detalle.MontoDescuento;
-                totalIva += detalle.MontoImpuesto;
+                subtotalSinDescuento += subtotalLinea;
+                totalDescuentos += descuentoLinea;
+                totalImpuestos += impuestoLinea;
             }
 
-            Compra.Costo_Total_Grabado = subtotal;
-            Compra.Iva = totalIva;
-            Compra.Total = subtotal + totalIva;
+            Compra.Costo_Total_Grabado = subtotalSinDescuento - totalDescuentos;
+            Compra.Iva = totalImpuestos;
+            Compra.Total = Compra.Costo_Total_Grabado + Compra.Iva;
+        }
+
+        private decimal CalcularMontoDescuento(decimal costoUnitario, int cantidad, decimal porcentajeDescuento)
+        {
+            var subtotal = costoUnitario * cantidad;
+            return subtotal * (porcentajeDescuento / 100);
+        }
+
+        private decimal CalcularMontoImpuesto(decimal costoUnitario, int cantidad, decimal porcentajeDescuento, decimal porcentajeImpuesto)
+        {
+            var subtotal = costoUnitario * cantidad;
+            var descuento = CalcularMontoDescuento(costoUnitario, cantidad, porcentajeDescuento);
+            var subtotalConDescuento = subtotal - descuento;
+            return subtotalConDescuento * (porcentajeImpuesto / 100);
+        }
+
+        private decimal CalcularSubtotal(decimal costoUnitario, int cantidad, decimal porcentajeDescuento)
+        {
+            var subtotal = costoUnitario * cantidad;
+            var descuento = CalcularMontoDescuento(costoUnitario, cantidad, porcentajeDescuento);
+            return subtotal - descuento;
         }
 
         private async Task ActualizarInventario(string codigoProducto, int cantidad, string tipoMovimiento, string concepto)
@@ -323,45 +484,35 @@ namespace TOHPO.Pages.Operaciones.Compras
 
                 if (inventario == null)
                 {
-                    throw new Exception($"No se encontr� inventario para el producto {codigoProducto}");
+                    throw new Exception($"No se encontró inventario para el producto {codigoProducto}");
                 }
 
-                // Actualizar tanto Cantidad como Existencia de manera coherente
-                // Para compras (ENTRADA): se aumentan ambos valores
+                // Actualizar inventario según tipo de movimiento
                 if (tipoMovimiento == "ENTRADA")
                 {
-                    inventario.Cantidad += cantidad;      // Cantidad total acumulada
-                    inventario.Existencia += cantidad;    // Existencia disponible actual
-                }
-                else if (tipoMovimiento == "SALIDA")
-                {
-                    inventario.Cantidad -= cantidad;      // Cantidad total
-                    inventario.Existencia -= cantidad;    // Existencia disponible
-
-                    // Validar que no queden valores negativos
-                    if (inventario.Cantidad < 0)
-                    {
-                        throw new Exception($"La cantidad total del producto {codigoProducto} no puede ser negativa.");
-                    }
+                    inventario.Cantidad += cantidad;
+                    inventario.Existencia += cantidad;
                     
-                    if (inventario.Existencia < 0)
-                    {
-                        throw new Exception($"La existencia del producto {codigoProducto} no puede ser negativa.");
-                    }
-                }
-
-                // Actualizar precio de compra si es una entrada
-                if (tipoMovimiento == "ENTRADA" && cantidad > 0)
-                {
-                    // Buscar el detalle de compra para obtener el costo unitario
+                    // Actualizar precio de compra
                     var detalleCompra = DetallesCompra.FirstOrDefault(d => d.CodigoProducto == codigoProducto);
                     if (detalleCompra != null)
                     {
                         inventario.Precio_Compra = detalleCompra.CostoUnitario;
                     }
                 }
+                else if (tipoMovimiento == "SALIDA")
+                {
+                    inventario.Cantidad -= cantidad;
+                    inventario.Existencia -= cantidad;
 
-                // Crear movimiento de inventario para auditor�a
+                    // Validar que no queden valores negativos
+                    if (inventario.Cantidad < 0 || inventario.Existencia < 0)
+                    {
+                        throw new Exception($"La cantidad del producto {codigoProducto} no puede ser negativa.");
+                    }
+                }
+
+                // Crear movimiento de inventario para auditoría
                 var movimiento = new Movimiento_Inventario
                 {
                     Id_Inventario = inventario.Id,
@@ -376,133 +527,6 @@ namespace TOHPO.Pages.Operaciones.Compras
             catch (Exception ex)
             {
                 throw new Exception($"Error al actualizar inventario para producto {codigoProducto}: {ex.Message}");
-            }
-        }
-
-        private async Task ActualizarCompraExistente()
-        {
-            // Obtener los detalles originales
-            var detallesOriginales = await _context.Compra_Detalle
-                .Where(cd => cd.Id_Compra == Compra.Id)
-                .ToListAsync();
-
-            // Crear un diccionario para manejar las diferencias
-            var cambiosInventario = new Dictionary<string, (int cantidad, decimal costoUnitario)>();
-
-            // Procesar productos originales (los restamos porque los "devolvemos" del inventario)
-            foreach (var detalleOriginal in detallesOriginales)
-            {
-                if (!cambiosInventario.ContainsKey(detalleOriginal.Codigo_Producto))
-                {
-                    cambiosInventario[detalleOriginal.Codigo_Producto] = (0, 0);
-                }
-                
-                // Restar la cantidad original (la sacamos del inventario)
-                var actual = cambiosInventario[detalleOriginal.Codigo_Producto];
-                cambiosInventario[detalleOriginal.Codigo_Producto] = (actual.cantidad - detalleOriginal.Cantidad, actual.costoUnitario);
-            }
-
-            // Procesar productos nuevos/actualizados (los sumamos al inventario)
-            foreach (var detalleNuevo in DetallesCompra)
-            {
-                if (!cambiosInventario.ContainsKey(detalleNuevo.CodigoProducto))
-                {
-                    cambiosInventario[detalleNuevo.CodigoProducto] = (0, 0);
-                }
-                
-                // Sumar la nueva cantidad (la agregamos al inventario)
-                var actual = cambiosInventario[detalleNuevo.CodigoProducto];
-                cambiosInventario[detalleNuevo.CodigoProducto] = (actual.cantidad + detalleNuevo.Cantidad, detalleNuevo.CostoUnitario);
-            }
-
-            // Aplicar cambios al inventario solo donde hay diferencias
-            foreach (var cambio in cambiosInventario)
-            {
-                if (cambio.Value.cantidad != 0) // Solo procesar si hay diferencia real
-                {
-                    var inventario = await _context.Inventario
-                        .Include(i => i.Producto)
-                        .FirstOrDefaultAsync(i => i.Codigo_Producto == cambio.Key);
-
-                    if (inventario != null)
-                    {
-                        // Verificar que el cambio no deje el inventario en negativo
-                        var nuevaCantidad = inventario.Cantidad + cambio.Value.cantidad;
-                        var nuevaExistencia = inventario.Existencia + cambio.Value.cantidad;
-                        
-                        if (nuevaCantidad < 0 || nuevaExistencia < 0)
-                        {
-                            throw new Exception($"No se puede reducir el inventario de {inventario.Producto.Descripcion}. " +
-                                              $"Disponible: {inventario.Existencia}, reducci�n requerida: {Math.Abs(cambio.Value.cantidad)}");
-                        }
-
-                        // Aplicar el cambio
-                        inventario.Cantidad = nuevaCantidad;
-                        inventario.Existencia = nuevaExistencia;
-                        
-                        // Actualizar precio de compra si hay cantidad positiva
-                        if (cambio.Value.cantidad > 0 && cambio.Value.costoUnitario > 0)
-                        {
-                            inventario.Precio_Compra = cambio.Value.costoUnitario;
-                        }
-                        
-                        _context.Inventario.Update(inventario);
-
-                        // Registrar movimiento
-                        string motivo;
-                        
-                        if (cambio.Value.cantidad > 0)
-                        {
-                            motivo = $"Ajuste positivo por edici�n de compra #{Compra.Id} (+{cambio.Value.cantidad})";
-                        }
-                        else
-                        {
-                            motivo = $"Ajuste negativo por edici�n de compra #{Compra.Id} ({cambio.Value.cantidad})";
-                        }
-
-                        var movimiento = new Movimiento_Inventario
-                        {
-                            Id_Inventario = inventario.Id,
-                            Cantidad = Math.Abs(cambio.Value.cantidad),
-                            Motivo = motivo,
-                            Fecha = DateTime.Now
-                        };
-                        _context.Movimiento_Inventario.Add(movimiento);
-                    }
-                }
-            }
-
-            // Actualizar propiedades de la compra
-            var compraExistente = await _context.Compra.FirstOrDefaultAsync(c => c.Id == Compra.Id);
-            if (compraExistente != null)
-            {
-                compraExistente.Fecha = Compra.Fecha;
-                compraExistente.Hora = Compra.Hora;
-                compraExistente.Id_Proveedor = Compra.Id_Proveedor;
-                compraExistente.Concepto = Compra.Concepto;
-                compraExistente.Costo_Total_Grabado = Compra.Costo_Total_Grabado;
-                compraExistente.Iva = Compra.Iva;
-                compraExistente.Total = Compra.Total;
-            }
-
-            // Eliminar detalles originales
-            _context.Compra_Detalle.RemoveRange(detallesOriginales);
-
-            // Crear nuevos detalles
-            foreach (var detalle in DetallesCompra)
-            {
-                var detalleCompra = new Compra_Detalle
-                {
-                    Id_Compra = Compra.Id,
-                    Codigo_Producto = detalle.CodigoProducto,
-                    Cantidad = detalle.Cantidad,
-                    Costo_Unitario = detalle.CostoUnitario,
-                    Porcentaje_Descuento = detalle.PorcentajeDescuento,
-                    Monto_Descuento = detalle.MontoDescuento,
-                    Monto_Impuesto = detalle.MontoImpuesto,
-                    Subtotal = detalle.Subtotal
-                };
-                _context.Compra_Detalle.Add(detalleCompra);
             }
         }
     }

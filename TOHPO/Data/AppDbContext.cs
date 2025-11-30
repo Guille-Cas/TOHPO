@@ -42,6 +42,8 @@ namespace TOHPO.Data
         // NUEVO: Modelo para materias primas de recetas
         public DbSet<Receta_Materia_Prima> Receta_Materia_Prima { get; set; }
 
+        // NUEVO: Modelo para métodos de pago de pedidos
+        public DbSet<Pedido_Metodo_Pago> Pedido_Metodo_Pago { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -23,6 +23,9 @@
                     <div class="card-body">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
+                        <!-- CORRECCIÓN: Campo oculto para el ID de la compra -->
+                        <input type="hidden" asp-for="Compra.Id" />
+
                         <!-- Información de la compra -->
                         <div class="row mb-4">
                             <div class="col-md-3">
@@ -182,6 +185,63 @@
                             </div>
                         </div>
 
+                        <!-- Sección de métodos de pago -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">Métodos de Pago</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Método de Pago</label>
+                                        <select id="selectMetodoPago" asp-items="Model.MetodosPagoList" class="form-select">
+                                            <option value="">-- Seleccionar Método --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Monto</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">₡</span>
+                                            <input type="number" id="inputMontoMetodo" class="form-control" step="0.01" min="0.01" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-primary d-block w-100" onclick="agregarMetodoPago()">
+                                            Agregar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Tabla de métodos de pago -->
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="tablaMetodosPago">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Método de Pago</th>
+                                                <th>Monto</th>
+                                                <th width="80">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="bodyMetodosPago">
+                                            <!-- Los métodos de pago se agregarán aquí dinámicamente -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-info">
+                                                <th>Total Pagos:</th>
+                                                <th id="totalPagos">₡0.00</th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <div class="alert alert-warning" id="alertaPagos" style="display: none;">
+                                    <strong>Atención:</strong> El total de pagos debe coincidir con el total de la compra.
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Campos ocultos para los detalles -->
                         <div id="hiddenFields"></div>
                     </div>
@@ -208,7 +268,7 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        // Variables globales
+        // Variables globales - adaptadas para compras
         let productos = @Html.Raw(Json.Serialize(Model.DetallesCompra));
         let productosDisponibles = @Html.Raw(Json.Serialize(Model.ProductosDisponibles.Select(p => new { 
             codigo = p.CodigoReferencia, 
@@ -216,6 +276,7 @@
             porcentajeImpuesto = p.Impuesto != null ? p.Impuesto.Porcentaje : 0
         })));
         let contadorProductos = productos.length;
+        let metodosPagoData = [];
 
         // Función para reiniciar el botón de guardar
         function reiniciarBotonGuardar() {
@@ -226,35 +287,44 @@
             guardarBtn.prop('disabled', false).html(textoOriginal);
         }
 
-        // Event listener para configuraciones iniciales
+        // Event listener para configuración inicial
         $(document).ready(function() {
             // Reiniciar botón al cargar la página (en caso de error del servidor)
             reiniciarBotonGuardar();
 
-            // Configurar la hora inicial sin segundos (mejorado)
+            // Configurar la hora inicial sin segundos
             const horaInput = $('#Compra_Hora');
             if (horaInput.length) {
-                // Si no hay valor o si queremos una nueva compra, establecer hora actual
                 if (horaInput.val() === '' || @Json.Serialize(Model.Compra.Id == 0)) {
                     const now = new Date();
                     const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
                                       now.getMinutes().toString().padStart(2, '0');
                     horaInput.val(timeString);
                 } else {
-                    // Para edición, asegurar formato HH:mm
                     const currentValue = horaInput.val();
                     if (currentValue.length > 5) {
                         horaInput.val(currentValue.substring(0, 5));
                     }
                 }
                 
-                // Evento para formatear la hora cuando cambie
                 horaInput.on('change', function() {
                     const value = $(this).val();
                     if (value && value.length > 5) {
                         $(this).val(value.substring(0, 5));
                     }
                 });
+            }
+
+            // Cargar métodos de pago existentes si es edición
+            if (@Json.Serialize(Model.MetodosPago != null && Model.MetodosPago.Any())) {
+                metodosPagoData = @Html.Raw(Json.Serialize(Model.MetodosPago.Select(mp => new {
+                    id = mp.Id,
+                    idMetodoPago = mp.IdMetodoPago,
+                    nombreMetodoPago = mp.NombreMetodoPago,
+                    monto = mp.Monto
+                })));
+                actualizarTablaMetodosPago();
+                actualizarValidacionPagos();
             }
         });
 
@@ -278,27 +348,12 @@
                 }
 
                 if (producto) {
-                    // Validar si el producto está registrado en inventario y obtener información completa
+                    // Obtener información adicional del producto
                     $.get(`/Operaciones/Compras/Upsert?handler=ProductoInfo&codigo=${producto.codigo}`)
                         .done(function(data) {
                             if (data.success) {
-                                // Llenar automáticamente el costo unitario sugerido
-                                $('#inputCostoUnitario').val(data.producto.costoUnitarioSugerido.toFixed(2));
+                                $('#inputCostoUnitario').val(data.producto.costo || 0);
                                 $('#inputBuscarProducto').val(`${data.producto.codigo} - ${data.producto.nombre}`).data('codigo', data.producto.codigo);
-                                
-                                // Mostrar información adicional si existe historial de compras
-                                if (data.producto.tieneHistorialCompras) {
-                                    // Cambiar el color del input para indicar que se sugiere un precio
-                                    $('#inputCostoUnitario').addClass('border-success').attr('title', `Precio sugerido basado en compras anteriores. Precio actual en inventario: ₡${data.producto.precioCompraActual.toFixed(2)}`);
-                                    
-                                    // Mostrar un mensaje informativo temporal
-                                    const mensaje = $('<small class="text-success" id="preciSugerido">✓ Precio sugerido cargado automáticamente</small>');
-                                    $('#inputCostoUnitario').parent().append(mensaje);
-                                    setTimeout(() => mensaje.fadeOut(), 3000);
-                                } else {
-                                    $('#inputCostoUnitario').removeClass('border-success').attr('title', 'Ingrese el costo unitario del producto');
-                                }
-                                
                                 $('#inputCantidad').focus();
                             } else {
                                 alert(data.message);
@@ -308,7 +363,7 @@
                             alert('Error al obtener información del producto');
                         });
                 } else {
-                    alert('Producto no encontrado en el catálogo');
+                    alert('Producto no encontrado');
                     $('#inputBuscarProducto').focus();
                 }
             },
@@ -327,7 +382,6 @@
 
                 if (costoUnitario <= 0) {
                     alert('El costo unitario debe ser mayor a 0');
-                    $('#inputCostoUnitario').focus();
                     return;
                 }
 
@@ -364,9 +418,8 @@
                 // Limpiar campos
                 $('#inputBuscarProducto').val('').removeData('codigo');
                 $('#inputCantidad').val(1);
-                $('#inputCostoUnitario').val('').removeClass('border-success').attr('title', '');
+                $('#inputCostoUnitario').val('');
                 $('#inputDescuento').val(0);
-                $('#preciSugerido').remove(); // Remover mensaje de precio sugerido
 
                 this.actualizarVistaProductos();
                 this.calcularTotales();
@@ -490,6 +543,9 @@
                 $('#ivaDisplay').text(`₡${totalIva.toFixed(2)}`);
                 $('#totalDisplay').text(`₡${total.toFixed(2)}`);
 
+                // Actualizar validación de pagos
+                actualizarValidacionPagos();
+
                 // Actualizar vista de productos
                 this.actualizarVistaProductos();
             },
@@ -497,7 +553,9 @@
             // Función para actualizar campos ocultos
             actualizarCamposOcultos: function() {
                 const container = $('#hiddenFields');
-                container.empty();
+                
+                // Limpiar campos previos de productos
+                container.find('[name*="DetallesCompra"]').remove();
 
                 productos.forEach((producto, index) => {
                     container.append(`
@@ -515,6 +573,95 @@
                 });
             }
         };
+
+        // Funciones de métodos de pago (copiadas exactamente de Ventas)
+        function agregarMetodoPago() {
+            const selectMetodo = document.getElementById('selectMetodoPago');
+            const inputMonto = document.getElementById('inputMontoMetodo');
+            
+            if (!selectMetodo.value || !inputMonto.value || parseFloat(inputMonto.value) <= 0) {
+                alert('Debe seleccionar un método de pago y un monto válido');
+                return;
+            }
+
+            const metodoPago = {
+                id: metodosPagoData.length + 1,
+                idMetodoPago: parseInt(selectMetodo.value),
+                nombreMetodoPago: selectMetodo.options[selectMetodo.selectedIndex].text,
+                monto: parseFloat(inputMonto.value)
+            };
+
+            metodosPagoData.push(metodoPago);
+            actualizarTablaMetodosPago();
+            actualizarValidacionPagos();
+            
+            // Limpiar campos
+            selectMetodo.value = '';
+            inputMonto.value = '';
+        }
+
+        function eliminarMetodoPago(index) {
+            metodosPagoData.splice(index, 1);
+            actualizarTablaMetodosPago();
+            actualizarValidacionPagos();
+        }
+
+        function actualizarTablaMetodosPago() {
+            const tbody = document.getElementById('bodyMetodosPago');
+            tbody.innerHTML = '';
+
+            metodosPagoData.forEach((metodo, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${metodo.nombreMetodoPago}</td>
+                    <td>₡${metodo.monto.toFixed(2)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="eliminarMetodoPago(${index})">
+                            Eliminar
+                        </button>
+                    </td>
+                `;
+            });
+
+            // Actualizar total de pagos
+            const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
+            document.getElementById('totalPagos').textContent = `₡${totalPagos.toFixed(2)}`;
+        }
+
+        function actualizarValidacionPagos() {
+            const totalCompra = parseFloat(document.getElementById('totalDisplay').textContent.replace('₡', '').replace(',', '')) || 0;
+            const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
+            
+            const alerta = document.getElementById('alertaPagos');
+            
+            if (Math.abs(totalCompra - totalPagos) > 0.01 && totalPagos > 0) {
+                alerta.style.display = 'block';
+                alerta.innerHTML = `
+                    <strong>Atención:</strong> 
+                    Total Compra: ₡${totalCompra.toFixed(2)} - 
+                    Total Pagos: ₡${totalPagos.toFixed(2)} - 
+                    Diferencia: ₡${(totalCompra - totalPagos).toFixed(2)}
+                `;
+            } else {
+                alerta.style.display = 'none';
+            }
+        }
+
+        function generarCamposOcultosMetodosPago() {
+            const hiddenFields = document.getElementById('hiddenFields');
+            
+            // Limpiar campos previos de métodos de pago
+            const prevMetodoFields = hiddenFields.querySelectorAll('[name*="MetodosPago"]');
+            prevMetodoFields.forEach(field => field.remove());
+
+            // Generar campos ocultos para métodos de pago
+            metodosPagoData.forEach((metodo, index) => {
+                hiddenFields.innerHTML += `
+                    <input type="hidden" name="MetodosPago[${index}].IdMetodoPago" value="${metodo.idMetodoPago}" />
+                    <input type="hidden" name="MetodosPago[${index}].Monto" value="${metodo.monto}" />
+                `;
+            });
+        }
 
         // Inicialización cuando el documento está listo
         $(document).ready(function() {
@@ -546,7 +693,7 @@
                 }
             });
 
-            // Validación antes de enviar con reinicio del botón en caso de fallo
+            // Validación antes de enviar
             $('#compraForm').on('submit', function(e) {
                 // Primero validar en cliente
                 if (productos.length === 0) {
@@ -563,6 +710,28 @@
                     reiniciarBotonGuardar();
                     return false;
                 }
+
+                // Validar métodos de pago
+                if (metodosPagoData.length === 0) {
+                    e.preventDefault();
+                    alert('Debe agregar al menos un método de pago');
+                    reiniciarBotonGuardar();
+                    return false;
+                }
+
+                // Validar que los totales coincidan
+                const totalCompra = parseFloat(document.getElementById('totalDisplay').textContent.replace('₡', '').replace(',', '')) || 0;
+                const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
+                
+                if (Math.abs(totalCompra - totalPagos) > 0.01) {
+                    e.preventDefault();
+                    alert(`Los totales no coinciden:\nCompra: ₡${totalCompra.toFixed(2)}\nPagos: ₡${totalPagos.toFixed(2)}`);
+                    reiniciarBotonGuardar();
+                    return false;
+                }
+
+                // Generar campos ocultos de métodos de pago
+                generarCamposOcultosMetodosPago();
 
                 // Si pasa las validaciones del cliente, deshabilitar botón
                 $('#guardarBtn').prop('disabled', true).html('Procesando...');
