@@ -4,6 +4,7 @@
     ViewData["Title"] = Model.Compra.Id == 0 ? "Nueva Compra - Registro de Inventario" : "Editar Compra";
 }
 
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -66,56 +67,51 @@
                         <div class="card mb-4">
                             <div class="card-header bg-success text-white">
                                 <h5 class="card-title mb-0">
-                                    Agregar Productos
+                                    <i class="fas fa-scanner"></i> Agregar Productos
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-10">
                                         <div class="form-group">
-                                            <label class="form-label">Buscar Producto</label>
+                                            <label class="form-label">Código/Nombre del Producto</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Hacer clic en Seleccionar para elegir producto..." readonly />
+                                                <input type="text" id="inputBuscarProducto" class="form-control form-control-lg" 
+                                                       placeholder="Escanee código de barras o ingrese código del producto..." 
+                                                       data-codigo="" data-porcentaje-impuesto="0"
+                                                       style="font-size: 1.1rem;" />
                                                 <button type="button" class="btn btn-outline-primary" id="btnSeleccionarProducto" data-bs-toggle="modal" data-bs-target="#modalSeleccionarProducto">
-                                                    Seleccionar
+                                                    <i class="fas fa-search"></i> Seleccionar
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Cantidad</label>
-                                            <input type="number" id="inputCantidad" class="form-control" value="1" min="1" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Costo Unit.</label>
-                                            <input type="number" id="inputCostoUnitario" class="form-control" step="0.01" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Desc. %</label>
-                                            <input type="number" id="inputDescuento" class="form-control" value="0" min="0" max="100" step="0.01" />
+                                            <small class="form-text text-success">
+                                                <i class="fas fa-barcode"></i> <strong>Escáner activo:</strong> Escanee el código de barras y se agregará automáticamente con cantidad 1
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label class="form-label">&nbsp;</label>
                                             <div class="d-grid">
-                                                <button type="button" class="btn btn-success" id="btnAgregarProducto">
-                                                    Agregar
+                                                <button type="button" class="btn btn-success btn-lg" id="btnAgregarProducto">
+                                                    <i class="fas fa-plus"></i> Agregar
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Campos ocultos para valores por defecto -->
+                                <input type="hidden" id="inputCantidad" value="1" />
+                                <input type="hidden" id="inputCostoUnitario" value="" />
+                                <input type="hidden" id="inputDescuento" value="0" />
+                                
                                 <div class="row mt-2">
                                     <div class="col-12">
                                         <div class="alert alert-info">
-                                            <strong>Validación de Inventario:</strong> Se verificará automáticamente que el producto esté registrado antes de agregarlo.
-                                            Los productos comprados se agregarán al inventario disponible.
+                                            <i class="fas fa-info-circle"></i> <strong>Modo Escáner Simplificado:</strong> 
+                                            Los productos se agregan automáticamente con cantidad 1, costo sugerido y sin descuento. 
+                                            Puede modificar estos valores directamente en la tabla de productos.
                                         </div>
                                     </div>
                                 </div>
@@ -343,7 +339,7 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-        <script src="~/js/Operaciones/compras-upsert.js"></script>
+    <script src="~/js/Operaciones/compras-upsert.js"></script>
 
     <script>
         // Variables globales - adaptadas para compras
@@ -469,9 +465,15 @@
 
             // Función para seleccionar un producto del modal
             seleccionarProducto: function(codigo, nombre, costo) {
-                $('#inputBuscarProducto').val(`${codigo} - ${nombre}`).data('codigo', codigo);
-                $('#inputCostoUnitario').val(costo);
-                $('#inputCantidad').focus();
+                // Llamar a la función actualizada del archivo compras-upsert.js
+                if (typeof seleccionarProductoCompra === 'function') {
+                    seleccionarProductoCompra(codigo, nombre, costo, 0, 0);
+                } else {
+                    // Fallback para compatibilidad
+                    $('#inputBuscarProducto').val(`${codigo}`).data('codigo', codigo);
+                    $('#inputCostoUnitario').val(costo);
+                    $('#inputCantidad').focus();
+                }
             },
 
             // Función para filtrar productos en el modal
@@ -497,7 +499,12 @@
                 const busqueda = $('#inputBuscarProducto').val().toLowerCase();
                 
                 if (!busqueda) {
-                    alert('Ingrese un código o nombre de producto');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Búsqueda requerida',
+                        text: 'Ingrese un código o nombre de producto',
+                        confirmButtonColor: '#d33'
+                    });
                     return;
                 }
 
@@ -518,14 +525,29 @@
                                 $('#inputBuscarProducto').val(`${data.producto.codigo} - ${data.producto.nombre}`).data('codigo', data.producto.codigo);
                                 $('#inputCantidad').focus();
                             } else {
-                                alert(data.message);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message,
+                                    confirmButtonColor: '#d33'
+                                });
                             }
                         })
                         .fail(function() {
-                            alert('Error al obtener información del producto');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de conexión',
+                                text: 'Error al obtener información del producto',
+                                confirmButtonColor: '#d33'
+                            });
                         });
                 } else {
-                    alert('Producto no encontrado');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Producto no encontrado',
+                        text: 'No se encontró el producto especificado',
+                        confirmButtonColor: '#d33'
+                    });
                     $('#inputBuscarProducto').focus();
                 }
             },
@@ -538,18 +560,36 @@
                 const porcentajeDescuento = parseFloat($('#inputDescuento').val()) || 0;
 
                 if (!codigoBusqueda) {
-                    alert('Seleccione un producto válido');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Producto requerido',
+                        text: 'Debe seleccionar un producto válido',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputBuscarProducto').focus();
                     return;
                 }
 
                 if (costoUnitario <= 0) {
-                    alert('El costo unitario debe ser mayor a 0');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Costo inválido',
+                        text: 'El costo unitario debe ser mayor a 0',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputCostoUnitario').focus();
                     return;
                 }
 
                 const producto = productosDisponibles.find(p => p.codigo === codigoBusqueda);
                 if (!producto) {
-                    alert('Producto no válido');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Producto no válido',
+                        text: 'El producto seleccionado no es válido',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputBuscarProducto').focus();
                     return;
                 }
 
@@ -577,6 +617,16 @@
                     });
                 }
 
+                // Toast de confirmación
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `${producto.nombre} agregado exitosamente a la compra`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+
                 // Limpiar campos
                 $('#inputBuscarProducto').val('').removeData('codigo');
                 $('#inputCantidad').val(1);
@@ -585,16 +635,35 @@
 
                 this.actualizarVistaProductos();
                 this.calcularTotales();
-                $('#inputBuscarProducto').focus();
             },
 
             // Función para eliminar productos
             eliminarProducto: function(index) {
-                if (confirm('¿Está seguro de eliminar este producto?')) {
-                    productos.splice(index, 1);
-                    this.actualizarVistaProductos();
-                    this.calcularTotales();
-                }
+                Swal.fire({
+                    title: '¿Está seguro?',
+                    text: '¿Desea eliminar este producto de la compra?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        productos.splice(index, 1);
+                        this.actualizarVistaProductos();
+                        this.calcularTotales();
+                        
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Producto eliminado',
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                });
             },
 
             // Función para editar cantidad

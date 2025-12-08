@@ -4,6 +4,8 @@
     ViewData["Title"] = Model.Venta.Id == 0 ? "Nueva Venta - Caja Registradora" : "Editar Venta";
 }
 
+
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -67,48 +69,51 @@
                         <div class="card mb-4">
                             <div class="card-header bg-primary text-white">
                                 <h5 class="card-title mb-0">
-                                    Agregar Productos
+                                    <i class="fas fa-scanner"></i> Agregar Productos
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-10">
                                         <div class="form-group">
-                                            <label class="form-label">Producto Seleccionado</label>
+                                            <label class="form-label">Código/Nombre del Producto</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Haga clic en 'Seleccionar' para elegir un producto..." readonly />
+                                                <input type="text" id="inputBuscarProducto" class="form-control form-control-lg" 
+                                                       placeholder="Escanee código de barras o ingrese código del producto..." 
+                                                       data-codigo="" data-porcentaje-impuesto="0"
+                                                       style="font-size: 1.1rem;" />
                                                 <button type="button" class="btn btn-outline-secondary" id="btnBuscarProducto">
                                                     <i class="fas fa-search"></i> Seleccionar
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Cantidad</label>
-                                            <input type="number" id="inputCantidad" class="form-control" value="1" min="1" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Precio Unit.</label>
-                                            <input type="number" id="inputPrecioUnitario" class="form-control" step="0.01" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Desc. %</label>
-                                            <input type="number" id="inputDescuento" class="form-control" value="0" min="0" max="100" step="0.01" />
+                                            <small class="form-text text-success">
+                                                <i class="fas fa-barcode"></i> <strong>Escáner activo:</strong> Escanee el código de barras y se agregará automáticamente con cantidad 1
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label class="form-label">&nbsp;</label>
                                             <div class="d-grid">
-                                                <button type="button" class="btn btn-success" id="btnAgregarProducto">
-                                                    Agregar
+                                                <button type="button" class="btn btn-success btn-lg" id="btnAgregarProducto">
+                                                    <i class="fas fa-plus"></i> Agregar
                                                 </button>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Campos ocultos para valores por defecto -->
+                                <input type="hidden" id="inputCantidad" value="1" />
+                                <input type="hidden" id="inputPrecioUnitario" value="" />
+                                <input type="hidden" id="inputDescuento" value="0" />
+                                
+                                <div class="row mt-2">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i> <strong>Modo Escáner Simplificado:</strong> 
+                                            Los productos se agregan automáticamente con cantidad 1, precio de venta por defecto y sin descuento. 
+                                            Puede modificar estos valores directamente en la tabla de productos.
                                         </div>
                                     </div>
                                 </div>
@@ -337,6 +342,7 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="~/js/Operaciones/ventas-upsert.js"></script>
+
     <script>
         // Variables globales
         let productos = @Html.Raw(Json.Serialize(Model.DetallesVenta));
@@ -451,7 +457,7 @@
                             <td class="text-end">₡${producto.precioUnitario.toFixed(2)}</td>
                             <td class="text-center">
                                 <button type="button" class="btn btn-primary btn-sm w-100" 
-                                        onclick="VentaManager.seleccionarProducto('${producto.codigo}', '${producto.nombre.replace(/'/g, "\\'")}', ${producto.precioUnitario}, ${producto.porcentajeImpuesto})">
+                                        onclick="VentaManager.seleccionarProducto('${producto.codigo}', ${producto.precioUnitario}, ${producto.porcentajeImpuesto})">
                                     <i class="fas fa-check"></i> Seleccionar
                                 </button>
                             </td>
@@ -462,9 +468,9 @@
             },
 
             // NUEVA: Función para seleccionar un producto del modal
-            seleccionarProducto: function(codigo, nombre, precio, porcentajeImpuesto) {
+            seleccionarProducto: function(codigo, precio, porcentajeImpuesto) {
                 // Llenar campos
-                $('#inputBuscarProducto').val(`${codigo} - ${nombre}`).data('codigo', codigo);
+                $('#inputBuscarProducto').val(`${codigo}`).data('codigo', codigo);
                 $('#inputPrecioUnitario').val(precio);
                 
                 // Almacenar porcentaje de impuesto
@@ -487,17 +493,35 @@
                 const porcentajeImpuesto = $('#inputBuscarProducto').data('porcentajeImpuesto') || 0;
 
                 if (!codigoBusqueda || !nombreProducto) {
-                    alert('Debe seleccionar un producto válido desde el modal');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Producto requerido',
+                        text: 'Debe seleccionar un producto válido',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputBuscarProducto').focus();
                     return;
                 }
 
                 if (precioUnitario <= 0) {
-                    alert('El precio unitario debe ser mayor a 0');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Precio inválido',
+                        text: 'El precio unitario debe ser mayor a 0',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputPrecioUnitario').focus();
                     return;
                 }
 
                 if (cantidad <= 0) {
-                    alert('La cantidad debe ser mayor a 0');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Cantidad inválida',
+                        text: 'La cantidad debe ser mayor a 0',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputCantidad').focus();
                     return;
                 }
 
@@ -525,12 +549,23 @@
                     });
                 }
 
+                // Toast de confirmación
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `${nombreProducto.split(' - ')[1] || nombreProducto} agregado exitosamente`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+
                 // Limpiar campos
                 $('#inputBuscarProducto').val('').removeData('codigo').removeData('porcentajeImpuesto');
                 $('#inputCantidad').val(1);
                 $('#inputPrecioUnitario').val('');
                 $('#inputDescuento').val(0);
 
+                // Actualizar vista y cálculos
                 this.actualizarVistaProductos();
                 this.calcularTotales();
             },
@@ -803,7 +838,12 @@
             const inputMonto = document.getElementById('inputMontoMetodo');
             
             if (!selectMetodo.value || !inputMonto.value || parseFloat(inputMonto.value) <= 0) {
-                alert('Debe seleccionar un método de pago y un monto válido');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un método de pago y un monto válido',
+                    confirmButtonColor: '#d33'
+                });
                 return;
             }
 
@@ -816,17 +856,27 @@
 
             metodosPagoData.push(metodoPago);
             actualizarTablaMetodosPago();
-            actualizarValidacionPagos();
+            actualizarValidacionPagos(); // Esto debería actualizar el badge correctamente
             
             // Limpiar campos
             selectMetodo.value = '';
             inputMonto.value = '';
+
+            // Toast de confirmación
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Método de pago agregado: ${metodoPago.nombreMetodoPago}`,
+                showConfirmButton: false,
+                timer: 2000
+            });
         }
 
         function eliminarMetodoPago(index) {
             metodosPagoData.splice(index, 1);
             actualizarTablaMetodosPago();
-            actualizarValidacionPagos();
+            actualizarValidacionPagos(); // Esto debería actualizar el badge correctamente
         }
 
         function actualizarTablaMetodosPago() {
@@ -857,15 +907,27 @@
             
             const alerta = document.getElementById('alertaPagos');
             
-            if (Math.abs(totalVenta - totalPagos) > 0.01 && totalPagos > 0) {
+            if (totalPagos < totalVenta) {
+                // Pago insuficiente - mostrar error
                 alerta.style.display = 'block';
+                alerta.className = 'alert alert-danger';
                 alerta.innerHTML = `
-                    <strong>Atención:</strong> 
+                    <strong>¡Atención!</strong> 
                     Total Venta: ₡${totalVenta.toFixed(2)} - 
                     Total Pagos: ₡${totalPagos.toFixed(2)} - 
-                    Diferencia: ₡${(totalVenta - totalPagos).toFixed(2)}
+                    <strong>Faltante: ₡${(totalVenta - totalPagos).toFixed(2)}</strong>
+                `;
+            } else if (totalPagos > totalVenta) {
+                // Pago superior - mostrar información de vuelto
+                alerta.style.display = 'block';
+                alerta.className = 'alert alert-info';
+                alerta.innerHTML = `
+                    <strong>Pago Recibido:</strong> ₡${totalPagos.toFixed(2)} | 
+                    <strong>Total Venta:</strong> ₡${totalVenta.toFixed(2)} | 
+                    <strong>Vuelto a entregar:</strong> ₡${(totalPagos - totalVenta).toFixed(2)}
                 `;
             } else {
+                // Pago exacto - ocultar alerta
                 alerta.style.display = 'none';
             }
         }

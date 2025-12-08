@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Office2013.Excel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -134,7 +135,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 var producto = await _context.Producto
                     .Include(p => p.Inventario)
                     .Include(p => p.Impuesto)
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo && p.Estado);
+                    .FirstOrDefaultAsync(p => p.Codigo_Barra == codigo && p.Estado);
 
                 if (producto == null)
                 {
@@ -151,7 +152,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     success = true,
                     producto = new
                     {
-                        codigo = producto.CodigoReferencia,
+                        codigo = producto.CodigoReferencia, // CORREGIDO: Usar CodigoReferencia para guardar en BD
                         nombre = producto.Descripcion,
                         precio = producto.Inventario.Precio_Venta,
                         existencia = producto.Inventario.Existencia,
@@ -176,7 +177,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     .Where(i => i.Estado && i.Existencia > 0)
                     .Select(i => new
                     {
-                        codigo = i.Codigo_Producto,
+                        codigo = i.Producto.CodigoReferencia, 
                         nombre = i.Producto.Descripcion,
                         cantidadInventario = i.Existencia,
                         precioUnitario = i.Precio_Venta,
@@ -220,7 +221,6 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 return Page();
             }
 
-
             // Validar que hay métodos de pago
             if (MetodosPago == null || !MetodosPago.Any())
             {
@@ -257,10 +257,13 @@ namespace TOHPO.Pages.Operaciones.Ventas
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
-                if (Venta.Id == 0)
+                // Variable para determinar si es nueva venta
+                bool esNuevaVenta = Venta.Id == 0;
+
+                if (esNuevaVenta)
                 {
                     // Nueva venta
-                    Venta.Fecha=DateTime.Now.Date;
+                    Venta.Fecha = DateTime.Now.Date;
                     Venta.Hora = DateTime.Now;
                     await CrearNuevaVenta();
                 }
@@ -271,7 +274,9 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 }
 
                 await transaction.CommitAsync();
-                TempData["SuccessMessage"] = Venta.Id == 0 ? "Venta creada exitosamente" : "Venta actualizada exitosamente";
+                
+                // CORREGIDO: Establecer mensaje de éxito y redirigir correctamente
+                TempData["SuccessMessage"] = esNuevaVenta ? "Venta creada exitosamente" : "Venta actualizada exitosamente";
                 return RedirectToPage("./Index");
             }
             catch (Exception ex)
@@ -308,9 +313,9 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 _context.Detalle_Venta.Add(detalleVenta);
 
-                // Actualizar inventario - reducir existencias
+                // CORREGIDO: Buscar inventario por CodigoReferencia (que es lo que se guarda en detalle.CodigoProducto)
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
+                   .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {
@@ -337,6 +342,8 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
         private async Task ActualizarVentaExistente()
         {
+
+
             // Obtener venta existente con sus detalles y métodos de pago
             var ventaExistente = await _context.Venta
                 .Include(v => v.Detalle_Ventas)
@@ -348,9 +355,11 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 throw new InvalidOperationException("Venta no encontrada");
             }
 
-            // Restaurar inventario de la venta original
+            // CORREGIDO: Restaurar inventario usando CodigoReferencia (que ya está en Codigo_Producto)
             foreach (var detalleOriginal in ventaExistente.Detalle_Ventas)
             {
+                
+
                 var inventario = await _context.Inventario
                     .FirstOrDefaultAsync(i => i.Codigo_Producto == detalleOriginal.Codigo_Producto);
 
@@ -386,11 +395,11 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
             // Agregar nuevos detalles
             foreach (var detalle in DetallesVenta)
-            {
+            { 
                 var detalleVenta = new Detalle_Venta
                 {
                     Id_Venta = Venta.Id,
-                    Codigo_Producto = detalle.CodigoProducto,
+                    Codigo_Producto = detalle.CodigoProducto ?? string.Empty,
                     Cantidad = detalle.Cantidad,
                     Precio_Unitario = detalle.PrecioUnitario,
                     Porcentaje_Descuento = detalle.PorcentajeDescuento,
@@ -401,9 +410,9 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 _context.Detalle_Venta.Add(detalleVenta);
 
-                // Actualizar inventario - reducir existencias
+                // CORREGIDO: Buscar inventario por CodigoReferencia (que es lo que se guarda en detalle.CodigoProducto)
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
+                   .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {

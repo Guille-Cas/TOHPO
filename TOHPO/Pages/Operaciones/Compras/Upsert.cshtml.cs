@@ -208,19 +208,20 @@ namespace TOHPO.Pages.Operaciones.Compras
 
             try
             {
+                // CAMBIO: Buscar por CodigoReferencia en lugar de Codigo_Barra
                 var producto = await _context.Producto
                     .Include(p => p.Impuesto)
                     .Include(p => p.Inventario)
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo);
+                    .FirstOrDefaultAsync(p => p.Codigo_Barra == codigo && p.Estado);
 
                 if (producto == null)
                 {
-                    return new JsonResult(new { success = false, message = "Producto no encontrado en el catálogo" });
+                    return new JsonResult(new { success = false, message = "Producto no encontrado" });
                 }
 
                 // Verificar si el producto tiene inventario registrado
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == codigo);
+                    .FirstOrDefaultAsync(i => i.Codigo_Producto == producto.CodigoReferencia);
 
                 if (inventario == null)
                 {
@@ -241,7 +242,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                 else
                 {
                     var ultimaCompra = await _context.Compra_Detalle
-                        .Where(cd => cd.Codigo_Producto == codigo)
+                        .Where(cd => cd.Codigo_Producto == producto.CodigoReferencia)
                         .Include(cd => cd.Compra)
                         .OrderByDescending(cd => cd.Compra.Fecha)
                         .ThenByDescending(cd => cd.Compra.Hora)
@@ -253,11 +254,13 @@ namespace TOHPO.Pages.Operaciones.Compras
                     }
                 }
 
+                // Retornar información usando CodigoReferencia
                 var productoInfo = new
                 {
-                    codigo = producto.CodigoReferencia,
+                    codigo = producto.CodigoReferencia, // CAMBIO: Usar CodigoReferencia
                     nombre = producto.Descripcion,
                     costo = costoUnitarioSugerido,
+                    existencia = inventario.Existencia, // Agregar existencia
                     porcentajeImpuesto = producto.Impuesto?.Porcentaje ?? 0
                 };
 
@@ -549,7 +552,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                     .Where(p => p.Estado == true)
                     .Select(p => new
                     {
-                        codigo = p.CodigoReferencia,
+                        codigo = p.Codigo_Barra, // Cambiado de p.CodigoReferencia a p.Codigo_Barra
                         nombre = p.Descripcion,
                         descripcion = p.Descripcion,
                         costo = _context.Inventario
