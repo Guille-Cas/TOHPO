@@ -232,19 +232,25 @@ namespace TOHPO.Pages.Operaciones.Ventas
             // Calcular totales antes de la validación
             CalcularTotalesVenta();
 
-            // Validar que los totales de métodos de pago coincidan con el total de la venta
+            // NUEVA LÓGICA: Validar métodos de pago - permitir montos superiores para flujo de caja
             var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
-            var diferencia = Math.Abs(Venta.Total - totalMetodosPago);
-            
-            // Usar una tolerancia más pequeña y redondear a 2 decimales
             var totalVentaRedondeado = Math.Round(Venta.Total, 2);
             var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
             
-            if (totalVentaRedondeado != totalPagosRedondeado)
+            // Validar que el total de pagos no sea menor que el total de la venta
+            if (totalPagosRedondeado < totalVentaRedondeado)
             {
-                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) debe coincidir con el total de la venta (₡{totalVentaRedondeado:F2}). Diferencia: ₡{Math.Abs(totalVentaRedondeado - totalPagosRedondeado):F2}";
+                var diferencia = totalVentaRedondeado - totalPagosRedondeado;
+                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) no puede ser menor que el total de la venta (₡{totalVentaRedondeado:F2}). Faltante: ₡{diferencia:F2}";
                 await CargarDatos();
                 return Page();
+            }
+            
+            // Si el pago es mayor que la venta, mostrar información de cambio/vuelto
+            if (totalPagosRedondeado > totalVentaRedondeado)
+            {
+                var vuelto = totalPagosRedondeado - totalVentaRedondeado;
+                TempData["InfoMessage"] = $"Pago recibido: ₡{totalPagosRedondeado:F2} | Total venta: ₡{totalVentaRedondeado:F2} | Vuelto a entregar: ₡{vuelto:F2}";
             }
 
             try

@@ -139,16 +139,25 @@ namespace TOHPO.Pages.Operaciones.Compras
             // Calcular totales antes de la validación
             CalcularTotales();
 
-            // Validar que los totales de métodos de pago coincidan con el total de la compra
+            // NUEVA LÓGICA: Validar métodos de pago - permitir montos superiores para flujo de caja
             var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
             var totalCompraRedondeado = Math.Round(Compra.Total, 2);
             var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
             
-            if (totalCompraRedondeado != totalPagosRedondeado)
+            // Validar que el total de pagos no sea menor que el total de la compra
+            if (totalPagosRedondeado < totalCompraRedondeado)
             {
-                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) debe coincidir con el total de la compra (₡{totalCompraRedondeado:F2}). Diferencia: ₡{Math.Abs(totalCompraRedondeado - totalPagosRedondeado):F2}";
+                var diferencia = totalCompraRedondeado - totalPagosRedondeado;
+                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) no puede ser menor que el total de la compra (₡{totalCompraRedondeado:F2}). Faltante: ₡{diferencia:F2}";
                 await CargarDatos();
                 return Page();
+            }
+            
+            // Si el pago es mayor que la compra, mostrar información sobre el pago adelantado
+            if (totalPagosRedondeado > totalCompraRedondeado)
+            {
+                var exceso = totalPagosRedondeado - totalCompraRedondeado;
+                TempData["InfoMessage"] = $"Pago realizado: ₡{totalPagosRedondeado:F2} | Total compra: ₡{totalCompraRedondeado:F2} | Pago adelantado/exceso: ₡{exceso:F2}";
             }
 
             try
