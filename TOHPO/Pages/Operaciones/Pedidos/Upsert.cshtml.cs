@@ -33,10 +33,11 @@ namespace TOHPO.Pages.Operaciones.Pedidos
             if (id == null)
             {
                 // Crear nuevo pedido
+                var now = DateTime.Now;
                 Pedido = new Pedido
                 {
-                    Fecha_Creacion = DateTime.Now,
-                    Fecha_Entrega = DateTime.Now.AddDays(7),
+                    Fecha_Creacion = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0),
+                    Fecha_Entrega = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0).AddDays(7),
                     Estado = false,
                     Abono = 0,
                     Saldo = 0,

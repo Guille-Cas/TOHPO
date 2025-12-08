@@ -153,15 +153,15 @@
                                             <td>
                                                 <div class="btn-group" role="group">
                                                     <!-- Ver detalles -->
-                                                    <button type="button" class="btn btn-info btn-sm" 
+                                                    <button type="button" class="btn btn-info btn-sm me-2 rounded"
                                                             data-bs-toggle="modal" 
                                                             data-bs-target="#detalleModal@(pedido.Id)">
                                                         Detalles
                                                     </button>
                                                     
                                                     <!-- Editar -->
-                                                    <a asp-page="./Upsert" asp-route-id="@pedido.Id" 
-                                                       class="btn btn-warning btn-sm">
+                                                    <a asp-page="./Upsert" asp-route-id="@pedido.Id"
+                                                       class="btn btn-warning btn-sm me-2 rounded">
                                                         Editar
                                                     </a>
                                                     
@@ -169,8 +169,8 @@
                                                     @if (pedido.Estado)
                                                     {
                                                         <!-- Pedido completado - opción para marcar como pendiente -->
-                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id" 
-                                                           class="btn btn-outline-secondary btn-sm"
+                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id"
+                                                           class="btn btn-outline-secondary btn-sm me-2 rounded"
                                                            onclick="return confirm('¿Desea marcar este pedido como pendiente nuevamente?')"
                                                            title="Marcar como pendiente">
                                                             Reabrir
@@ -179,8 +179,8 @@
                                                     else
                                                     {
                                                         <!-- Pedido pendiente - opción para completar -->
-                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id" 
-                                                           class="btn btn-success btn-sm"
+                                                        <a asp-page-handler="ToggleEstado" asp-route-id="@pedido.Id"
+                                                           class="btn btn-success btn-sm me-2 rounded"
                                                            onclick="return confirm('¿Confirma que desea completar este pedido?')"
                                                            title="Marcar como completado">
                                                             Completar
@@ -190,8 +190,8 @@
                                                     <!-- Eliminar - solo para pedidos pendientes -->
                                                     @if (!pedido.Estado)
                                                     {
-                                                        <a asp-page-handler="Eliminar" asp-route-id="@pedido.Id" 
-                                                           class="btn btn-danger btn-sm"
+                                                        <a asp-page-handler="Eliminar" asp-route-id="@pedido.Id"
+                                                           class="btn btn-danger btn-sm me-2 rounded"
                                                            onclick="return confirm('¿Está seguro de eliminar este pedido? Esta acción no se puede deshacer.')"
                                                            title="Eliminar pedido">
                                                             Eliminar

@@ -102,14 +102,14 @@
                                                         </td>
                                                         <td>
                                                             <div class="btn-group btn-group-sm" role="group">
-                                                                <button type="button" class="btn btn-info" onclick="verDetalleReceta(@receta.Id)">
+                                                                <button type="button" class="btn btn-info me-2 rounded" onclick="verDetalleReceta(@receta.Id)">
                                                                     Detalles
                                                                 </button>
-                                                                <a asp-page="./Upsert" asp-route-id="@receta.Id" class="btn btn-warning">
+                                                                <a asp-page="./Upsert" asp-route-id="@receta.Id" class="btn btn-warning me-2 rounded">
                                                                     Editar
                                                                 </a>
-                                                                <a asp-page-handler="EliminarReceta" asp-route-id="@receta.Id" 
-                                                                   class="btn btn-danger" 
+                                                                <a asp-page-handler="EliminarReceta" asp-route-id="@receta.Id"
+                                                                   class="btn btn-danger me-2 rounded"
                                                                    onclick="return confirm('¿Está seguro de eliminar esta receta?')">
                                                                     Eliminar
                                                                 </a>
