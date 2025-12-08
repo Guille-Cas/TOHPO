@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Data;
 using TOHPO.Models;
@@ -88,7 +88,7 @@ namespace TOHPO.Pages.Recordatorios
                 if (recordatorio == null) 
                     return new JsonResult(new { success = false, message = "Recordatorio no encontrado" });
                 
-                // Si es un recordatorio recurrente (padre), eliminar también los hijos
+                // Si es un recordatorio recurrente (padre), eliminar tambiÃ©n los hijos
                 if (recordatorio.EsRecurrente && recordatorio.RecordatoriosHijo.Any())
                 {
                     _context.Recordatorio.RemoveRange(recordatorio.RecordatoriosHijo);
@@ -152,10 +152,10 @@ namespace TOHPO.Pages.Recordatorios
 
             var texto = tipo.Value switch
             {
-                TipoRecurrencia.Diario => intervalo == 1 ? "Diario" : $"Cada {intervalo} días",
+                TipoRecurrencia.Diario => intervalo == 1 ? "Diario" : $"Cada {intervalo} dÃ­as",
                 TipoRecurrencia.Semanal => intervalo == 1 ? "Semanal" : $"Cada {intervalo} semanas",
                 TipoRecurrencia.Mensual => intervalo == 1 ? "Mensual" : $"Cada {intervalo} meses",
-                TipoRecurrencia.Anual => intervalo == 1 ? "Anual" : $"Cada {intervalo} años",
+                TipoRecurrencia.Anual => intervalo == 1 ? "Anual" : $"Cada {intervalo} aÃ±os",
                 _ => "Desconocido"
             };
 
@@ -170,7 +170,7 @@ namespace TOHPO.Pages.Recordatorios
             if (diferencia.TotalDays < 0)
                 return "Vencido";
             else if (diferencia.TotalHours <= 24)
-                return "Próximo";
+                return "PrÃ³ximo";
             else
                 return "Programado";
         }

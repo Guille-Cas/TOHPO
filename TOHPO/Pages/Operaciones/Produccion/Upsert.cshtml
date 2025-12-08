@@ -1,4 +1,4 @@
-@page "{id:int?}"
+Ôªø@page "{id:int?}"
 @using System.Text.Json
 @model TOHPO.Pages.Operaciones.Produccion.UpsertModel
 @{
@@ -22,10 +22,10 @@
                         <input type="hidden" asp-for="Receta.Fecha_Creacion" />
 
                         <div class="row">
-                            <!-- InformaciÛn b·sica -->
+                            <!-- Informaci√≥n b√°sica -->
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Receta.Descripcion" class="form-label">DescripciÛn *</label>
+                                    <label asp-for="Receta.Descripcion" class="form-label">Descripci√≥n *</label>
                                     <input asp-for="Receta.Descripcion" type="text" class="form-control" required maxlength="200">
                                     <span asp-validation-for="Receta.Descripcion" class="text-danger"></span>
                                 </div>
@@ -74,7 +74,7 @@
                                 <div class="mb-3">
                                     <label asp-for="Receta.Detalle" class="form-label">Detalle</label>
                                     <textarea asp-for="Receta.Detalle" class="form-control" rows="4" 
-                                              placeholder="DescripciÛn detallada de la receta"></textarea>
+                                              placeholder="Descripci√≥n detallada de la receta"></textarea>
                                     <span asp-validation-for="Receta.Detalle" class="text-danger"></span>
                                 </div>
 
@@ -87,7 +87,7 @@
                             </div>
                         </div>
 
-                        <!-- SecciÛn de Materias Primas -->
+                        <!-- Secci√≥n de Materias Primas -->
                         <div class="row mt-4">
                             <div class="col-12">
                                 <hr>
@@ -152,7 +152,7 @@
                                             </tr>
                                         </thead>
                                         <tbody id="cuerpoTablaMateriasPrimas">
-                                            <!-- Se llenan din·micamente -->
+                                            <!-- Se llenan din√°micamente -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -162,13 +162,13 @@
                             </div>
                         </div>
 
-                        <!-- InformaciÛn adicional (solo en ediciÛn) -->
+                        <!-- Informaci√≥n adicional (solo en edici√≥n) -->
                         @if (Model.Receta.Id > 0)
                         {
                             <div class="row">
                                 <div class="col-12">
                                     <div class="alert alert-info">
-                                        <strong>InformaciÛn:</strong> Receta creada el @Model.Receta.Fecha_Creacion.ToString("dd/MM/yyyy HH:mm")
+                                        <strong>Informaci√≥n:</strong> Receta creada el @Model.Receta.Fecha_Creacion.ToString("dd/MM/yyyy HH:mm")
                                     </div>
                                 </div>
                             </div>
@@ -199,7 +199,7 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     
     <script>
-        // InicializaciÛn mejorada para evitar errores de undefined
+        // Inicializaci√≥n mejorada para evitar errores de undefined
         let materiasPrimasSeleccionadas = [];
         let contadorMateriasPrimas = 0;
         
@@ -217,10 +217,10 @@
             6: 'Onza'
         };
 
-        // CORREGIDO: InicializaciÛn m·s robusta de materias primas desde el servidor
+        // CORREGIDO: Inicializaci√≥n m√°s robusta de materias primas desde el servidor
         function inicializarMateriasPrimasDesdeServidor() {
             try {
-                // CORREGIDO: Mejor manejo de la serializaciÛn JSON
+                // CORREGIDO: Mejor manejo de la serializaci√≥n JSON
                 const materiasPrimasDelServidor = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MateriasPrimasSeleccionadas, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
 
                 console.log('Datos del servidor (raw):', materiasPrimasDelServidor);
@@ -234,7 +234,7 @@
                         const materiaPrimaProcesada = {
                             Id: mp.id || 0,
                             Id_Materia_Prima: mp.id_Materia_Prima || mp.idMateriaPrima || 0,
-                            Descripcion: mp.descripcion || 'Sin descripciÛn',
+                            Descripcion: mp.descripcion || 'Sin descripci√≥n',
                             Cantidad_Requerida: parseFloat(mp.cantidad_Requerida || mp.cantidadRequerida || 0),
                             Unidad_Medida: parseInt(mp.unidad_Medida || mp.unidadMedida || 0),
                             Observaciones: mp.observaciones || ''
@@ -272,7 +272,7 @@
                 .then(data => {
                     if (data.valido) {
                         infoDiv.innerHTML = `<div class="text-success">
-                            Producto v·lido: ${data.producto.descripcion}
+                            Producto v√°lido: ${data.producto.descripcion}
                             ${data.producto.categoria ? `(${data.producto.categoria})` : ''}
                         </div>`;
                     } else {
@@ -312,11 +312,11 @@
             const inputObservaciones = document.getElementById('inputObservaciones');
 
             if (!selectMP.value || !inputCantidad.value || parseFloat(inputCantidad.value) <= 0) {
-                alert('Por favor, seleccione una materia prima y especifique una cantidad v·lida');
+                alert('Por favor, seleccione una materia prima y especifique una cantidad v√°lida');
                 return;
             }
 
-            // Verificar que no estÈ duplicada
+            // Verificar que no est√© duplicada
             const yaExiste = materiasPrimasSeleccionadas.some(mp => mp.Id_Materia_Prima == selectMP.value);
             if (yaExiste) {
                 alert('Esta materia prima ya ha sido agregada a la receta');
@@ -362,7 +362,7 @@
             camposOcultos.innerHTML = '';
 
             if (!Array.isArray(materiasPrimasSeleccionadas)) {
-                console.error('materiasPrimasSeleccionadas no es un array v·lido');
+                console.error('materiasPrimasSeleccionadas no es un array v√°lido');
                 return;
             }
 
@@ -370,7 +370,7 @@
 
             materiasPrimasSeleccionadas.forEach((mp, index) => {
                 // Validaciones para evitar errores de undefined
-                const descripcion = mp.Descripcion || 'Sin descripciÛn';
+                const descripcion = mp.Descripcion || 'Sin descripci√≥n';
                 const cantidad = (mp.Cantidad_Requerida !== undefined && mp.Cantidad_Requerida !== null) 
                     ? parseFloat(mp.Cantidad_Requerida).toFixed(3) 
                     : '0.000';
@@ -408,12 +408,12 @@
             });
         }
 
-        // InicializaciÛn al cargar la p·gina
+        // Inicializaci√≥n al cargar la p√°gina
         document.addEventListener('DOMContentLoaded', function() {
             try {
                 const productoSelect = document.querySelector('select[name="Receta.Codigo_Producto"]');
                 if (productoSelect && productoSelect.value) {
-                    // No validar autom·ticamente en ediciÛn para evitar la advertencia
+                    // No validar autom√°ticamente en edici√≥n para evitar la advertencia
                     if (currentRecetaId === 0) {
                         validarProducto(productoSelect.value);
                     }
@@ -425,7 +425,7 @@
                 actualizarTablaMateriasPrimas();
                 console.log('Carga completada');
             } catch (error) {
-                console.error('Error en la inicializaciÛn:', error);
+                console.error('Error en la inicializaci√≥n:', error);
             }
         });
     </script>

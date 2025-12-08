@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+锘縰sing Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -58,7 +58,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             Pedido = pedido;
 
-            // Cargar detalles para edici髇
+            // Cargar detalles para edici贸n
             DetallesPedido = pedido.Pedido_Detalles.Select(pd => new PedidoDetalleDto
             {
                 Codigo_Producto = pd.Codigo_Producto,
@@ -74,11 +74,11 @@ namespace TOHPO.Pages.Operaciones.Pedidos
         {
             await LoadSelectListsAsync();
             
-            // Remover validaciones de propiedades de navegaci髇 que no se env韆n desde el formulario
+            // Remover validaciones de propiedades de navegaci贸n que no se env铆an desde el formulario
             ModelState.Remove("Pedido.Cliente");
             ModelState.Remove("Pedido.Agente_Ventas");
             
-            // Remover validaciones de propiedades calculadas/navegaci髇 en detalles
+            // Remover validaciones de propiedades calculadas/navegaci贸n en detalles
             for (int i = 0; i < (DetallesPedido?.Count ?? 0); i++)
             {
                 ModelState.Remove($"DetallesPedido[{i}].Producto_Descripcion");
@@ -315,7 +315,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
         {
             try
             {
-                // Obtener productos con informaci髇 de inventario
+                // Obtener productos con informaci贸n de inventario
                 var productosConInventario = await _context.Producto
                     .Include(p => p.Impuesto)
                     .Where(p => p.Estado == true)

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Models;
 using TOHPO.Data;
@@ -90,12 +90,12 @@ namespace TOHPO.Pages.Recordatorios
 
                 if (Recordatorio.MaximoRepeticiones.HasValue && Recordatorio.MaximoRepeticiones < 1)
                 {
-                    ModelState.AddModelError("Recordatorio.MaximoRepeticiones", "El número de repeticiones debe ser mayor a 0");
+                    ModelState.AddModelError("Recordatorio.MaximoRepeticiones", "El nÃºmero de repeticiones debe ser mayor a 0");
                 }
 
                 if (!Recordatorio.FechaFinRecurrencia.HasValue && !Recordatorio.MaximoRepeticiones.HasValue)
                 {
-                    ModelState.AddModelError("", "Debe especificar una fecha de fin o un número máximo de repeticiones para la recurrencia");
+                    ModelState.AddModelError("", "Debe especificar una fecha de fin o un nÃºmero mÃ¡ximo de repeticiones para la recurrencia");
                 }
             }
             
@@ -161,7 +161,7 @@ namespace TOHPO.Pages.Recordatorios
                     Motivo_RecordatorioId = recordatorioPadre.Motivo_RecordatorioId,
                     Detalles = recordatorioPadre.Detalles,
                     RecordatorioPadreId = recordatorioPadre.Id,
-                    EsRecurrente = false // Los recordatorios hijo no son recurrentes por sí mismos
+                    EsRecurrente = false // Los recordatorios hijo no son recurrentes por sÃ­ mismos
                 };
 
                 recordatoriosGenerados.Add(nuevoRecordatorio);
@@ -179,15 +179,15 @@ namespace TOHPO.Pages.Recordatorios
 
         private bool ShouldContinueGenerating(DateTime fecha, int contador, Recordatorio recordatorio)
         {
-            // Verificar límite por número de repeticiones
+            // Verificar lÃ­mite por nÃºmero de repeticiones
             if (recordatorio.MaximoRepeticiones.HasValue && contador >= recordatorio.MaximoRepeticiones.Value)
                 return false;
 
-            // Verificar límite por fecha
+            // Verificar lÃ­mite por fecha
             if (recordatorio.FechaFinRecurrencia.HasValue && fecha > recordatorio.FechaFinRecurrencia.Value)
                 return false;
 
-            // Verificar que no sea más de 2 años en el futuro
+            // Verificar que no sea mÃ¡s de 2 aÃ±os en el futuro
             if (fecha > DateTime.Now.AddYears(2))
                 return false;
 

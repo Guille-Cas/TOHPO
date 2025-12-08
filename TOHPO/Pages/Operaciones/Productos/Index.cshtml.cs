@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+Ôªøusing Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
@@ -35,7 +35,7 @@ namespace TOHPO.Pages.Operaciones.Productos
         {
             if (string.IsNullOrEmpty(id))
             {
-                TempData["ErrorMessage"] = "ID de producto no v·lido";
+                TempData["ErrorMessage"] = "ID de producto no v√°lido";
                 return RedirectToPage();
             }
 
@@ -48,7 +48,7 @@ namespace TOHPO.Pages.Operaciones.Productos
 
             try
             {
-                // Verificar si el producto est· siendo usado en otras tablas
+                // Verificar si el producto est√° siendo usado en otras tablas
                 var enUsoEnInventario = await _context.Inventario
                     .AnyAsync(i => i.Codigo_Producto == id);
                 
@@ -64,7 +64,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                 }
                 else
                 {
-                    // Eliminar completamente si no est· en uso
+                    // Eliminar completamente si no est√° en uso
                     _context.Producto.Remove(producto);
                     await _context.SaveChangesAsync();
                     TempData["SuccessMessage"] = "Producto eliminado exitosamente";

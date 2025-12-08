@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+Ôªøusing Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -56,13 +56,13 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 return NotFound();
             }
 
-            // CORREGIDO: Cargar las materias primas con mejor manejo de la relaciÛn
+            // CORREGIDO: Cargar las materias primas con mejor manejo de la relaci√≥n
             var recetasMateriasPrimas = await _context.Receta_Materia_Prima
                 .Include(rmp => rmp.Materia_Prima)
                 .Where(rmp => rmp.Id_Receta == id && rmp.Estado)
                 .ToListAsync();
 
-            // CORREGIDO: Mapeo m·s robusto con validaciones adicionales
+            // CORREGIDO: Mapeo m√°s robusto con validaciones adicionales
             MateriasPrimasSeleccionadas = new List<RecetaMateriaPrimaDto>();
             
             foreach (var rmp in recetasMateriasPrimas)
@@ -74,7 +74,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     {
                         Id = rmp.Id,
                         Id_Materia_Prima = rmp.Id_Materia_Prima,
-                        Descripcion = rmp.Materia_Prima.Descripcion ?? "Sin descripciÛn",
+                        Descripcion = rmp.Materia_Prima.Descripcion ?? "Sin descripci√≥n",
                         Cantidad_Requerida = rmp.Cantidad_Requerida,
                         Unidad_Medida = rmp.Unidad_Medida,
                         Observaciones = rmp.Observaciones ?? ""
@@ -82,7 +82,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     
                     MateriasPrimasSeleccionadas.Add(dto);
                     
-                    // DEBUG: Log para verificar quÈ se est· agregando
+                    // DEBUG: Log para verificar qu√© se est√° agregando
                     Console.WriteLine($"Agregando materia prima: {dto.Descripcion}, Cantidad: {dto.Cantidad_Requerida}");
                 }
                 else
@@ -109,7 +109,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 ModelState.Remove(key);
             }
 
-            // CORREGIDO: Remover validaciones de DescripciÛn ya que es solo informativa
+            // CORREGIDO: Remover validaciones de Descripci√≥n ya que es solo informativa
             var descripcionKeys = ModelState.Keys
                 .Where(k => k.Contains("MateriasPrimasSeleccionadas") && k.EndsWith(".Descripcion"))
                 .ToList();
@@ -167,7 +167,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                         return NotFound();
                     }
 
-                    // Verificar si la receta est· siendo usada en producciones activas
+                    // Verificar si la receta est√° siendo usada en producciones activas
                     var produccionesActivas = await _context.Produccion_Detalle
                         .Where(pd => pd.Id_Receta == Receta.Id)
                         .Include(pd => pd.Produccion)
@@ -177,7 +177,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                         recetaExistente.Codigo_Producto != Receta.Codigo_Producto ||
                         recetaExistente.Rendimiento != Receta.Rendimiento))
                     {
-                        ModelState.AddModelError("", "No se pueden modificar el producto o rendimiento de una receta que est· siendo utilizada en producciones activas");
+                        ModelState.AddModelError("", "No se pueden modificar el producto o rendimiento de una receta que est√° siendo utilizada en producciones activas");
                         await CargarSelectLists();
                         return Page();
                     }
@@ -191,7 +191,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     recetaExistente.Cantidad_Empaque = Receta.Cantidad_Empaque;
                     recetaExistente.Estado = Receta.Estado;
 
-                    // CORREGIDO: Actualizar materias primas de forma m·s eficiente
+                    // CORREGIDO: Actualizar materias primas de forma m√°s eficiente
                     var materiasPrimasExistentes = await _context.Receta_Materia_Prima
                         .Where(rmp => rmp.Id_Receta == Receta.Id)
                         .ToListAsync();
@@ -227,7 +227,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
                 if (!materiaPrimaExiste)
                 {
-                    continue; // Saltar si la materia prima no existe o est· inactiva
+                    continue; // Saltar si la materia prima no existe o est√° inactiva
                 }
 
                 var recetaMateriaPrima = new Receta_Materia_Prima
@@ -261,7 +261,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
             MateriasPrimasSelectList = new SelectList(materiasPrimas, "Id", "Descripcion");
         }
 
-        // CORREGIDO: Mejorar la validaciÛn del producto para evitar la advertencia en ediciÛn
+        // CORREGIDO: Mejorar la validaci√≥n del producto para evitar la advertencia en edici√≥n
         public async Task<JsonResult> OnGetValidarProductoAsync(string codigo)
         {
             var producto = await _context.Producto
@@ -273,7 +273,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 return new JsonResult(new { valido = false, mensaje = "Producto no encontrado o inactivo" });
             }
 
-            // CORREGIDO: Obtener el ID de la receta actual desde la URL o par·metros
+            // CORREGIDO: Obtener el ID de la receta actual desde la URL o par√°metros
             var currentRecetaId = 0;
             if (Request.Query.TryGetValue("id", out var idValue) && int.TryParse(idValue, out var parsedId))
             {
@@ -302,7 +302,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 {
                     codigo = producto.CodigoReferencia,
                     descripcion = producto.Descripcion,
-                    categoria = producto.Categoria?.Descripcion ?? "Sin categorÌa"
+                    categoria = producto.Categoria?.Descripcion ?? "Sin categor√≠a"
                 }
             });
         }

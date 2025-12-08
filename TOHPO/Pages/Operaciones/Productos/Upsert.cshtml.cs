@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +37,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                         Estado = true,
                         Es_Materia_Prima = false,
                         Es_De_Terceros = false,
-                        Se_Daña = false,
+                        Se_DaÃ±a = false,
                         Tiempo_De_Vida = 0,
                         Unidad_Medida = Unidad_Medida.Unidad
                     };
@@ -61,7 +61,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                     Producto = producto;
                 }
                 
-                // Cargar las listas DESPUÉS de asignar el producto
+                // Cargar las listas DESPUÃ‰S de asignar el producto
                 await LoadSelectListsAsync();
                 
                 return Page();
@@ -76,7 +76,7 @@ namespace TOHPO.Pages.Operaciones.Productos
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Remover validaciones de navegación que se cargan por separado
+            // Remover validaciones de navegaciÃ³n que se cargan por separado
             ModelState.Remove("Producto.Categoria");
             ModelState.Remove("Producto.Impuesto");
             ModelState.Remove("Producto.Materia_Prima");
@@ -89,9 +89,9 @@ namespace TOHPO.Pages.Operaciones.Productos
                 ModelState.AddModelError("Producto.Id_Materia_Prima", "Debe seleccionar una materia prima cuando el producto es materia prima.");
             }
 
-            if (Producto.Se_Daña && Producto.Tiempo_De_Vida <= 0)
+            if (Producto.Se_DaÃ±a && Producto.Tiempo_De_Vida <= 0)
             {
-                ModelState.AddModelError("Producto.Tiempo_De_Vida", "Debe especificar un tiempo de vida mayor a 0 cuando el producto se daña con el tiempo.");
+                ModelState.AddModelError("Producto.Tiempo_De_Vida", "Debe especificar un tiempo de vida mayor a 0 cuando el producto se daÃ±a con el tiempo.");
             }
 
             if (!ModelState.IsValid)
@@ -102,13 +102,13 @@ namespace TOHPO.Pages.Operaciones.Productos
 
             try
             {
-                // Lógica condicional para campos opcionales
+                // LÃ³gica condicional para campos opcionales
                 if (!Producto.Es_Materia_Prima)
                 {
                     Producto.Id_Materia_Prima = null;
                 }
 
-                if (!Producto.Se_Daña)
+                if (!Producto.Se_DaÃ±a)
                 {
                     Producto.Tiempo_De_Vida = 0;
                 }
@@ -127,7 +127,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                     existingProduct.Id_Presentacion = Producto.Id_Presentacion;
                     existingProduct.Es_Materia_Prima = Producto.Es_Materia_Prima;
                     existingProduct.Es_De_Terceros = Producto.Es_De_Terceros;
-                    existingProduct.Se_Daña = Producto.Se_Daña;
+                    existingProduct.Se_DaÃ±a = Producto.Se_DaÃ±a;
                     existingProduct.Tiempo_De_Vida = Producto.Tiempo_De_Vida;
                     existingProduct.Unidad_Medida = Producto.Unidad_Medida;
                     existingProduct.Estado = Producto.Estado;
@@ -163,7 +163,7 @@ namespace TOHPO.Pages.Operaciones.Productos
         {
             try
             {
-                // Cargar categorías activas
+                // Cargar categorÃ­as activas
                 var categorias = await _context.Categoria
                     .Where(c => c.Estado)
                     .OrderBy(c => c.Descripcion)
@@ -186,7 +186,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                     .ToListAsync();
                 MateriaPrimasList = new SelectList(materiasPrimas, "Id", "Descripcion", Producto?.Id_Materia_Prima);
 
-                // Cargar presentaciones con descripción completa
+                // Cargar presentaciones con descripciÃ³n completa
                 var presentaciones = await _context.Presentacion
                     .OrderBy(p => p.Cantidad)
                     .AsNoTracking()
@@ -199,7 +199,7 @@ namespace TOHPO.Pages.Operaciones.Productos
             }
             catch (Exception ex)
             {
-                // Log error pero continúa con listas vacías
+                // Log error pero continÃºa con listas vacÃ­as
                 CategoriasList = new SelectList(new List<object>(), "Id", "Descripcion");
                 ImpuestosList = new SelectList(new List<object>(), "Id", "Descripcion");
                 MateriaPrimasList = new SelectList(new List<object>(), "Id", "Descripcion");

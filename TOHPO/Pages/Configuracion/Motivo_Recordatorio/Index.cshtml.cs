@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
@@ -48,16 +48,16 @@ namespace TOHPO.Pages.Configuracion.Motivo_Recordatorio
             {
                 if (string.IsNullOrWhiteSpace(descripcion))
                 {
-                    return new JsonResult(new { success = false, message = "La descripción es requerida", type = "error" });
+                    return new JsonResult(new { success = false, message = "La descripciÃ³n es requerida", type = "error" });
                 }
 
-                // Verificar si ya existe un motivo con la misma descripción
+                // Verificar si ya existe un motivo con la misma descripciÃ³n
                 var motivoExistente = await _context.Motivo_Recordatorio
                     .AnyAsync(m => m.Descripcion.ToLower() == descripcion.ToLower());
 
                 if (motivoExistente)
                 {
-                    return new JsonResult(new { success = false, message = "Ya existe un motivo con esa descripción", type = "error" });
+                    return new JsonResult(new { success = false, message = "Ya existe un motivo con esa descripciÃ³n", type = "error" });
                 }
 
                 var nuevoMotivo = new TOHPO.Models.Motivo_Recordatorio
@@ -90,16 +90,16 @@ namespace TOHPO.Pages.Configuracion.Motivo_Recordatorio
 
                 if (string.IsNullOrWhiteSpace(descripcion))
                 {
-                    return new JsonResult(new { success = false, message = "La descripción es requerida", type = "error" });
+                    return new JsonResult(new { success = false, message = "La descripciÃ³n es requerida", type = "error" });
                 }
 
-                // Verificar si ya existe otro motivo con la misma descripción
+                // Verificar si ya existe otro motivo con la misma descripciÃ³n
                 var motivoExistente = await _context.Motivo_Recordatorio
                     .AnyAsync(m => m.Descripcion.ToLower() == descripcion.ToLower() && m.Id != id);
 
                 if (motivoExistente)
                 {
-                    return new JsonResult(new { success = false, message = "Ya existe otro motivo con esa descripción", type = "error" });
+                    return new JsonResult(new { success = false, message = "Ya existe otro motivo con esa descripciÃ³n", type = "error" });
                 }
 
                 motivo.Descripcion = descripcion.Trim();
@@ -126,7 +126,7 @@ namespace TOHPO.Pages.Configuracion.Motivo_Recordatorio
                     return new JsonResult(new { success = false, message = "Motivo no encontrado", type = "error" });
                 }
 
-                // Verificar si el motivo está siendo usado en recordatorios
+                // Verificar si el motivo estÃ¡ siendo usado en recordatorios
                 var recordatoriosConMotivo = await _context.Recordatorio
                     .AnyAsync(r => r.Motivo_RecordatorioId == id);
 
@@ -134,7 +134,7 @@ namespace TOHPO.Pages.Configuracion.Motivo_Recordatorio
                 {
                     return new JsonResult(new { 
                         success = false, 
-                        message = "No se puede eliminar el motivo porque tiene recordatorios asociados. ¿Desea desactivarlo en su lugar?", 
+                        message = "No se puede eliminar el motivo porque tiene recordatorios asociados. Â¿Desea desactivarlo en su lugar?", 
                         type = "validation",
                         canDelete = false,
                         shouldDeactivate = true

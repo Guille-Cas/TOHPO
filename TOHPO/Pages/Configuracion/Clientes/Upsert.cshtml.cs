@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Models;
@@ -48,13 +48,13 @@ namespace TOHPO.Pages.Configuracion.Clientes
         {
             try
             {
-                // Validar cédula única
+                // Validar cÃ©dula Ãºnica
                 var existeCliente = await _context.Cliente
                     .AnyAsync(c => c.Cedula == Cliente.Cedula && c.Id != Cliente.Id);
 
                 if (existeCliente)
                 {
-                    ModelState.AddModelError("Cliente.Cedula", "Ya existe un cliente con esta cédula");
+                    ModelState.AddModelError("Cliente.Cedula", "Ya existe un cliente con esta cÃ©dula");
                 }
 
                 if (!ModelState.IsValid)

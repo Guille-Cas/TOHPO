@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Models;
 using TOHPO.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace TOHPO.Pages.Configuracion.Categorias
 {
@@ -15,40 +16,81 @@ namespace TOHPO.Pages.Configuracion.Categorias
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            if (id.HasValue)
+            try
             {
-                Categoria = await _context.Categoria.FindAsync(id.Value);
-                if (Categoria == null) return NotFound();
+                if (id.HasValue)
+                {
+                    Categoria = await _context.Categoria.FindAsync(id.Value);
+                    if (Categoria == null) 
+                    {
+                        TempData["ErrorMessage"] = "Categoría no encontrada";
+                        return RedirectToPage("/Configuracion/Categorias/Index");
+                    }
+                }
+                else
+                {
+                    Categoria = new Categoria { Estado = true }; // Por defecto activo para nuevas categorías
+                }
+                return Page();
             }
-            else
+            catch (Exception ex)
             {
-                Categoria = new Categoria { Estado = true }; // Por defecto activo para nuevas categor�as
+                TempData["ErrorMessage"] = $"Error al cargar la categoría: {ex.Message}";
+                return RedirectToPage("/Configuracion/Categorias/Index");
             }
-            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid) return Page();
-            
-            if (Categoria.Id > 0)
+            try
             {
-                var existente = await _context.Categoria.FindAsync(Categoria.Id);
-                if (existente == null) return NotFound();
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Por favor corrija los errores en el formulario";
+                    return Page();
+                }
+
+                // Verificar si ya existe una categoría con la misma descripción
+                var categoriaExistente = await _context.Categoria
+                    .AnyAsync(c => c.Descripcion.ToLower() == Categoria.Descripcion.ToLower() && c.Id != Categoria.Id);
+
+                if (categoriaExistente)
+                {
+                    TempData["ErrorMessage"] = "Ya existe una categoría con esa descripción";
+                    return Page();
+                }
                 
-                // Actualizar ambas propiedades
-                existente.Descripcion = Categoria.Descripcion;
-                existente.Estado = Categoria.Estado;
+                if (Categoria.Id > 0)
+                {
+                    var existente = await _context.Categoria.FindAsync(Categoria.Id);
+                    if (existente == null) 
+                    {
+                        TempData["ErrorMessage"] = "Categoría no encontrada";
+                        return RedirectToPage("/Configuracion/Categorias/Index");
+                    }
+                    
+                    // Actualizar ambas propiedades
+                    existente.Descripcion = Categoria.Descripcion?.Trim();
+                    existente.Estado = Categoria.Estado;
+                    
+                    _context.Categoria.Update(existente);
+                    TempData["SuccessMessage"] = "Categoría actualizada exitosamente";
+                }
+                else
+                {
+                    Categoria.Descripcion = Categoria.Descripcion?.Trim();
+                    _context.Categoria.Add(Categoria);
+                    TempData["SuccessMessage"] = "Categoría creada exitosamente";
+                }
                 
-                _context.Categoria.Update(existente);
+                await _context.SaveChangesAsync();
+                return RedirectToPage("/Configuracion/Categorias/Index");
             }
-            else
+            catch (Exception ex)
             {
-                _context.Categoria.Add(Categoria);
+                TempData["ErrorMessage"] = $"Error al guardar la categoría: {ex.Message}";
+                return Page();
             }
-            
-            await _context.SaveChangesAsync();
-            return RedirectToPage("/Configuracion/Categorias/Index");
         }
     }
 }

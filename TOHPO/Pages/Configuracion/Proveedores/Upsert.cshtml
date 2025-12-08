@@ -1,4 +1,4 @@
-@page "{id?}"
+ï»¿@page "{id?}"
 @using TOHPO.Models
 @model TOHPO.Pages.Configuracion.Proveedores.UpsertModel
 @{
@@ -23,12 +23,12 @@
                     </div>
                 </div>
 
-                <!-- DESCRIPCIÓN (ALERT) -->
+                <!-- DESCRIPCIÃ“N (ALERT) -->
                 <div class="card-body border-bottom">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         @(isEdit
-                                                ? "Actualice la información del proveedor y guarde los cambios para mantener sus datos al día."
-                                                : "Complete la información del nuevo proveedor y guarde el registro para que quede disponible en el sistema.")
+                                                ? "Actualice la informaciÃ³n del proveedor y guarde los cambios para mantener sus datos al dÃ­a."
+                                                : "Complete la informaciÃ³n del nuevo proveedor y guarde el registro para que quede disponible en el sistema.")
 
                     </div>
                 </div>
@@ -99,4 +99,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <partial name="~/Pages/Shared/_TempDataFeedback.cshtml" />
 }

@@ -1,0 +1,32 @@
+﻿@*
+    Sistema de feedback universal para TempData
+    Maneja los mensajes de TempData usando el sistema de feedback universal (SweetAlert2)
+*@
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        @if (TempData["SuccessMessage"] != null)
+            {
+                    <text>
+                    showSuccess(@Html.Raw(Json.Serialize(TempData["SuccessMessage"].ToString())), 'Éxito');
+                    </text>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                    <text>
+                    showError(@Html.Raw(Json.Serialize(TempData["ErrorMessage"].ToString())), 'Error');
+                    </text>
+            }
+        
+        @if (TempData["WarningMessage"] != null)
+        {
+            <text>showWarning('@TempData["WarningMessage"]', 'Advertencia');</text>
+        }
+        
+        @if (TempData["InfoMessage"] != null)
+        {
+            <text>showInfo('@TempData["InfoMessage"]', 'Información');</text>
+        }
+    });
+</script>

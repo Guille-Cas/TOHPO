@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Models;
@@ -53,14 +53,14 @@ namespace TOHPO.Pages.Configuracion.Motivo_Recordatorio
                     return Page();
                 }
 
-                // Verificar descripción duplicada
+                // Verificar descripciÃ³n duplicada
                 var motivoExistente = await _context.Motivo_Recordatorio
                     .FirstOrDefaultAsync(m => m.Descripcion.ToLower() == MotivoRecordatorio.Descripcion.ToLower() 
                                            && m.Id != MotivoRecordatorio.Id);
 
                 if (motivoExistente != null)
                 {
-                    ModelState.AddModelError("MotivoRecordatorio.Descripcion", "Ya existe un motivo con esta descripción");
+                    ModelState.AddModelError("MotivoRecordatorio.Descripcion", "Ya existe un motivo con esta descripciÃ³n");
                     return Page();
                 }
 

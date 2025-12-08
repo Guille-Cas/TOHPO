@@ -1,4 +1,4 @@
-@page
+ï»¿@page
 @model TOHPO.Pages.Operaciones.Productos.UpsertModel
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Producto.CodigoReferencia) ? "Crear Producto" : "Editar Producto";
@@ -24,13 +24,13 @@
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
                         <div class="row">
-                            <!-- Información básica del producto -->
+                            <!-- InformaciÃ³n bÃ¡sica del producto -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.CodigoReferencia" class="form-label"></label>
                                     <input asp-for="Producto.CodigoReferencia" class="form-control" />
                                     <span asp-validation-for="Producto.CodigoReferencia" class="text-danger"></span>
-                                    <small class="form-text text-muted">Código único del producto</small>
+                                    <small class="form-text text-muted">CÃ³digo Ãºnico del producto</small>
                                 </div>
                             </div>
                             
@@ -39,7 +39,7 @@
                                     <label asp-for="Producto.Codigo_Barra" class="form-label"></label>
                                     <input asp-for="Producto.Codigo_Barra" class="form-control" />
                                     <span asp-validation-for="Producto.Codigo_Barra" class="text-danger"></span>
-                                    <small class="form-text text-muted">Código de barras (opcional)</small>
+                                    <small class="form-text text-muted">CÃ³digo de barras (opcional)</small>
                                 </div>
                             </div>
                         </div>
@@ -55,14 +55,14 @@
                         </div>
 
                         <div class="row">
-                            <!-- Categoría -->
+                            <!-- CategorÃ­a -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="Producto.Id_Categoria" class="form-label">Categoría</label>
+                                    <label asp-for="Producto.Id_Categoria" class="form-label">CategorÃ­a</label>
                                     <select asp-for="Producto.Id_Categoria" 
                                             asp-items="Model.CategoriasList" 
                                             class="form-select">
-                                        <option value="">-- Seleccionar Categoría --</option>
+                                        <option value="">-- Seleccionar CategorÃ­a --</option>
                                     </select>
                                     <span asp-validation-for="Producto.Id_Categoria" class="text-danger"></span>
                                 </div>
@@ -96,14 +96,14 @@
                                 </div>
                             </div>
 
-                            <!-- Presentación -->
+                            <!-- PresentaciÃ³n -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="Producto.Id_Presentacion" class="form-label">Presentación</label>
+                                    <label asp-for="Producto.Id_Presentacion" class="form-label">PresentaciÃ³n</label>
                                     <select asp-for="Producto.Id_Presentacion" 
                                             asp-items="Model.PresentacionesList" 
                                             class="form-select">
-                                        <option value="">-- Seleccionar Presentación --</option>
+                                        <option value="">-- Seleccionar PresentaciÃ³n --</option>
                                     </select>
                                     <span asp-validation-for="Producto.Id_Presentacion" class="text-danger"></span>
                                 </div>
@@ -122,7 +122,7 @@
                                         <option value="3">Litro</option>
                                         <option value="4">Mililitro</option>
                                         <option value="5">Metro</option>
-                                        <option value="6">Centímetro</option>
+                                        <option value="6">CentÃ­metro</option>
                                         <option value="7">Caja</option>
                                         <option value="8">Paquete</option>
                                     </select>
@@ -136,17 +136,17 @@
                                     <label asp-for="Producto.Tiempo_De_Vida" class="form-label"></label>
                                     <input asp-for="Producto.Tiempo_De_Vida" class="form-control" type="number" min="0" />
                                     <span asp-validation-for="Producto.Tiempo_De_Vida" class="text-danger"></span>
-                                    <small class="form-text text-muted">Días de vida útil del producto</small>
+                                    <small class="form-text text-muted">DÃ­as de vida Ãºtil del producto</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Checkboxes para características especiales -->
+                        <!-- Checkboxes para caracterÃ­sticas especiales -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h6 class="card-title mb-0">Características del Producto</h6>
+                                        <h6 class="card-title mb-0">CaracterÃ­sticas del Producto</h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
@@ -164,8 +164,8 @@
                                             </div>
                                             <div class="col-md-3">
                                                 <div class="form-check">
-                                                    <input asp-for="Producto.Se_Daña" class="form-check-input" type="checkbox" id="chk-se-dana" />
-                                                    <label asp-for="Producto.Se_Daña" class="form-check-label">Se daña con el tiempo</label>
+                                                    <input asp-for="Producto.Se_DaÃ±a" class="form-check-input" type="checkbox" id="chk-se-dana" />
+                                                    <label asp-for="Producto.Se_DaÃ±a" class="form-check-label">Se daÃ±a con el tiempo</label>
                                                 </div>
                                             </div>
                                             <div class="col-md-3">
@@ -183,7 +183,7 @@
                         @if (!string.IsNullOrEmpty(Model.Producto.CodigoReferencia))
                         {
                             <div class="alert alert-info mt-3">
-                                <strong>Información:</strong> Está editando un producto existente.
+                                <strong>InformaciÃ³n:</strong> EstÃ¡ editando un producto existente.
                             </div>
                         }
                     </div>
@@ -211,7 +211,7 @@
     
     <script>
         $(document).ready(function() {
-            // Función para manejar la visibilidad de campos
+            // FunciÃ³n para manejar la visibilidad de campos
             function toggleFieldVisibility() {
                 var esMateriaPrima = $('#chk-materia-prima').is(':checked');
                 var seDana = $('#chk-se-dana').is(':checked');
@@ -235,35 +235,35 @@
                 }
             }
             
-            // Ejecutar al cargar la página
+            // Ejecutar al cargar la pÃ¡gina
             toggleFieldVisibility();
             
             // Ejecutar cuando cambie el checkbox de materia prima
             $('#chk-materia-prima').on('change', toggleFieldVisibility);
             
-            // Ejecutar cuando cambie el checkbox de se daña
+            // Ejecutar cuando cambie el checkbox de se daÃ±a
             $('#chk-se-dana').on('change', toggleFieldVisibility);
 
-            // Validación personalizada
+            // ValidaciÃ³n personalizada
             $('form').on('submit', function(e) {
                 var codigo = $('#Producto_CodigoReferencia').val();
                 var descripcion = $('#Producto_Descripcion').val();
                 
                 if (!codigo.trim()) {
                     e.preventDefault();
-                    alert('El código de referencia es obligatorio');
+                    alert('El cÃ³digo de referencia es obligatorio');
                     $('#Producto_CodigoReferencia').focus();
                     return false;
                 }
                 
                 if (!descripcion.trim()) {
                     e.preventDefault();
-                    alert('La descripción es obligatoria');
+                    alert('La descripciÃ³n es obligatoria');
                     $('#Producto_Descripcion').focus();
                     return false;
                 }
                 
-                // Validación condicional para materia prima
+                // ValidaciÃ³n condicional para materia prima
                 var esMateriaPrima = $('#chk-materia-prima').is(':checked');
                 var materiaPrimaSeleccionada = $('#Producto_Id_Materia_Prima').val();
                 
@@ -274,19 +274,19 @@
                     return false;
                 }
                 
-                // Validación condicional para tiempo de vida
+                // ValidaciÃ³n condicional para tiempo de vida
                 var seDana = $('#chk-se-dana').is(':checked');
                 var tiempoVida = parseInt($('#Producto_Tiempo_De_Vida').val()) || 0;
                 
                 if (seDana && tiempoVida <= 0) {
                     e.preventDefault();
-                    alert('Debe especificar un tiempo de vida mayor a 0 días');
+                    alert('Debe especificar un tiempo de vida mayor a 0 dÃ­as');
                     $('#Producto_Tiempo_De_Vida').focus();
                     return false;
                 }
             });
 
-            // Mostrar información adicional del impuesto seleccionado
+            // Mostrar informaciÃ³n adicional del impuesto seleccionado
             $('#Producto_Id_Impuesto').on('change', function() {
                 var selectedText = $(this).find('option:selected').text();
                 if (selectedText && selectedText !== '-- Seleccionar Impuesto --') {

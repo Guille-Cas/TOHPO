@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
@@ -75,7 +75,7 @@ namespace TOHPO.Pages.Operaciones.Compras
         {
             if (id <= 0)
             {
-                TempData["ErrorMessage"] = "ID de compra no válido";
+                TempData["ErrorMessage"] = "ID de compra no vÃ¡lido";
                 return RedirectToPage();
             }
 
@@ -93,10 +93,10 @@ namespace TOHPO.Pages.Operaciones.Compras
             try
             {
                 // IMPORTANTE: NO afectamos el inventario al eliminar registros de compra
-                // La eliminación de registros es solo administrativa/contable
+                // La eliminaciÃ³n de registros es solo administrativa/contable
                 // El inventario se mantiene tal como estaba
 
-                // Registrar la eliminación en los movimientos para auditoría (opcional)
+                // Registrar la eliminaciÃ³n en los movimientos para auditorÃ­a (opcional)
                 foreach (var detalle in compra.Compra_Detalles)
                 {
                     var inventario = await _context.Inventario
@@ -104,12 +104,12 @@ namespace TOHPO.Pages.Operaciones.Compras
 
                     if (inventario != null)
                     {
-                        // Solo registrar el movimiento para auditoría, sin cambiar cantidades
+                        // Solo registrar el movimiento para auditorÃ­a, sin cambiar cantidades
                         var movimiento = new Movimiento_Inventario
                         {
                             Id_Inventario = inventario.Id,
                             Cantidad = 0, // Cantidad 0 indica que es solo informativo
-                            Motivo = $"Eliminación de registro - Compra #{compra.Id} (Sin afectar inventario)",
+                            Motivo = $"EliminaciÃ³n de registro - Compra #{compra.Id} (Sin afectar inventario)",
                             Fecha = DateTime.Now
                         };
                         _context.Movimiento_Inventario.Add(movimiento);
@@ -122,7 +122,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                     _context.Compra_Detalle.RemoveRange(compra.Compra_Detalles);
                 }
 
-                // Eliminar métodos de pago
+                // Eliminar mÃ©todos de pago
                 if (compra.Compra_Metodo_Pagos.Any())
                 {
                     _context.Compra_Metodo_Pago.RemoveRange(compra.Compra_Metodo_Pagos);

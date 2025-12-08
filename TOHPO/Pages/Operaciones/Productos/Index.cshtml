@@ -1,4 +1,4 @@
-@page
+锘緻page
 @model TOHPO.Pages.Operaciones.Productos.IndexModel
 @{
     ViewData["Title"] = "Productos";
@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        Gesti髇 de Productos
+                        Gesti贸n de Productos
                     </h3>
                     <div class="card-tools">
                         <a asp-page="./Upsert" class="btn btn-primary btn-sm">
@@ -34,13 +34,13 @@
                         <table class="table table-bordered table-striped" id="productosTable">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th>C骴igo</th>
-                                    <th>Descripci髇</th>
-                                    <th>Categor韆</th>
+                                    <th>C贸digo</th>
+                                    <th>Descripci贸n</th>
+                                    <th>Categor铆a</th>
                                     <th>Impuesto</th>
-                                    <th>Presentaci髇</th>
+                                    <th>Presentaci贸n</th>
                                     <th>Unidad Medida</th>
-                                    <th>Caracter韘ticas</th>
+                                    <th>Caracter铆sticas</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -63,7 +63,7 @@
                                                 @if (producto.Tiempo_De_Vida > 0)
                                                 {
                                                     <br><small class="text-info">
-                                                        @producto.Tiempo_De_Vida d韆s
+                                                        @producto.Tiempo_De_Vida d铆as
                                                     </small>
                                                 }
                                             </td>
@@ -74,7 +74,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-muted">Sin categor韆</span>
+                                                    <span class="text-muted">Sin categor铆a</span>
                                                 }
                                             </td>
                                             <td>
@@ -97,7 +97,7 @@
                                                 }
                                                 else
                                                 {
-                                                    <span class="text-muted">Sin presentaci髇</span>
+                                                    <span class="text-muted">Sin presentaci贸n</span>
                                                 }
                                             </td>
                                             <td>
@@ -211,7 +211,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="detalleContenido">
-                <!-- Contenido din醡ico -->
+                <!-- Contenido din谩mico -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>

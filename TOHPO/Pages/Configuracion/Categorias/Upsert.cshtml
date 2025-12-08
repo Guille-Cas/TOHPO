@@ -71,4 +71,28 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>showSuccess('@TempData["SuccessMessage"].ToString().Replace("'", "\\'")', 'Éxito');</text>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>showError('@TempData["ErrorMessage"].ToString().Replace("'", "\\'")', 'Error');</text>
+            }
+            
+            @if (TempData["WarningMessage"] != null)
+            {
+                <text>showWarning('@TempData["WarningMessage"].ToString().Replace("'", "\\'")', 'Advertencia');</text>
+            }
+            
+            @if (TempData["InfoMessage"] != null)
+            {
+                <text>showInfo('@TempData["InfoMessage"].ToString().Replace("'", "\\'")', 'Información');</text>
+            }
+        });
+    </script>
 }
