@@ -28,7 +28,7 @@
                 <div class="menu-buttons d-grid gap-2 w-100">
                     <a class="btn btn-primary" asp-page="/Configuracion/Clientes/Index">Clientes</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Categorias/Index">Categorías</a>
-                    <a class="btn btn-primary" asp-page="/Configuracion/Presentaciones/Index">Presentaciones</a>
+                    <a class="btn btn-primary" asp-page="/Configuracion/Presentaciones/Index">Presentaciones de productos</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Materias_Prima/Index">Materias Primas</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Impuestos/Index">Impuestos</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Metodos_Pago/Index">Métodos de pago</a>
@@ -36,7 +36,7 @@
                     <a class="btn btn-primary" asp-page="/Operaciones/Productos/Index">Productos</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Proveedores/Index">Proveedores</a>
                     <a class="btn btn-primary" asp-page="/Configuracion/Agentes_ventas/Index">Agentes de Ventas</a>
-                    <button class="btn btn-primary">Configuración</button>
+                    @* <button class="btn btn-primary">Configuración</button> *@
                     <a class="btn btn-primary" asp-page="/Operaciones/Reportes/Index">Reportes</a>
                 </div>
             </div>
@@ -72,40 +72,57 @@
                     acceso rápido y notificaciones
                 </div>
 
-                <!-- Notificaciones de Pedidos Pendientes -->
-                @if (Model.PedidosPendientes.Any())
-                {
-                    <div class="notifications-section mb-3">
+                <!-- Contenido -->
+                <div class="w-100">
+                    @if (Model.PedidosPendientes.Any())
+                    {
+                        <!-- Título de la sección de notificaciones -->
                         <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h6 class="fw-semibold text-warning mb-0 small text-center">
+                            <h6 class="fw-semibold text-warning mb-0 small">
                                 <i class="fas fa-exclamation-triangle me-1"></i>
-                                Pedidos Pendientes (@Model.PedidosPendientes.Count)
+                                Pedidos pendientes (@Model.PedidosPendientes.Count)
                             </h6>
                         </div>
+
+                        <!-- Lista de pedidos -->
                         <div class="notifications-container">
                             @foreach (var pedido in Model.PedidosPendientes.Take(3))
                             {
-                                <div class="standard-card @(pedido.EsVencido ? "border-danger" : "border-warning") mb-2">
+                                <div class="standard-card bg-light text-dark rounded-3 px-2 py-2 mb-2 border
+                                            @(pedido.EsVencido ? "border-danger" : "border-warning")">
                                     <div class="d-flex justify-content-between align-items-start">
-                                        <div class="flex-grow-1">
-                                            <div class="fw-semibold small">@pedido.Cliente</div>
+                                        <!-- Info principal del pedido -->
+                                        <div class="flex-grow-1 me-2">
+                                            <div class="fw-semibold small">
+                                                @pedido.Cliente
+                                            </div>
                                             <div class="text-muted small">
-                                                <i class="fas fa-calendar me-1"></i>@pedido.FechaEntrega.ToString("dd/MM")
-                                                | ₡@pedido.Total.ToString("N0")
+                                                <i class="fas fa-calendar me-1"></i>
+                                                @pedido.FechaEntrega.ToString("dd/MM")
+                                                &nbsp;|&nbsp;
+                                                ₡@pedido.Total.ToString("N0")
                                             </div>
                                         </div>
-                                        <div class="d-flex align-items-center gap-2">
+
+                                        <!-- Estado + acción -->
+                                        <div class="d-flex flex-column align-items-end gap-1">
                                             @if (pedido.EsVencido)
                                             {
                                                 <span class="badge bg-danger small">Vencido</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-info small">@pedido.DiasRestantes días</span>
+                                                <span class="badge bg-warning text-dark small">
+                                                    @pedido.DiasRestantes día@(pedido.DiasRestantes == 1 ? "" : "s")
+                                                </span>
                                             }
-                                            <form method="post" asp-page-handler="CompletarPedido" class="d-inline">
+
+                                            <form method="post"
+                                                  asp-page-handler="CompletarPedido"
+                                                  class="d-inline">
                                                 <input type="hidden" name="pedidoId" value="@pedido.Id" />
-                                                <button type="submit" class="btn btn-success btn-xs" 
+                                                <button type="submit"
+                                                        class="btn btn-primary btn-sm px-2 py-1"
                                                         onclick="return confirm('¿Completar pedido?')"
                                                         title="Completar pedido">
                                                     Completar
@@ -115,22 +132,29 @@
                                     </div>
                                 </div>
                             }
+
                             @if (Model.PedidosPendientes.Count > 3)
                             {
-                                <div class="text-center">
-                                    <small class="text-muted">y @(Model.PedidosPendientes.Count - 3) más...</small>
+                                <div class="text-center mt-1">
+                                    <small class="text-light-50">
+                                        y @(Model.PedidosPendientes.Count - 3) más...
+                                    </small>
                                 </div>
                             }
                         </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="empty-state">
-                        <i class="fas fa-check-circle fa-2x mb-2 text-muted"></i>
-                        <p class="mb-0 small text-muted">No hay pedidos pendientes</p>
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <!-- Estado vacío -->
+                        <div class="empty-state text-center mt-2">
+                            <i class="fas fa-check-circle fa-2x mb-2 text-light-50"></i>
+                            <p class="mb-0 small text-light-50">
+                                No hay pedidos pendientes
+                            </p>
+                        </div>
+                    }
+                </div>
+
             </div>
         </div>
 
@@ -179,7 +203,7 @@
                                             </div>
                                             <form method="post" asp-page-handler="CompletarRecordatorio" class="d-inline">
                                                 <input type="hidden" name="recordatorioId" value="@evento.Id" />
-                                                <button type="submit" class="btn btn-success btn-xs" 
+                                                <button type="submit" class="btn bg-primary btn-xs"
                                                         onclick="return confirm('¿Marcar recordatorio como listo?')"
                                                         title="Marcar como listo">
                                                     Listo
