@@ -1,5 +1,4 @@
-ï»¿@page "{id:int?}"
-@using System.Text.Json
+@page
 @model TOHPO.Pages.Operaciones.Produccion.UpsertModel
 @{
     ViewData["Title"] = Model.Receta.Id == 0 ? "Nueva Receta" : "Editar Receta";
@@ -9,186 +8,231 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h3>
-                        @(Model.Receta.Id == 0 ? "Nueva Receta" : "Editar Receta")
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title">
+                        @ViewData["Title"]
                     </h3>
+                    <div class="card-tools">
+                        <a asp-page="./Index" class="btn btn-light btn-sm">
+                            Volver al Listado
+                        </a>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post">
-                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                        
-                        <input type="hidden" asp-for="Receta.Id" />
-                        <input type="hidden" asp-for="Receta.Fecha_Creacion" />
 
-                        <div class="row">
-                            <!-- InformaciÃ³n bÃ¡sica -->
+                <form method="post" id="recetaForm">
+                    <div class="card-body">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <input type="hidden" asp-for="Receta.Id" />
+
+                        <!-- Información básica de la receta -->
+                        <div class="row mb-4">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Receta.Descripcion" class="form-label">DescripciÃ³n *</label>
-                                    <input asp-for="Receta.Descripcion" type="text" class="form-control" required maxlength="200">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Descripcion" class="form-label">Descripción de la Receta</label>
+                                    <input asp-for="Receta.Descripcion" class="form-control" placeholder="Nombre de la receta..." />
                                     <span asp-validation-for="Receta.Descripcion" class="text-danger"></span>
                                 </div>
-
-                                <div class="mb-3">
-                                    <label asp-for="Receta.Codigo_Producto" class="form-label">Producto *</label>
-                                    <select asp-for="Receta.Codigo_Producto" asp-items="Model.ProductosSelectList" 
-                                            class="form-select" required onchange="validarProducto(this.value)">
-                                        <option value="">Seleccione un producto...</option>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Codigo_Producto" class="form-label">Producto Final</label>
+                                    <select asp-for="Receta.Codigo_Producto" asp-items="Model.ProductosList" class="form-select">
+                                        <option value="">-- Seleccionar Producto --</option>
                                     </select>
                                     <span asp-validation-for="Receta.Codigo_Producto" class="text-danger"></span>
-                                    <div id="productoInfo" class="form-text"></div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label asp-for="Receta.Rendimiento" class="form-label">Rendimiento *</label>
-                                            <input asp-for="Receta.Rendimiento" type="number" step="0.01" min="0.01" 
-                                                   class="form-control" required>
-                                            <span asp-validation-for="Receta.Rendimiento" class="text-danger"></span>
-                                            <div class="form-text">Cantidad que se produce con esta receta</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label asp-for="Receta.Cantidad_Empaque" class="form-label">Cantidad Empaque</label>
-                                            <input asp-for="Receta.Cantidad_Empaque" type="number" step="0.01" min="0" 
-                                                   class="form-control">
-                                            <span asp-validation-for="Receta.Cantidad_Empaque" class="text-danger"></span>
-                                            <div class="form-text">Cantidad por empaque (opcional)</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input asp-for="Receta.Estado" type="checkbox" class="form-check-input">
-                                        <label asp-for="Receta.Estado" class="form-check-label">Activo</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Detalles e instrucciones -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Receta.Detalle" class="form-label">Detalle</label>
-                                    <textarea asp-for="Receta.Detalle" class="form-control" rows="4" 
-                                              placeholder="DescripciÃ³n detallada de la receta"></textarea>
-                                    <span asp-validation-for="Receta.Detalle" class="text-danger"></span>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label asp-for="Receta.Instrucciones" class="form-label">Instrucciones *</label>
-                                    <textarea asp-for="Receta.Instrucciones" class="form-control" rows="6" required
-                                              placeholder="Pasos detallados para elaborar la receta"></textarea>
-                                    <span asp-validation-for="Receta.Instrucciones" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- SecciÃ³n de Materias Primas -->
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <hr>
-                                <h4>Materias Primas</h4>
-                                
-                                <!-- Agregar Materia Prima -->
-                                <div class="card mb-3">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <label class="form-label">Materia Prima</label>
-                                                <select id="selectMateriaPrima" class="form-select" onchange="cargarInfoMateriaPrima()">
-                                                    <option value="">Seleccione una materia prima...</option>
-                                                    @if (Model.MateriasPrimasSelectList != null)
-                                                    {
-                                                        @foreach (var item in Model.MateriasPrimasSelectList)
-                                                        {
-                                                            <option value="@item.Value">@item.Text</option>
-                                                        }
-                                                    }
-                                                </select>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Rendimiento" class="form-label">Rendimiento (Unidades Producidas)</label>
+                                    <input asp-for="Receta.Rendimiento" class="form-control" type="number" step="0.01" min="0.01" />
+                                    <span asp-validation-for="Receta.Rendimiento" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Cantidad_Empaque" class="form-label">Cantidad por Empaque (Opcional)</label>
+                                    <input asp-for="Receta.Cantidad_Empaque" class="form-control" type="number" step="0.01" min="0" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Estado" class="form-label">Estado</label>
+                                    <select asp-for="Receta.Estado" class="form-select">
+                                        <option value="true">Activa</option>
+                                        <option value="false">Inactiva</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Instrucciones" class="form-label">Instrucciones de Preparación</label>
+                                    <textarea asp-for="Receta.Instrucciones" class="form-control" rows="4" placeholder="Pasos para preparar la receta..."></textarea>
+                                    <span asp-validation-for="Receta.Instrucciones" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Receta.Detalle" class="form-label">Detalles Adicionales (Opcional)</label>
+                                    <textarea asp-for="Receta.Detalle" class="form-control" rows="4" placeholder="Información adicional sobre la receta..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de agregar materias primas -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-plus"></i> Agregar Materias Primas
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label class="form-label">Materia Prima</label>
+                                            <div class="input-group">
+                                                <input type="text" id="inputBuscarMateriaPrima" class="form-control form-control-lg" 
+                                                       placeholder="Buscar materia prima por nombre..." 
+                                                       data-id="" data-unidad-medida=""
+                                                       style="font-size: 1.1rem;" />
+                                                <button type="button" class="btn btn-outline-primary" id="btnSeleccionarMateriaPrima" data-bs-toggle="modal" data-bs-target="#modalSeleccionarMateriaPrima">
+                                                    <i class="fas fa-search"></i> Seleccionar
+                                                </button>
                                             </div>
-                                            <div class="col-md-2">
-                                                <label class="form-label">Cantidad</label>
-                                                <input type="number" id="inputCantidad" class="form-control" step="0.001" min="0.001" placeholder="0.000">
-                                            </div>
-                                            <div class="col-md-2">
-                                                <label class="form-label">Unidad</label>
-                                                <select id="selectUnidadMedida" class="form-select">
-                                                    <option value="0">Kilogramo</option>
-                                                    <option value="1">Gramo</option>
-                                                    <option value="2">Litro</option>
-                                                    <option value="3">Mililitro</option>
-                                                    <option value="4">Unidad</option>
-                                                    <option value="5">Libra</option>
-                                                    <option value="6">Onza</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label">Observaciones</label>
-                                                <input type="text" id="inputObservaciones" class="form-control" maxlength="200" placeholder="Opcional">
-                                            </div>
-                                            <div class="col-md-1 d-flex align-items-end">
-                                                <button type="button" class="btn btn-success" onclick="agregarMateriaPrima()">
-                                                    Agregar
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">Cantidad</label>
+                                            <input type="number" id="inputCantidad" class="form-control" 
+                                                   step="0.001" min="0.001" value="1" placeholder="0.000" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="form-label">&nbsp;</label>
+                                            <div class="d-grid">
+                                                <button type="button" class="btn btn-success" id="btnAgregarMateriaPrima">
+                                                    <i class="fas fa-plus"></i> Agregar
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label class="form-label">Observaciones (Opcional)</label>
+                                            <input type="text" id="inputObservaciones" class="form-control" 
+                                                   placeholder="Notas adicionales sobre esta materia prima..." />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                <!-- Lista de Materias Primas -->
+                        <!-- Tabla de materias primas agregadas -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-list"></i> Materias Primas de la Receta
+                                </h5>
+                            </div>
+                            <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-striped table-hover" id="tablaMateriasPrimas">
+                                    <table class="table table-striped" id="tablaMateriasPrimas">
                                         <thead class="table-dark">
                                             <tr>
                                                 <th>Materia Prima</th>
                                                 <th>Cantidad</th>
                                                 <th>Unidad</th>
                                                 <th>Observaciones</th>
-                                                <th>Acciones</th>
+                                                <th width="100">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody id="cuerpoTablaMateriasPrimas">
-                                            <!-- Se llenan dinÃ¡micamente -->
+                                            <tr id="filaVaciaReceta">
+                                                <td colspan="5" class="text-center text-muted">
+                                                    No se han agregado materias primas. Use el buscador arriba para agregar.
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
-
-                                <!-- Campos ocultos para las materias primas -->
-                                <div id="camposOcultosMateriasPrimas"></div>
                             </div>
                         </div>
 
-                        <!-- InformaciÃ³n adicional (solo en ediciÃ³n) -->
-                        @if (Model.Receta.Id > 0)
-                        {
-                            <div class="row">
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <strong>InformaciÃ³n:</strong> Receta creada el @Model.Receta.Fecha_Creacion.ToString("dd/MM/yyyy HH:mm")
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                        <!-- Campos ocultos para los detalles -->
+                        <div id="hiddenFieldsMateriasPrimas"></div>
+                    </div>
 
-                        <!-- Botones -->
+                    <div class="card-footer">
                         <div class="row">
-                            <div class="col-12">
-                                <hr>
-                                <div class="d-flex justify-content-between">
-                                    <a asp-page="./Index" class="btn btn-secondary">
-                                        Volver
-                                    </a>
-                                    <button type="submit" class="btn btn-success">
-                                        @(Model.Receta.Id == 0 ? "Crear Receta" : "Actualizar Receta")
-                                    </button>
-                                </div>
+                            <div class="col-md-12 text-end">
+                                <button type="submit" class="btn btn-success btn-lg me-2" id="guardarBtn">
+                                    @(Model.Receta.Id == 0 ? "Crear Receta" : "Actualizar Receta")
+                                </button>
+                                <a asp-page="./Index" class="btn btn-secondary">
+                                    Cancelar
+                                </a>
                             </div>
                         </div>
-                    </form>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Selección de Materias Primas -->
+<div class="modal fade" id="modalSeleccionarMateriaPrima" tabindex="-1" aria-labelledby="modalSeleccionarMateriaPrimaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalSeleccionarMateriaPrimaLabel">
+                    <i class="fas fa-search"></i> Seleccionar Materia Prima
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <input type="text" id="filtroMateriaPrima" class="form-control" 
+                               placeholder="Buscar materia prima por nombre..."
+                               autofocus>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="RecetaManager.filtrarMateriasPrimas()">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Unidad de Medida</th>
+                                <th width="100">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaMateriasPrimasModal">
+                            <tr id="noMateriasMessage">
+                                <td colspan="3" class="text-center text-muted">
+                                    Cargando materias primas...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -196,237 +240,291 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        // InicializaciÃ³n mejorada para evitar errores de undefined
-        let materiasPrimasSeleccionadas = [];
-        let contadorMateriasPrimas = 0;
-        
-        // Obtener el ID de la receta actual para validaciones
-        const currentRecetaId = @(Model.Receta.Id);
+        // Variables globales para la gestión de materias primas
+        let materiasPrimasData = [];
+        let detalleMateriasPrimas = [];
+        let contadorFilas = 0;
 
-        // Unidades de medida
-        const unidadesMedida = {
-            0: 'Kilogramo',
-            1: 'Gramo', 
-            2: 'Litro',
-            3: 'Mililitro',
-            4: 'Unidad',
-            5: 'Libra',
-            6: 'Onza'
-        };
+        $(document).ready(function() {
+            console.log('Document ready - iniciando carga');
 
-        // CORREGIDO: InicializaciÃ³n mÃ¡s robusta de materias primas desde el servidor
-        function inicializarMateriasPrimasDesdeServidor() {
-            try {
-                // CORREGIDO: Mejor manejo de la serializaciÃ³n JSON
-                const materiasPrimasDelServidor = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MateriasPrimasSeleccionadas, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+            // Inicializar array vacío
+            detalleMateriasPrimas = [];
 
-                console.log('Datos del servidor (raw):', materiasPrimasDelServidor);
-                
-                if (materiasPrimasDelServidor && Array.isArray(materiasPrimasDelServidor)) {
-                    materiasPrimasSeleccionadas = [];
+            // Cargar materias primas existentes si es edición
+            @if (Model.DetallesMateriasPrimas != null && Model.DetallesMateriasPrimas.Any())
+            {
+                <text>
+                console.log('Hay materias primas para cargar');
+                try {
+                    var jsonData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DetallesMateriasPrimas, new System.Text.Json.JsonSerializerOptions { 
+                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    }));
+                    console.log('Datos JSON recibidos:', jsonData);
                     
-                    materiasPrimasDelServidor.forEach((mp, index) => {
-                        console.log(`Procesando MP ${index}:`, mp);
-                        
-                        const materiaPrimaProcesada = {
-                            Id: mp.id || 0,
-                            Id_Materia_Prima: mp.id_Materia_Prima || mp.idMateriaPrima || 0,
-                            Descripcion: mp.descripcion || 'Sin descripciÃ³n',
-                            Cantidad_Requerida: parseFloat(mp.cantidad_Requerida || mp.cantidadRequerida || 0),
-                            Unidad_Medida: parseInt(mp.unidad_Medida || mp.unidadMedida || 0),
-                            Observaciones: mp.observaciones || ''
-                        };
-                        
-                        console.log('MP procesada:', materiaPrimaProcesada);
-                        materiasPrimasSeleccionadas.push(materiaPrimaProcesada);
-                    });
+                    // Convertir los datos y asegurar que tienen la estructura correcta
+                    detalleMateriasPrimas = jsonData.map(item => ({
+                        Id: item.id || 0,
+                        IdMateriaPrima: item.idMateriaPrima,
+                        NombreMateriaPrima: item.nombreMateriaPrima || '',
+                        CantidadRequerida: parseFloat(item.cantidadRequerida) || 0,
+                        UnidadMedida: item.unidadMedida || 'Unidad',
+                        Observaciones: item.observaciones || '',
+                        Estado: item.estado !== false
+                    }));
                     
-                    console.log('Materias primas finales cargadas:', materiasPrimasSeleccionadas);
-                } else {
-                    console.warn('No se recibieron materias primas del servidor o el formato es incorrecto');
+                    console.log('Materias primas procesadas:', detalleMateriasPrimas);
+                    
+                    // Actualizar tabla inmediatamente
+                    actualizarTablaMateriasPrimas();
+                } catch (error) {
+                    console.error('Error al procesar materias primas:', error);
+                    detalleMateriasPrimas = [];
                 }
-            } catch (error) {
-                console.error('Error al cargar materias primas del servidor:', error);
-                materiasPrimasSeleccionadas = [];
+                </text>
             }
-        }
-
-        function validarProducto(codigo) {
-            const infoDiv = document.getElementById('productoInfo');
-            
-            if (!codigo) {
-                infoDiv.innerHTML = '';
-                return;
+            else
+            {
+                <text>
+                console.log('No hay materias primas existentes para cargar');
+                </text>
             }
 
-            let url = `?handler=ValidarProducto&codigo=${encodeURIComponent(codigo)}`;
-            if (currentRecetaId > 0) {
-                url += `&id=${currentRecetaId}`;
-            }
+            // Objeto para manejar las funciones de recetas
+            window.RecetaManager = {
+                // Variables para el modal de materias primas
+                materiasPrimasModalData: [],
+                
+                // Función para cargar materias primas en el modal
+                cargarMateriasPrimasModal: function() {
+                    $.get('/Operaciones/Produccion/Upsert?handler=MateriasPrimas')
+                        .done(function(data) {
+                            if (data.success) {
+                                RecetaManager.materiasPrimasModalData = data.materiasPrimas;
+                                RecetaManager.mostrarMateriasPrimasModal(RecetaManager.materiasPrimasModalData);
+                            } else {
+                                alert('Error al cargar materias primas: ' + data.message);
+                            }
+                        })
+                        .fail(function() {
+                            alert('Error al conectar con el servidor');
+                        });
+                },
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.valido) {
-                        infoDiv.innerHTML = `<div class="text-success">
-                            Producto vÃ¡lido: ${data.producto.descripcion}
-                            ${data.producto.categoria ? `(${data.producto.categoria})` : ''}
-                        </div>`;
-                    } else {
-                        infoDiv.innerHTML = `<div class="text-danger">
-                            ${data.mensaje}
-                            ${data.recetaId ? `<br><small>Receta existente: ${data.recetaDescripcion}</small>` : ''}
-                        </div>`;
+                // Función para mostrar materias primas en el modal
+                mostrarMateriasPrimasModal: function(materiasPrimas) {
+                    const tbody = $('#tablaMateriasPrimasModal');
+                    tbody.empty();
+
+                    if (materiasPrimas.length === 0) {
+                        $('#noMateriasMessage').show();
+                        return;
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    infoDiv.innerHTML = '<div class="text-warning">Error al validar el producto</div>';
-                });
-        }
 
-        function cargarInfoMateriaPrima() {
-            const select = document.getElementById('selectMateriaPrima');
-            const id = select.value;
-            
-            if (!id) return;
+                    materiasPrimas.forEach((materia) => {
+                        const row = `
+                            <tr>
+                                <td><strong>${materia.descripcion}</strong></td>
+                                <td><span class="badge bg-info">${materia.unidadMedida}</span></td>
+                                <td>
+                                    <button type="button" class="btn btn-primary btn-sm" 
+                                            onclick="RecetaManager.seleccionarMateriaPrima(${materia.id}, '${materia.descripcion}', '${materia.unidadMedida}')"
+                                            data-bs-dismiss="modal">
+                                        Seleccionar
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                        tbody.append(row);
+                    });
+                },
 
-            fetch(`?handler=ObtenerMateriaPrima&id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const selectUnidad = document.getElementById('selectUnidadMedida');
-                        selectUnidad.value = data.materia_prima.unidad_medida || 0;
+                // Función para seleccionar una materia prima del modal
+                seleccionarMateriaPrima: function(id, descripcion, unidadMedida) {
+                    $('#inputBuscarMateriaPrima').val(descripcion).data('id', id).data('unidad-medida', unidadMedida);
+                    $('#inputCantidad').focus();
+                },
+
+                // Función para filtrar materias primas en el modal
+                filtrarMateriasPrimas: function() {
+                    const filtro = $('#filtroMateriaPrima').val().toLowerCase();
+                    
+                    if (!filtro) {
+                        this.mostrarMateriasPrimasModal(this.materiasPrimasModalData);
+                        return;
                     }
-                })
-                .catch(error => console.error('Error:', error));
-        }
 
-        function agregarMateriaPrima() {
-            const selectMP = document.getElementById('selectMateriaPrima');
-            const inputCantidad = document.getElementById('inputCantidad');
-            const selectUnidad = document.getElementById('selectUnidadMedida');
-            const inputObservaciones = document.getElementById('inputObservaciones');
+                    const materiasFiltradas = this.materiasPrimasModalData.filter(materia => 
+                        materia.descripcion.toLowerCase().includes(filtro)
+                    );
 
-            if (!selectMP.value || !inputCantidad.value || parseFloat(inputCantidad.value) <= 0) {
-                alert('Por favor, seleccione una materia prima y especifique una cantidad vÃ¡lida');
-                return;
-            }
-
-            // Verificar que no estÃ© duplicada
-            const yaExiste = materiasPrimasSeleccionadas.some(mp => mp.Id_Materia_Prima == selectMP.value);
-            if (yaExiste) {
-                alert('Esta materia prima ya ha sido agregada a la receta');
-                return;
-            }
-
-            const nuevaMateriaPrima = {
-                Id: 0,
-                Id_Materia_Prima: parseInt(selectMP.value),
-                Descripcion: selectMP.options[selectMP.selectedIndex].text,
-                Cantidad_Requerida: parseFloat(inputCantidad.value),
-                Unidad_Medida: parseInt(selectUnidad.value),
-                Observaciones: inputObservaciones.value || ''
+                    this.mostrarMateriasPrimasModal(materiasFiltradas);
+                }
             };
 
-            materiasPrimasSeleccionadas.push(nuevaMateriaPrima);
-            actualizarTablaMateriasPrimas();
-
-            // Limpiar campos
-            selectMP.value = '';
-            inputCantidad.value = '';
-            selectUnidad.value = '0';
-            inputObservaciones.value = '';
-        }
-
-        function eliminarMateriaPrima(index) {
-            if (index >= 0 && index < materiasPrimasSeleccionadas.length) {
-                materiasPrimasSeleccionadas.splice(index, 1);
-                actualizarTablaMateriasPrimas();
-            }
-        }
-
-        function actualizarTablaMateriasPrimas() {
-            const tbody = document.getElementById('cuerpoTablaMateriasPrimas');
-            const camposOcultos = document.getElementById('camposOcultosMateriasPrimas');
-            
-            if (!tbody || !camposOcultos) {
-                console.error('No se encontraron los elementos de la tabla');
-                return;
-            }
-
-            tbody.innerHTML = '';
-            camposOcultos.innerHTML = '';
-
-            if (!Array.isArray(materiasPrimasSeleccionadas)) {
-                console.error('materiasPrimasSeleccionadas no es un array vÃ¡lido');
-                return;
-            }
-
-            console.log('Actualizando tabla con:', materiasPrimasSeleccionadas);
-
-            materiasPrimasSeleccionadas.forEach((mp, index) => {
-                // Validaciones para evitar errores de undefined
-                const descripcion = mp.Descripcion || 'Sin descripciÃ³n';
-                const cantidad = (mp.Cantidad_Requerida !== undefined && mp.Cantidad_Requerida !== null) 
-                    ? parseFloat(mp.Cantidad_Requerida).toFixed(3) 
-                    : '0.000';
-                const unidad = unidadesMedida[mp.Unidad_Medida] || 'Unidad';
-                const observaciones = mp.Observaciones || '';
-
-                console.log(`Fila ${index}: ${descripcion}, ${cantidad}, ${unidad}`);
-
-                // Agregar fila a la tabla
-                const fila = document.createElement('tr');
-                fila.innerHTML = `
-                    <td>${descripcion}</td>
-                    <td>${cantidad}</td>
-                    <td>${unidad}</td>
-                    <td>${observaciones}</td>
-                    <td>
-                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarMateriaPrima(${index})">
-                            Eliminar
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(fila);
-
-                // Agregar campos ocultos con validaciones
-                const campoOculto = document.createElement('div');
-                campoOculto.innerHTML = `
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Id" value="${mp.Id || 0}" />
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Id_Materia_Prima" value="${mp.Id_Materia_Prima || 0}" />
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Descripcion" value="${descripcion}" />
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Cantidad_Requerida" value="${mp.Cantidad_Requerida || 0}" />
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Unidad_Medida" value="${mp.Unidad_Medida || 0}" />
-                    <input type="hidden" name="MateriasPrimasSeleccionadas[${index}].Observaciones" value="${observaciones}" />
-                `;
-                camposOcultos.appendChild(campoOculto);
+            // Eventos
+            $('#btnSeleccionarMateriaPrima').click(function() {
+                RecetaManager.cargarMateriasPrimasModal();
             });
-        }
 
-        // InicializaciÃ³n al cargar la pÃ¡gina
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                const productoSelect = document.querySelector('select[name="Receta.Codigo_Producto"]');
-                if (productoSelect && productoSelect.value) {
-                    // No validar automÃ¡ticamente en ediciÃ³n para evitar la advertencia
-                    if (currentRecetaId === 0) {
-                        validarProducto(productoSelect.value);
-                    }
+            $('#btnAgregarMateriaPrima').click(function() {
+                agregarMateriaPrima();
+            });
+
+            $('#inputCantidad').keypress(function(e) {
+                if (e.which === 13) {
+                    agregarMateriaPrima();
+                }
+            });
+
+            $('#filtroMateriaPrima').keyup(function() {
+                RecetaManager.filtrarMateriasPrimas();
+            });
+
+            // Función para agregar materia prima a la tabla
+            function agregarMateriaPrima() {
+                const materiaPrimaInput = $('#inputBuscarMateriaPrima');
+                const cantidadInput = $('#inputCantidad');
+                const observacionesInput = $('#inputObservaciones');
+
+                const idMateriaPrima = materiaPrimaInput.data('id');
+                const nombreMateriaPrima = materiaPrimaInput.val();
+                const cantidad = parseFloat(cantidadInput.val()) || 0;
+                const unidadMedida = materiaPrimaInput.data('unidad-medida');
+                const observaciones = observacionesInput.val();
+
+                // Validaciones
+                if (!idMateriaPrima || !nombreMateriaPrima) {
+                    alert('Debe seleccionar una materia prima.');
+                    return;
                 }
 
-                // CORREGIDO: Cargar materias primas existentes de forma segura
-                console.log('Iniciando carga de materias primas...');
-                inicializarMateriasPrimasDesdeServidor();
+                if (cantidad <= 0) {
+                    alert('La cantidad debe ser mayor a 0.');
+                    cantidadInput.focus();
+                    return;
+                }
+
+                // Verificar si ya existe la materia prima
+                const yaExiste = detalleMateriasPrimas.some(d => d.Estado && d.IdMateriaPrima === idMateriaPrima);
+                if (yaExiste) {
+                    alert('Esta materia prima ya está agregada a la receta.');
+                    return;
+                }
+
+                // Agregar al array
+                const nuevoDetalle = {
+                    Id: 0,
+                    IdMateriaPrima: idMateriaPrima,
+                    NombreMateriaPrima: nombreMateriaPrima,
+                    CantidadRequerida: cantidad,
+                    UnidadMedida: unidadMedida,
+                    Observaciones: observaciones,
+                    Estado: true
+                };
+
+                detalleMateriasPrimas.push(nuevoDetalle);
+
+                // Limpiar campos
+                materiaPrimaInput.val('').data('id', '').data('unidad-medida', '');
+                cantidadInput.val('1');
+                observacionesInput.val('');
+
+                // Actualizar tabla
                 actualizarTablaMateriasPrimas();
-                console.log('Carga completada');
-            } catch (error) {
-                console.error('Error en la inicializaciÃ³n:', error);
+                
+                // Focus al input de búsqueda
+                materiaPrimaInput.focus();
             }
+
+            // Función para actualizar la tabla de materias primas
+            function actualizarTablaMateriasPrimas() {
+                console.log('=== EJECUTANDO actualizarTablaMateriasPrimas ===');
+                console.log('detalleMateriasPrimas completo:', detalleMateriasPrimas);
+                
+                const cuerpoTabla = $('#cuerpoTablaMateriasPrimas');
+                const camposOcultos = $('#hiddenFieldsMateriasPrimas');
+                
+                if (cuerpoTabla.length === 0) {
+                    console.error('No se encontró el elemento cuerpoTablaMateriasPrimas');
+                    return;
+                }
+                
+                cuerpoTabla.empty();
+                camposOcultos.empty();
+
+                const materiasPrimasActivas = detalleMateriasPrimas.filter(d => d.Estado === true);
+                console.log('Materias primas activas filtradas:', materiasPrimasActivas);
+
+                if (materiasPrimasActivas.length === 0) {
+                    console.log('No hay materias primas activas, mostrando mensaje vacío');
+                    cuerpoTabla.append(`
+                        <tr id="filaVaciaReceta">
+                            <td colspan="5" class="text-center text-muted">
+                                No se han agregado materias primas. Use el buscador arriba para agregar.
+                            </td>
+                        </tr>
+                    `);
+                    return;
+                }
+
+                console.log('Construyendo tabla con', materiasPrimasActivas.length, 'materias primas');
+                materiasPrimasActivas.forEach((detalle, index) => {
+                    console.log(`Procesando materia prima ${index}:`, detalle);
+                    
+                    // Asegurar que los valores sean correctos
+                    const cantidad = parseFloat(detalle.CantidadRequerida) || 0;
+                    const nombreMateria = detalle.NombreMateriaPrima || 'Sin nombre';
+                    const unidad = detalle.UnidadMedida || 'Unidad';
+                    const observaciones = detalle.Observaciones || '';
+                    
+                    // Fila de la tabla
+                    const fila = `
+                        <tr>
+                            <td><strong>${nombreMateria}</strong></td>
+                            <td>${cantidad.toFixed(3)}</td>
+                            <td><span class="badge bg-info">${unidad}</span></td>
+                            <td>${observaciones || '<em class="text-muted">Sin observaciones</em>'}</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarMateriaPrima(${detalleMateriasPrimas.indexOf(detalle)})">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    cuerpoTabla.append(fila);
+
+                    // Campos ocultos
+                    camposOcultos.append(`
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].Id" value="${detalle.Id || 0}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].IdMateriaPrima" value="${detalle.IdMateriaPrima}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].NombreMateriaPrima" value="${nombreMateria}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].CantidadRequerida" value="${cantidad}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].UnidadMedida" value="${unidad}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].Observaciones" value="${observaciones}" />
+                        <input type="hidden" name="DetallesMateriasPrimas[${index}].Estado" value="${detalle.Estado}" />
+                    `);
+                });
+                
+                console.log('Tabla actualizada exitosamente');
+                console.log('Contenido final del cuerpo de tabla:', cuerpoTabla.html());
+            }
+
+            // Función global para eliminar materia prima
+            window.eliminarMateriaPrima = function(index) {
+                if (confirm('¿Está seguro de eliminar esta materia prima de la receta?')) {
+                    detalleMateriasPrimas[index].Estado = false;
+                    actualizarTablaMateriasPrimas();
+                }
+            };
+
+            // Exponer funciones globalmente
+            window.actualizarTablaMateriasPrimas = actualizarTablaMateriasPrimas;
+            
+            console.log('Inicialización completa');
         });
     </script>
 }

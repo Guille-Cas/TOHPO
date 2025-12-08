@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="Pages\Operaciones\Recetas\" />
 	  <Folder Include="wwwroot\lib\chartjs\" />
 	</ItemGroup>
 

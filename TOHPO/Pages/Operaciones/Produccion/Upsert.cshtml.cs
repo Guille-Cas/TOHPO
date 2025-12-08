@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
 using TOHPO.Models;
-using System.Text.Json;
 using TOHPO.Models.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace TOHPO.Pages.Operaciones.Produccion
 {
@@ -22,73 +20,72 @@ namespace TOHPO.Pages.Operaciones.Produccion
         [BindProperty]
         public Receta Receta { get; set; } = default!;
 
-        public SelectList ProductosSelectList { get; set; } = default!;
-        public SelectList MateriasPrimasSelectList { get; set; } = default!;
-
         [BindProperty]
-        public List<RecetaMateriaPrimaDto> MateriasPrimasSeleccionadas { get; set; } = new();
+        public List<DetalleMateriasPrimasViewModel> DetallesMateriasPrimas { get; set; } = new List<DetalleMateriasPrimasViewModel>();
+
+        public SelectList ProductosList { get; set; } = default!;
+        public List<Materia_Prima> MateriasPrimasDisponibles { get; set; } = new List<Materia_Prima>();
+
+        public class DetalleMateriasPrimasViewModel
+        {
+            public int Id { get; set; }
+            public int IdMateriaPrima { get; set; }
+            public string NombreMateriaPrima { get; set; } = string.Empty;
+            public decimal CantidadRequerida { get; set; }
+            public Unidad_Medida UnidadMedida { get; set; }
+            public string? Observaciones { get; set; }
+            public bool Estado { get; set; } = true;
+        }
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            await CargarSelectLists();
+            await CargarDatos();
 
-            if (id == null)
+            if (id.HasValue)
             {
-                // Nueva receta
-                Receta = new Receta
+                var receta = await _context.Receta
+                    .Include(r => r.Producto)
+                    .Include(r => r.Receta_Materias_Primas)
+                        .ThenInclude(rmp => rmp.Materia_Prima)
+                    .FirstOrDefaultAsync(r => r.Id == id.Value);
+
+                if (receta == null)
                 {
-                    Fecha_Creacion = DateTime.Now,
-                    Estado = true,
-                    Rendimiento = 1.0,
-                    Cantidad_Empaque = 1.0
-                };
-                return Page();
-            }
+                    TempData["ErrorMessage"] = "Receta no encontrada";
+                    return RedirectToPage("./Index");
+                }
 
-            // Cargar receta existente
-            Receta = await _context.Receta
-                .Include(r => r.Producto)
-                    .ThenInclude(p => p.Categoria)
-                .FirstOrDefaultAsync(r => r.Id == id);
+                Receta = receta;
 
-            if (Receta == null)
-            {
-                return NotFound();
-            }
-
-            // CORREGIDO: Cargar las materias primas con mejor manejo de la relación
-            var recetasMateriasPrimas = await _context.Receta_Materia_Prima
-                .Include(rmp => rmp.Materia_Prima)
-                .Where(rmp => rmp.Id_Receta == id && rmp.Estado)
-                .ToListAsync();
-
-            // CORREGIDO: Mapeo más robusto con validaciones adicionales
-            MateriasPrimasSeleccionadas = new List<RecetaMateriaPrimaDto>();
-            
-            foreach (var rmp in recetasMateriasPrimas)
-            {
-                // Verificar que la materia prima no sea nula
-                if (rmp.Materia_Prima != null)
-                {
-                    var dto = new RecetaMateriaPrimaDto
+                // Cargar detalles de materias primas para edici�n
+                DetallesMateriasPrimas = receta.Receta_Materias_Primas
+                    .Where(rmp => rmp.Materia_Prima != null && rmp.Estado) // Filtrar nulls y solo activos
+                    .Select(rmp => new DetalleMateriasPrimasViewModel
                     {
                         Id = rmp.Id,
-                        Id_Materia_Prima = rmp.Id_Materia_Prima,
-                        Descripcion = rmp.Materia_Prima.Descripcion ?? "Sin descripción",
-                        Cantidad_Requerida = rmp.Cantidad_Requerida,
-                        Unidad_Medida = rmp.Unidad_Medida,
-                        Observaciones = rmp.Observaciones ?? ""
-                    };
-                    
-                    MateriasPrimasSeleccionadas.Add(dto);
-                    
-                    // DEBUG: Log para verificar qué se está agregando
-                    Console.WriteLine($"Agregando materia prima: {dto.Descripcion}, Cantidad: {dto.Cantidad_Requerida}");
-                }
-                else
+                        IdMateriaPrima = rmp.Id_Materia_Prima,
+                        NombreMateriaPrima = rmp.Materia_Prima.Descripcion,
+                        CantidadRequerida = rmp.Cantidad_Requerida,
+                        UnidadMedida = rmp.Unidad_Medida,
+                        Observaciones = rmp.Observaciones ?? string.Empty,
+                        Estado = rmp.Estado
+                    }).ToList();
+
+                Console.WriteLine($"Materias primas cargadas para edici�n: {DetallesMateriasPrimas.Count}");
+                foreach (var detalle in DetallesMateriasPrimas)
                 {
-                    Console.WriteLine($"Materia prima nula para ID: {rmp.Id_Materia_Prima}");
+                    Console.WriteLine($"- {detalle.NombreMateriaPrima}: {detalle.CantidadRequerida} {detalle.UnidadMedida}");
                 }
+            }
+            else
+            {
+                // Crear nueva receta
+                Receta = new Receta
+                {
+                    Estado = true,
+                    Fecha_Creacion = DateTime.Now,
+                    Rendimiento = 1
+                };
             }
 
             return Page();
@@ -96,93 +93,82 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Remover validaciones que no son necesarias
+            // Remover validaciones de navegaci�n que se cargan por separado
             ModelState.Remove("Receta.Producto");
-            
-            // Remover validaciones de Observaciones para todos los elementos
-            var observacionesKeys = ModelState.Keys
-                .Where(k => k.Contains("MateriasPrimasSeleccionadas") && k.EndsWith(".Observaciones"))
-                .ToList();
-            
-            foreach (var key in observacionesKeys)
+            ModelState.Remove("Receta.Receta_Materias_Primas");
+
+            // Validar que haya al menos una materia prima
+            if (DetallesMateriasPrimas == null || !DetallesMateriasPrimas.Any(d => d.Estado))
             {
-                ModelState.Remove(key);
+                ModelState.AddModelError("", "Debe agregar al menos una materia prima a la receta.");
             }
 
-            // CORREGIDO: Remover validaciones de Descripción ya que es solo informativa
-            var descripcionKeys = ModelState.Keys
-                .Where(k => k.Contains("MateriasPrimasSeleccionadas") && k.EndsWith(".Descripcion"))
-                .ToList();
+            // Validar que no haya materias primas duplicadas
+            var materiasPrimasActivas = DetallesMateriasPrimas.Where(d => d.Estado).ToList();
+            var duplicados = materiasPrimasActivas.GroupBy(d => d.IdMateriaPrima)
+                                                 .Where(g => g.Count() > 1)
+                                                 .Select(g => g.Key);
             
-            foreach (var key in descripcionKeys)
+            if (duplicados.Any())
             {
-                ModelState.Remove(key);
+                ModelState.AddModelError("", "No se pueden agregar materias primas duplicadas.");
+            }
+
+            // Validar cantidades requeridas
+            foreach (var detalle in materiasPrimasActivas)
+            {
+                if (detalle.CantidadRequerida <= 0)
+                {
+                    ModelState.AddModelError("", $"La cantidad requerida para {detalle.NombreMateriaPrima} debe ser mayor a 0.");
+                }
             }
 
             if (!ModelState.IsValid)
             {
-                await CargarSelectLists();
-                return Page();
-            }
-
-            if (MateriasPrimasSeleccionadas == null || !MateriasPrimasSeleccionadas.Any())
-            {
-                ModelState.AddModelError("", "Debe agregar al menos una materia prima a la receta");
-                await CargarSelectLists();
+                await CargarDatos();
                 return Page();
             }
 
             try
             {
-                // Verificar que el producto existe
-                var producto = await _context.Producto
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == Receta.Codigo_Producto);
-                
-                if (producto == null)
-                {
-                    ModelState.AddModelError("Receta.Codigo_Producto", "El producto seleccionado no existe");
-                    await CargarSelectLists();
-                    return Page();
-                }
-
                 if (Receta.Id == 0)
                 {
-                    // Nueva receta
+                    // Crear nueva receta
                     Receta.Fecha_Creacion = DateTime.Now;
                     _context.Receta.Add(Receta);
                     await _context.SaveChangesAsync();
 
-                    // Agregar materias primas
-                    await GuardarMateriasPrimas(Receta.Id);
-                    
-                    TempData["SuccessMessage"] = "Receta creada exitosamente";
+                    // Agregar detalles de materias primas
+                    foreach (var detalle in materiasPrimasActivas)
+                    {
+                        var recetaMateriaPrima = new Receta_Materia_Prima
+                        {
+                            Id_Receta = Receta.Id,
+                            Id_Materia_Prima = detalle.IdMateriaPrima,
+                            Cantidad_Requerida = detalle.CantidadRequerida,
+                            Unidad_Medida = detalle.UnidadMedida,
+                            Observaciones = detalle.Observaciones,
+                            Estado = true
+                        };
+                        _context.Receta_Materia_Prima.Add(recetaMateriaPrima);
+                    }
+
+                    TempData["SuccessMessage"] = "Receta creada exitosamente.";
                 }
                 else
                 {
-                    // Editar receta existente
-                    var recetaExistente = await _context.Receta.FindAsync(Receta.Id);
-                    
+                    // Actualizar receta existente
+                    var recetaExistente = await _context.Receta
+                        .Include(r => r.Receta_Materias_Primas)
+                        .FirstOrDefaultAsync(r => r.Id == Receta.Id);
+
                     if (recetaExistente == null)
                     {
-                        return NotFound();
+                        TempData["ErrorMessage"] = "Receta no encontrada.";
+                        return RedirectToPage("./Index");
                     }
 
-                    // Verificar si la receta está siendo usada en producciones activas
-                    var produccionesActivas = await _context.Produccion_Detalle
-                        .Where(pd => pd.Id_Receta == Receta.Id)
-                        .Include(pd => pd.Produccion)
-                        .AnyAsync(pd => pd.Produccion.Estado);
-
-                    if (produccionesActivas && (
-                        recetaExistente.Codigo_Producto != Receta.Codigo_Producto ||
-                        recetaExistente.Rendimiento != Receta.Rendimiento))
-                    {
-                        ModelState.AddModelError("", "No se pueden modificar el producto o rendimiento de una receta que está siendo utilizada en producciones activas");
-                        await CargarSelectLists();
-                        return Page();
-                    }
-
-                    // Actualizar campos de la receta
+                    // Actualizar datos principales
                     recetaExistente.Descripcion = Receta.Descripcion;
                     recetaExistente.Codigo_Producto = Receta.Codigo_Producto;
                     recetaExistente.Rendimiento = Receta.Rendimiento;
@@ -191,162 +177,91 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     recetaExistente.Cantidad_Empaque = Receta.Cantidad_Empaque;
                     recetaExistente.Estado = Receta.Estado;
 
-                    // CORREGIDO: Actualizar materias primas de forma más eficiente
-                    var materiasPrimasExistentes = await _context.Receta_Materia_Prima
-                        .Where(rmp => rmp.Id_Receta == Receta.Id)
-                        .ToListAsync();
+                    // Eliminar detalles existentes
+                    _context.Receta_Materia_Prima.RemoveRange(recetaExistente.Receta_Materias_Primas);
 
-                    // Eliminar las existentes
-                    _context.Receta_Materia_Prima.RemoveRange(materiasPrimasExistentes);
-                    await _context.SaveChangesAsync();
+                    // Agregar nuevos detalles
+                    foreach (var detalle in materiasPrimasActivas)
+                    {
+                        var recetaMateriaPrima = new Receta_Materia_Prima
+                        {
+                            Id_Receta = recetaExistente.Id,
+                            Id_Materia_Prima = detalle.IdMateriaPrima,
+                            Cantidad_Requerida = detalle.CantidadRequerida,
+                            Unidad_Medida = detalle.UnidadMedida,
+                            Observaciones = detalle.Observaciones,
+                            Estado = true
+                        };
+                        _context.Receta_Materia_Prima.Add(recetaMateriaPrima);
+                    }
 
-                    // Agregar las nuevas
-                    await GuardarMateriasPrimas(Receta.Id);
-
-                    TempData["SuccessMessage"] = "Receta actualizada exitosamente";
+                    TempData["SuccessMessage"] = "Receta actualizada exitosamente.";
                 }
 
                 await _context.SaveChangesAsync();
                 return RedirectToPage("./Index");
             }
+            catch (DbUpdateException dbEx)
+            {
+                ModelState.AddModelError("", $"Error de base de datos: {dbEx.InnerException?.Message ?? dbEx.Message}");
+                await CargarDatos();
+                return Page();
+            }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "Error al guardar la receta: " + ex.Message);
-                await CargarSelectLists();
+                ModelState.AddModelError("", $"Error inesperado: {ex.Message}");
+                await CargarDatos();
                 return Page();
             }
         }
 
-        private async Task GuardarMateriasPrimas(int recetaId)
+        public async Task<IActionResult> OnGetMateriasPrimasAsync()
         {
-            foreach (var mp in MateriasPrimasSeleccionadas)
+            try
             {
-                // CORREGIDO: Verificar que la materia prima existe
-                var materiaPrimaExiste = await _context.Materia_Prima
-                    .AnyAsync(m => m.Id == mp.Id_Materia_Prima && m.Estado);
+                var materiasPrimas = await _context.Materia_Prima
+                    .Where(mp => mp.Estado)
+                    .OrderBy(mp => mp.Descripcion)
+                    .Select(mp => new
+                    {
+                        id = mp.Id,
+                        descripcion = mp.Descripcion,
+                        unidadMedida = mp.Unidad_Medida.ToString()
+                    })
+                    .AsNoTracking()
+                    .ToListAsync();
 
-                if (!materiaPrimaExiste)
-                {
-                    continue; // Saltar si la materia prima no existe o está inactiva
-                }
-
-                var recetaMateriaPrima = new Receta_Materia_Prima
-                {
-                    Id_Receta = recetaId,
-                    Id_Materia_Prima = mp.Id_Materia_Prima,
-                    Cantidad_Requerida = mp.Cantidad_Requerida,
-                    Unidad_Medida = mp.Unidad_Medida,
-                    Observaciones = string.IsNullOrWhiteSpace(mp.Observaciones) ? null : mp.Observaciones.Trim(),
-                    Estado = true
-                };
-
-                _context.Receta_Materia_Prima.Add(recetaMateriaPrima);
+                return new JsonResult(new { success = true, materiasPrimas });
+            }
+            catch (Exception ex)
+            {
+                return new JsonResult(new { success = false, message = ex.Message });
             }
         }
 
-        private async Task CargarSelectLists()
+        private async Task CargarDatos()
         {
-            var productos = await _context.Producto
-                .Where(p => p.Estado)
-                .OrderBy(p => p.Descripcion)
-                .ToListAsync();
+            try
+            {
+                // Cargar solo productos que NO son materias primas (productos terminados)
+                var productos = await _context.Producto
+                    .Where(p => p.Estado && !p.Es_Materia_Prima)
+                    .OrderBy(p => p.Descripcion)
+                    .AsNoTracking()
+                    .ToListAsync();
+                ProductosList = new SelectList(productos, "CodigoReferencia", "Descripcion", Receta?.Codigo_Producto);
 
-            ProductosSelectList = new SelectList(productos, "CodigoReferencia", "Descripcion");
-
-            var materiasPrimas = await _context.Materia_Prima
-                .Where(mp => mp.Estado)
-                .OrderBy(mp => mp.Descripcion)
-                .ToListAsync();
-
-            MateriasPrimasSelectList = new SelectList(materiasPrimas, "Id", "Descripcion");
+                // Cargar materias primas activas
+                MateriasPrimasDisponibles = await _context.Materia_Prima
+                    .Where(mp => mp.Estado)
+                    .OrderBy(mp => mp.Descripcion)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en CargarDatos: {ex.Message}");
+            }
         }
-
-        // CORREGIDO: Mejorar la validación del producto para evitar la advertencia en edición
-        public async Task<JsonResult> OnGetValidarProductoAsync(string codigo)
-        {
-            var producto = await _context.Producto
-                .Include(p => p.Categoria)
-                .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo && p.Estado);
-
-            if (producto == null)
-            {
-                return new JsonResult(new { valido = false, mensaje = "Producto no encontrado o inactivo" });
-            }
-
-            // CORREGIDO: Obtener el ID de la receta actual desde la URL o parámetros
-            var currentRecetaId = 0;
-            if (Request.Query.TryGetValue("id", out var idValue) && int.TryParse(idValue, out var parsedId))
-            {
-                currentRecetaId = parsedId;
-            }
-
-            // Verificar si ya existe una receta para este producto (excluyendo la receta actual)
-            var recetaExistente = await _context.Receta
-                .FirstOrDefaultAsync(r => r.Codigo_Producto == codigo && r.Id != currentRecetaId);
-
-            if (recetaExistente != null)
-            {
-                return new JsonResult(new 
-                { 
-                    valido = false, 
-                    mensaje = "Ya existe una receta para este producto",
-                    recetaId = recetaExistente.Id,
-                    recetaDescripcion = recetaExistente.Descripcion
-                });
-            }
-
-            return new JsonResult(new 
-            { 
-                valido = true, 
-                producto = new 
-                {
-                    codigo = producto.CodigoReferencia,
-                    descripcion = producto.Descripcion,
-                    categoria = producto.Categoria?.Descripcion ?? "Sin categoría"
-                }
-            });
-        }
-
-        public async Task<JsonResult> OnGetObtenerMateriaPrimaAsync(int id)
-        {
-            var materiaPrima = await _context.Materia_Prima.FindAsync(id);
-            
-            if (materiaPrima == null)
-            {
-                return new JsonResult(new { success = false, mensaje = "Materia prima no encontrada" });
-            }
-
-            return new JsonResult(new 
-            { 
-                success = true,
-                materia_prima = new 
-                {
-                    id = materiaPrima.Id,
-                    descripcion = materiaPrima.Descripcion,
-                    unidad_medida = materiaPrima.Unidad_Medida
-                }
-            });
-        }
-    }
-
-    // DTO para manejar las materias primas en el formulario
-    public class RecetaMateriaPrimaDto
-    {
-        public int Id { get; set; }
-        
-        [Required(ErrorMessage = "Debe seleccionar una materia prima")]
-        public int Id_Materia_Prima { get; set; }
-        
-        public string Descripcion { get; set; } = "";
-        
-        [Required(ErrorMessage = "La cantidad es obligatoria")]
-        [Range(0.001, double.MaxValue, ErrorMessage = "La cantidad debe ser mayor a 0")]
-        public decimal Cantidad_Requerida { get; set; }
-        
-        [Required(ErrorMessage = "Debe seleccionar una unidad de medida")]
-        public Unidad_Medida Unidad_Medida { get; set; }
-        
-        // Las observaciones son opcionales
-        public string? Observaciones { get; set; }
     }
 }
