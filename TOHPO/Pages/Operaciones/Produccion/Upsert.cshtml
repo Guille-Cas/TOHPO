@@ -99,14 +99,19 @@
                                         <div class="form-group">
                                             <label class="form-label">Materia Prima</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarMateriaPrima" class="form-control form-control-lg" 
-                                                       placeholder="Buscar materia prima por nombre..." 
+                                                <input type="text" id="inputBuscarMateriaPrima" class="form-control form-control-lg bg-light" 
+                                                       placeholder="Seleccione una materia prima usando el botón..." 
                                                        data-id="" data-unidad-medida=""
-                                                       style="font-size: 1.1rem;" />
+                                                       style="font-size: 1.1rem; cursor: pointer;" 
+                                                       readonly 
+                                                       title="Haga clic en 'Seleccionar' para elegir una materia prima" />
                                                 <button type="button" class="btn btn-outline-primary" id="btnSeleccionarMateriaPrima" data-bs-toggle="modal" data-bs-target="#modalSeleccionarMateriaPrima">
                                                     <i class="fas fa-search"></i> Seleccionar
                                                 </button>
                                             </div>
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Use el botón "Seleccionar" para elegir una materia prima de la lista
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
@@ -344,8 +349,22 @@
 
                 // Función para seleccionar una materia prima del modal
                 seleccionarMateriaPrima: function(id, descripcion, unidadMedida) {
-                    $('#inputBuscarMateriaPrima').val(descripcion).data('id', id).data('unidad-medida', unidadMedida);
-                    $('#inputCantidad').focus();
+                    const inputMateriaPrima = $('#inputBuscarMateriaPrima');
+                    
+                    // Asignar valores
+                    inputMateriaPrima.val(descripcion)
+                                    .data('id', id)
+                                    .data('unidad-medida', unidadMedida);
+                    
+                    // Cambiar el estilo para indicar que se ha seleccionado
+                    inputMateriaPrima.removeClass('bg-light')
+                                    .addClass('bg-success')
+                                    .addClass('text-white');
+                    
+                    // Enfocar el campo de cantidad
+                    $('#inputCantidad').focus().select();
+                    
+                    console.log(`Materia prima seleccionada: ${descripcion} (ID: ${id}, Unidad: ${unidadMedida})`);
                 },
 
                 // Función para filtrar materias primas en el modal
@@ -370,16 +389,29 @@
                 RecetaManager.cargarMateriasPrimasModal();
             });
 
+            // Hacer que el input de materia prima abra el modal al hacer clic
+            $('#inputBuscarMateriaPrima').click(function() {
+                $('#btnSeleccionarMateriaPrima').click();
+            });
+
             $('#btnAgregarMateriaPrima').click(function() {
                 agregarMateriaPrima();
             });
 
+            // Solo permitir Enter en el campo de cantidad, no en el de materia prima
             $('#inputCantidad').keypress(function(e) {
                 if (e.which === 13) {
                     agregarMateriaPrima();
                 }
             });
 
+            // Prevenir escritura en el input de materia prima (extra seguridad)
+            $('#inputBuscarMateriaPrima').on('keydown keypress keyup', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Evento de filtro en tiempo real en el modal
             $('#filtroMateriaPrima').keyup(function() {
                 RecetaManager.filtrarMateriasPrimas();
             });
@@ -398,7 +430,8 @@
 
                 // Validaciones
                 if (!idMateriaPrima || !nombreMateriaPrima) {
-                    alert('Debe seleccionar una materia prima.');
+                    alert('Debe seleccionar una materia prima usando el botón "Seleccionar".');
+                    $('#btnSeleccionarMateriaPrima').focus();
                     return;
                 }
 
@@ -429,15 +462,19 @@
                 detalleMateriasPrimas.push(nuevoDetalle);
 
                 // Limpiar campos
-                materiaPrimaInput.val('').data('id', '').data('unidad-medida', '');
+                materiaPrimaInput.val('')
+                                .data('id', '')
+                                .data('unidad-medida', '')
+                                .removeClass('bg-success text-white')
+                                .addClass('bg-light');
                 cantidadInput.val('1');
                 observacionesInput.val('');
 
                 // Actualizar tabla
                 actualizarTablaMateriasPrimas();
                 
-                // Focus al input de búsqueda
-                materiaPrimaInput.focus();
+                // Focus al botón seleccionar para siguiente agregado
+                $('#btnSeleccionarMateriaPrima').focus();
             }
 
             // Función para actualizar la tabla de materias primas
