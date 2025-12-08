@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Models;
 using TOHPO.Data;
@@ -27,7 +27,7 @@ namespace TOHPO.Pages.Configuracion.Agentes_ventas
             }
             else
             {
-                AgenteVentas = new Agente_Ventas();
+                AgenteVentas = new Agente_Ventas { Estado = true }; // Por defecto activo para nuevos agentes
             }
             return Page();
         }
@@ -37,20 +37,26 @@ namespace TOHPO.Pages.Configuracion.Agentes_ventas
             Proveedores = await _context.Proveedor.ToListAsync();
             ModelState.Remove("AgenteVentas.Proveedor");
             if (!ModelState.IsValid) return Page();
+            
             if (AgenteVentas.Id > 0)
             {
                 var existente = await _context.Agente_Ventas.FindAsync(AgenteVentas.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar todas las propiedades
                 existente.Nombre = AgenteVentas.Nombre;
                 existente.Telefono = AgenteVentas.Telefono;
                 existente.Correo_Electronico = AgenteVentas.Correo_Electronico;
                 existente.Id_Proveedor = AgenteVentas.Id_Proveedor;
+                existente.Estado = AgenteVentas.Estado; 
+
                 _context.Agente_Ventas.Update(existente);
             }
             else
             {
                 _context.Agente_Ventas.Add(AgenteVentas);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Agentes_ventas/Index");
         }

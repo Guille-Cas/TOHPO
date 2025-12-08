@@ -37,6 +37,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                         Estado = true,
                         Es_Materia_Prima = false,
                         Es_De_Terceros = false,
+                        Se_Daña = false,
                         Tiempo_De_Vida = 0,
                         Unidad_Medida = Unidad_Medida.Unidad
                     };
@@ -82,6 +83,17 @@ namespace TOHPO.Pages.Operaciones.Productos
             ModelState.Remove("Producto.Presentacion");
             ModelState.Remove("Producto.Inventario");
 
+            // Validaciones condicionales
+            if (Producto.Es_Materia_Prima && (!Producto.Id_Materia_Prima.HasValue || Producto.Id_Materia_Prima.Value == 0))
+            {
+                ModelState.AddModelError("Producto.Id_Materia_Prima", "Debe seleccionar una materia prima cuando el producto es materia prima.");
+            }
+
+            if (Producto.Se_Daña && Producto.Tiempo_De_Vida <= 0)
+            {
+                ModelState.AddModelError("Producto.Tiempo_De_Vida", "Debe especificar un tiempo de vida mayor a 0 cuando el producto se daña con el tiempo.");
+            }
+
             if (!ModelState.IsValid)
             {
                 await LoadSelectListsAsync();
@@ -90,6 +102,17 @@ namespace TOHPO.Pages.Operaciones.Productos
 
             try
             {
+                // Lógica condicional para campos opcionales
+                if (!Producto.Es_Materia_Prima)
+                {
+                    Producto.Id_Materia_Prima = null;
+                }
+
+                if (!Producto.Se_Daña)
+                {
+                    Producto.Tiempo_De_Vida = 0;
+                }
+
                 // Verificar si es un producto existente
                 var existingProduct = await _context.Producto
                     .FirstOrDefaultAsync(p => p.CodigoReferencia == Producto.CodigoReferencia);
@@ -104,6 +127,7 @@ namespace TOHPO.Pages.Operaciones.Productos
                     existingProduct.Id_Presentacion = Producto.Id_Presentacion;
                     existingProduct.Es_Materia_Prima = Producto.Es_Materia_Prima;
                     existingProduct.Es_De_Terceros = Producto.Es_De_Terceros;
+                    existingProduct.Se_Daña = Producto.Se_Daña;
                     existingProduct.Tiempo_De_Vida = Producto.Tiempo_De_Vida;
                     existingProduct.Unidad_Medida = Producto.Unidad_Medida;
                     existingProduct.Estado = Producto.Estado;
@@ -139,8 +163,9 @@ namespace TOHPO.Pages.Operaciones.Productos
         {
             try
             {
-                // Cargar categorías
+                // Cargar categorías activas
                 var categorias = await _context.Categoria
+                    .Where(c => c.Estado)
                     .OrderBy(c => c.Descripcion)
                     .AsNoTracking()
                     .ToListAsync();
@@ -153,8 +178,9 @@ namespace TOHPO.Pages.Operaciones.Productos
                     .ToListAsync();
                 ImpuestosList = new SelectList(impuestos, "Id", "Descripcion", Producto?.Id_Impuesto);
 
-                // Cargar materias primas
+                // Cargar materias primas activas
                 var materiasPrimas = await _context.Materia_Prima
+                    .Where(mp => mp.Estado)
                     .OrderBy(mp => mp.Descripcion)
                     .AsNoTracking()
                     .ToListAsync();

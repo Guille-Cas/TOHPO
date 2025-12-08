@@ -22,7 +22,7 @@ namespace TOHPO.Pages.Configuracion.Categorias
             }
             else
             {
-                Categoria = new Categoria();
+                Categoria = new Categoria { Estado = true }; // Por defecto activo para nuevas categorías
             }
             return Page();
         }
@@ -30,17 +30,23 @@ namespace TOHPO.Pages.Configuracion.Categorias
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+            
             if (Categoria.Id > 0)
             {
                 var existente = await _context.Categoria.FindAsync(Categoria.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar ambas propiedades
                 existente.Descripcion = Categoria.Descripcion;
+                existente.Estado = Categoria.Estado;
+                
                 _context.Categoria.Update(existente);
             }
             else
             {
                 _context.Categoria.Add(Categoria);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Categorias/Index");
         }

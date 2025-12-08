@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Models;
 using TOHPO.Data;
@@ -22,7 +22,7 @@ namespace TOHPO.Pages.Configuracion.Proveedores
             }
             else
             {
-                Proveedor = new Proveedor();
+                Proveedor = new Proveedor { Estado = true }; // Por defecto activo para nuevos proveedores
             }
             return Page();
         }
@@ -30,20 +30,26 @@ namespace TOHPO.Pages.Configuracion.Proveedores
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+            
             if (Proveedor.Id > 0)
             {
                 var existente = await _context.Proveedor.FindAsync(Proveedor.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar todas las propiedades
                 existente.Nombre = Proveedor.Nombre;
                 existente.Telefono = Proveedor.Telefono;
                 existente.Correo_Electronico = Proveedor.Correo_Electronico;
                 existente.Direccion = Proveedor.Direccion;
+                existente.Estado = Proveedor.Estado; // ← AGREGAR ESTA LÍNEA
+                
                 _context.Proveedor.Update(existente);
             }
             else
             {
                 _context.Proveedor.Add(Proveedor);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Proveedores/Index");
         }

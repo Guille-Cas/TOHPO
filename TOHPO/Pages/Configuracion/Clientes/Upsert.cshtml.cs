@@ -78,6 +78,7 @@ namespace TOHPO.Pages.Configuracion.Clientes
                     clienteExistente.Segundo_Apellido = Cliente.Segundo_Apellido;
                     clienteExistente.Correo_Electronico = Cliente.Correo_Electronico;
                     clienteExistente.Telefono = Cliente.Telefono;
+                    clienteExistente.Estado = Cliente.Estado;
 
                     _context.Cliente.Update(clienteExistente);
                     TempData["SuccessMessage"] = "Cliente actualizado correctamente";

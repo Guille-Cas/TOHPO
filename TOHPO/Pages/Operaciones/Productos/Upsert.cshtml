@@ -84,7 +84,7 @@
 
                         <div class="row">
                             <!-- Materia Prima -->
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="materia-prima-container">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.Id_Materia_Prima" class="form-label">Materia Prima</label>
                                     <select asp-for="Producto.Id_Materia_Prima" 
@@ -131,7 +131,7 @@
                             </div>
 
                             <!-- Tiempo de Vida -->
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="tiempo-vida-container">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.Tiempo_De_Vida" class="form-label"></label>
                                     <input asp-for="Producto.Tiempo_De_Vida" class="form-control" type="number" min="0" />
@@ -150,19 +150,25 @@
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-check">
-                                                    <input asp-for="Producto.Es_Materia_Prima" class="form-check-input" type="checkbox" />
+                                                    <input asp-for="Producto.Es_Materia_Prima" class="form-check-input" type="checkbox" id="chk-materia-prima" />
                                                     <label asp-for="Producto.Es_Materia_Prima" class="form-check-label">Materia Prima</label>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-check">
                                                     <input asp-for="Producto.Es_De_Terceros" class="form-check-input" type="checkbox" />
                                                     <label asp-for="Producto.Es_De_Terceros" class="form-check-label">De Terceros</label>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input asp-for="Producto.Se_Daña" class="form-check-input" type="checkbox" id="chk-se-dana" />
+                                                    <label asp-for="Producto.Se_Daña" class="form-check-label">Se daña con el tiempo</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
                                                 <div class="form-check">
                                                     <input asp-for="Producto.Estado" class="form-check-input" type="checkbox" />
                                                     <label asp-for="Producto.Estado" class="form-check-label">Activo</label>
@@ -205,6 +211,39 @@
     
     <script>
         $(document).ready(function() {
+            // Función para manejar la visibilidad de campos
+            function toggleFieldVisibility() {
+                var esMateriaPrima = $('#chk-materia-prima').is(':checked');
+                var seDana = $('#chk-se-dana').is(':checked');
+                
+                // Mostrar/ocultar campo Materia Prima
+                if (esMateriaPrima) {
+                    $('#materia-prima-container').show();
+                    $('#Producto_Id_Materia_Prima').prop('required', true);
+                } else {
+                    $('#materia-prima-container').hide();
+                    $('#Producto_Id_Materia_Prima').val('').prop('required', false);
+                }
+                
+                // Mostrar/ocultar campo Tiempo de Vida
+                if (seDana) {
+                    $('#tiempo-vida-container').show();
+                    $('#Producto_Tiempo_De_Vida').prop('required', true);
+                } else {
+                    $('#tiempo-vida-container').hide();
+                    $('#Producto_Tiempo_De_Vida').val('0').prop('required', false);
+                }
+            }
+            
+            // Ejecutar al cargar la página
+            toggleFieldVisibility();
+            
+            // Ejecutar cuando cambie el checkbox de materia prima
+            $('#chk-materia-prima').on('change', toggleFieldVisibility);
+            
+            // Ejecutar cuando cambie el checkbox de se daña
+            $('#chk-se-dana').on('change', toggleFieldVisibility);
+
             // Validación personalizada
             $('form').on('submit', function(e) {
                 var codigo = $('#Producto_CodigoReferencia').val();
@@ -223,13 +262,27 @@
                     $('#Producto_Descripcion').focus();
                     return false;
                 }
-            });
-
-            // Actualizar vista previa cuando cambian los valores
-            $('#Producto_Id_Impuesto').on('change', function() {
-                var selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    console.log('Impuesto seleccionado:', selectedOption.text());
+                
+                // Validación condicional para materia prima
+                var esMateriaPrima = $('#chk-materia-prima').is(':checked');
+                var materiaPrimaSeleccionada = $('#Producto_Id_Materia_Prima').val();
+                
+                if (esMateriaPrima && !materiaPrimaSeleccionada) {
+                    e.preventDefault();
+                    alert('Debe seleccionar una materia prima');
+                    $('#Producto_Id_Materia_Prima').focus();
+                    return false;
+                }
+                
+                // Validación condicional para tiempo de vida
+                var seDana = $('#chk-se-dana').is(':checked');
+                var tiempoVida = parseInt($('#Producto_Tiempo_De_Vida').val()) || 0;
+                
+                if (seDana && tiempoVida <= 0) {
+                    e.preventDefault();
+                    alert('Debe especificar un tiempo de vida mayor a 0 días');
+                    $('#Producto_Tiempo_De_Vida').focus();
+                    return false;
                 }
             });
 

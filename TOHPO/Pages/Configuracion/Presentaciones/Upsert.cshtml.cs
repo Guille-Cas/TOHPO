@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Models;
 using TOHPO.Data;
@@ -22,7 +22,7 @@ namespace TOHPO.Pages.Configuracion.Presentaciones
             }
             else
             {
-                Presentacion = new Presentacion();
+                Presentacion = new Presentacion(); // Ya tiene Estado = true por defecto en el modelo
             }
             return Page();
         }
@@ -30,18 +30,24 @@ namespace TOHPO.Pages.Configuracion.Presentaciones
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+            
             if (Presentacion.Id > 0)
             {
                 var existente = await _context.Presentacion.FindAsync(Presentacion.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar todas las propiedades
                 existente.Cantidad = Presentacion.Cantidad;
                 existente.Unidad_Medida = Presentacion.Unidad_Medida;
+                existente.Estado = Presentacion.Estado; // ← AGREGAR ESTA LÍNEA
+                
                 _context.Presentacion.Update(existente);
             }
             else
             {
                 _context.Presentacion.Add(Presentacion);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Presentaciones/Index");
         }

@@ -22,7 +22,7 @@ namespace TOHPO.Pages.Configuracion.Impuestos
             }
             else
             {
-                Impuesto = new Impuesto();
+                Impuesto = new Impuesto { Estado = true }; // Por defecto activo para nuevos impuestos
             }
             return Page();
         }
@@ -30,18 +30,24 @@ namespace TOHPO.Pages.Configuracion.Impuestos
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+            
             if (Impuesto.Id > 0)
             {
                 var existente = await _context.Impuesto.FindAsync(Impuesto.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar todas las propiedades
                 existente.Descripcion = Impuesto.Descripcion;
                 existente.Porcentaje = Impuesto.Porcentaje;
+                existente.Estado = Impuesto.Estado;
+                
                 _context.Impuesto.Update(existente);
             }
             else
             {
                 _context.Impuesto.Add(Impuesto);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Impuestos/Index");
         }

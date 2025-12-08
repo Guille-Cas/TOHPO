@@ -22,7 +22,7 @@ namespace TOHPO.Pages.Configuracion.Materias_Prima
             }
             else
             {
-                MateriaPrima = new Materia_Prima();
+                MateriaPrima = new Materia_Prima { Estado = true }; // Por defecto activo para nuevas materias primas
             }
             return Page();
         }
@@ -30,18 +30,24 @@ namespace TOHPO.Pages.Configuracion.Materias_Prima
         public async Task<IActionResult> OnPostAsync()
         {
             if (!ModelState.IsValid) return Page();
+            
             if (MateriaPrima.Id > 0)
             {
                 var existente = await _context.Materia_Prima.FindAsync(MateriaPrima.Id);
                 if (existente == null) return NotFound();
+                
+                // Actualizar todas las propiedades
                 existente.Descripcion = MateriaPrima.Descripcion;
                 existente.Unidad_Medida = MateriaPrima.Unidad_Medida;
+                existente.Estado = MateriaPrima.Estado;
+
                 _context.Materia_Prima.Update(existente);
             }
             else
             {
                 _context.Materia_Prima.Add(MateriaPrima);
             }
+            
             await _context.SaveChangesAsync();
             return RedirectToPage("/Configuracion/Materias_Prima/Index");
         }

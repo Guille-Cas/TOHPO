@@ -24,6 +24,9 @@ namespace TOHPO.Models
 
         public bool Es_De_Terceros { get; set; }
 
+        [DisplayName("Se daña con el tiempo")]
+        public bool Se_Daña { get; set; }
+
         [Required(ErrorMessage = "La unidad de medida es obligatoria")]
         [DisplayName("Unidad de medida")]
         public Unidad_Medida Unidad_Medida { get; set; }
@@ -35,12 +38,12 @@ namespace TOHPO.Models
 
 
         [ForeignKey("Categoria")]
-        public int Id_Categoria { get; set; }
+        public int? Id_Categoria { get; set; }
         public Categoria Categoria { get; set; }
 
 
         [ForeignKey("Materia_Prima")]
-        public int Id_Materia_Prima { get; set; }
+        public int? Id_Materia_Prima { get; set; }
 
         public Materia_Prima Materia_Prima { get; set; }
         [ForeignKey("Presentacion")]
