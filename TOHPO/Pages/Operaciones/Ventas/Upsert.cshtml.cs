@@ -199,11 +199,17 @@ namespace TOHPO.Pages.Operaciones.Ventas
             ModelState.Remove("Venta.Cliente");
             ModelState.Remove("Venta.Detalle_Ventas");
             ModelState.Remove("Venta.Venta_Metodo_Pagos");
+            ModelState.Remove("Venta.Id_Cliente");
 
             if (!ModelState.IsValid)
             {
                 await CargarDatos();
                 return Page();
+            }
+
+            if (!Venta.Id_Cliente.HasValue || Venta.Id_Cliente == 0)
+            {
+                Venta.Id_Cliente = null;
             }
 
             // Validar que hay productos en la venta
@@ -213,6 +219,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 await CargarDatos();
                 return Page();
             }
+
 
             // Validar que hay métodos de pago
             if (MetodosPago == null || !MetodosPago.Any())
@@ -247,6 +254,8 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 if (Venta.Id == 0)
                 {
                     // Nueva venta
+                    Venta.Fecha=DateTime.Now.Date;
+                    Venta.Hora = DateTime.Now;
                     await CrearNuevaVenta();
                 }
                 else
@@ -354,7 +363,11 @@ namespace TOHPO.Pages.Operaciones.Ventas
             ventaExistente.Fecha = Venta.Fecha;
             ventaExistente.Hora = Venta.Hora;
             ventaExistente.Concepto = Venta.Concepto;
-            ventaExistente.Id_Cliente = Venta.Id_Cliente;
+
+            if (ventaExistente.Id_Cliente > 0)
+            {
+                ventaExistente.Id_Cliente = Venta.Id_Cliente;
+            }
 
             // Calcular nuevos totales
             CalcularTotalesVenta();

@@ -36,8 +36,8 @@ namespace TOHPO.Models
 
         // Relaciones
         [ForeignKey("Cliente")]
-        public int Id_Cliente { get; set; }
-        public Cliente Cliente { get; set; }
+        public int? Id_Cliente { get; set; }
+        public Cliente? Cliente { get; set; }
 
         [Display(Name = "Agente de Ventas")]
 
