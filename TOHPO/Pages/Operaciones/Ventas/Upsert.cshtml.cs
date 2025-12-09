@@ -315,12 +315,24 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 // CORREGIDO: Buscar inventario por CodigoReferencia (que es lo que se guarda en detalle.CodigoProducto)
                 var inventario = await _context.Inventario
+                   .Include(i => i.Producto)
                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {
                     inventario.Existencia -= detalle.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear movimiento de inventario para la venta
+                    var movimientoInventario = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = -detalle.Cantidad, // Negativo porque es una salida
+                        Motivo = $"Venta #{Venta.Id} - {inventario.Producto?.Descripcion ?? detalle.NombreProducto}",
+                        Fecha = Venta.Hora
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoInventario);
                 }
             }
 
@@ -342,8 +354,6 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
         private async Task ActualizarVentaExistente()
         {
-
-
             // Obtener venta existente con sus detalles y métodos de pago
             var ventaExistente = await _context.Venta
                 .Include(v => v.Detalle_Ventas)
@@ -355,18 +365,29 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 throw new InvalidOperationException("Venta no encontrada");
             }
 
-            // CORREGIDO: Restaurar inventario usando CodigoReferencia (que ya está en Codigo_Producto)
+            // CORREGIDO: Restaurar inventario y eliminar movimientos de inventario de la venta original
             foreach (var detalleOriginal in ventaExistente.Detalle_Ventas)
             {
-                
-
                 var inventario = await _context.Inventario
+                    .Include(i => i.Producto)
                     .FirstOrDefaultAsync(i => i.Codigo_Producto == detalleOriginal.Codigo_Producto);
 
                 if (inventario != null)
                 {
+                    // Restaurar el stock
                     inventario.Existencia += detalleOriginal.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear movimiento de reversión para el histórico
+                    var movimientoReversion = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = detalleOriginal.Cantidad, // Positivo porque es una entrada (reversión)
+                        Motivo = $"Reversión edición venta #{Venta.Id} - {inventario.Producto?.Descripcion ?? ""}",
+                        Fecha = DateTime.Now
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoReversion);
                 }
             }
 
@@ -410,14 +431,26 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 _context.Detalle_Venta.Add(detalleVenta);
 
-                // CORREGIDO: Buscar inventario por CodigoReferencia (que es lo que se guarda en detalle.CodigoProducto)
+                // CORREGIDO: Buscar inventario por CodigoReferencia y crear nuevos movimientos
                 var inventario = await _context.Inventario
+                   .Include(i => i.Producto)
                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {
                     inventario.Existencia -= detalle.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear nuevo movimiento de inventario para la venta actualizada
+                    var movimientoInventario = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = -detalle.Cantidad, // Negativo porque es una salida
+                        Motivo = $"Venta #{Venta.Id} (actualizada) - {inventario.Producto?.Descripcion ?? detalle.NombreProducto}",
+                        Fecha = Venta.Hora
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoInventario);
                 }
             }
 

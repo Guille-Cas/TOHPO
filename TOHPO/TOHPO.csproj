@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 	  <Folder Include="Pages\Operaciones\Recetas\" />
+	  <Folder Include="Pages\Utilidades\" />
 	  <Folder Include="wwwroot\lib\chartjs\" />
 	</ItemGroup>
 

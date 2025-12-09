@@ -423,5 +423,422 @@ namespace TOHPO.Helpers
             // Auto-ajustar columnas
             worksheet.Columns().AdjustToContents();
         }
+
+        #region Control Histórico Reports
+
+        public static byte[] GenerarReporteCompraDetalleExcel(List<Compra_Detalle> compraDetalles, DateTime? fechaInicio, DateTime? fechaFin, string filtroProducto = "")
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Histórico Compra Detalle");
+
+            // Configurar título
+            worksheet.Cell(1, 1).Value = "HISTÓRICO - DETALLES DE COMPRAS";
+            worksheet.Cell(1, 1).Style.Font.Bold = true;
+            worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+            worksheet.Range(1, 1, 1, 10).Merge();
+
+            // Configurar período y filtros
+            string periodo = "";
+            if (fechaInicio.HasValue && fechaFin.HasValue)
+            {
+                periodo = $"Período: {fechaInicio:dd/MM/yyyy} - {fechaFin:dd/MM/yyyy}";
+            }
+            else if (fechaInicio.HasValue)
+            {
+                periodo = $"Desde: {fechaInicio:dd/MM/yyyy}";
+            }
+            else if (fechaFin.HasValue)
+            {
+                periodo = $"Hasta: {fechaFin:dd/MM/yyyy}";
+            }
+            else
+            {
+                periodo = "Todos los registros";
+            }
+
+            if (!string.IsNullOrEmpty(filtroProducto))
+            {
+                periodo += $" | Filtro: {filtroProducto}";
+            }
+
+            worksheet.Cell(2, 1).Value = periodo;
+            worksheet.Cell(2, 1).Style.Font.Bold = true;
+            worksheet.Range(2, 1, 2, 10).Merge();
+
+            worksheet.Cell(3, 1).Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range(3, 1, 3, 10).Merge();
+
+            // Headers
+            var headers = new string[] 
+            { 
+                "ID", "Fecha Compra", "Proveedor", "Producto", "Cantidad", "Costo Unitario", 
+                "Descuento %", "Monto Descuento", "Monto Impuesto", "Subtotal" 
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(5, i + 1).Value = headers[i];
+                worksheet.Cell(5, i + 1).Style.Font.Bold = true;
+                worksheet.Cell(5, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                worksheet.Cell(5, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            // Datos
+            int row = 6;
+            decimal totalSubtotal = 0;
+            decimal totalImpuestos = 0;
+
+            foreach (var detalle in compraDetalles)
+            {
+                worksheet.Cell(row, 1).Value = detalle.Id;
+                worksheet.Cell(row, 2).Value = detalle.Compra?.Fecha.ToString("dd/MM/yyyy") ?? "";
+                worksheet.Cell(row, 3).Value = detalle.Compra?.Proveedor?.Nombre ?? "N/A";
+                worksheet.Cell(row, 4).Value = $"{detalle.Producto?.Descripcion} ({detalle.Codigo_Producto})";
+                worksheet.Cell(row, 5).Value = detalle.Cantidad;
+                worksheet.Cell(row, 6).Value = detalle.Costo_Unitario;
+                worksheet.Cell(row, 7).Value = detalle.Porcentaje_Descuento;
+                worksheet.Cell(row, 8).Value = detalle.Monto_Descuento;
+                worksheet.Cell(row, 9).Value = detalle.Monto_Impuesto;
+                worksheet.Cell(row, 10).Value = detalle.Subtotal;
+
+                totalSubtotal += detalle.Subtotal;
+                totalImpuestos += detalle.Monto_Impuesto;
+                row++;
+            }
+
+            // Totales
+            worksheet.Cell(row + 1, 8).Value = "TOTAL IMPUESTOS:";
+            worksheet.Cell(row + 1, 8).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 9).Value = totalImpuestos;
+            worksheet.Cell(row + 1, 9).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 9).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            worksheet.Cell(row + 2, 8).Value = "TOTAL GENERAL:";
+            worksheet.Cell(row + 2, 8).Style.Font.Bold = true;
+            worksheet.Cell(row + 2, 10).Value = totalSubtotal;
+            worksheet.Cell(row + 2, 10).Style.Font.Bold = true;
+            worksheet.Cell(row + 2, 10).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Formatear monedas
+            worksheet.Range(6, 6, row - 1, 6).Style.NumberFormat.Format = FORMATO_COLONES;
+            worksheet.Range(6, 8, row - 1, 10).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Auto-ajustar columnas
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        public static byte[] GenerarReporteVentaDetalleExcel(List<Detalle_Venta> ventaDetalles, DateTime? fechaInicio, DateTime? fechaFin, string filtroProducto = "")
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Histórico Venta Detalle");
+
+            // Configurar título
+            worksheet.Cell(1, 1).Value = "HISTÓRICO - DETALLES DE VENTAS";
+            worksheet.Cell(1, 1).Style.Font.Bold = true;
+            worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+            worksheet.Range(1, 1, 1, 10).Merge();
+
+            // Configurar período y filtros
+            string periodo = "";
+            if (fechaInicio.HasValue && fechaFin.HasValue)
+            {
+                periodo = $"Período: {fechaInicio:dd/MM/yyyy} - {fechaFin:dd/MM/yyyy}";
+            }
+            else if (fechaInicio.HasValue)
+            {
+                periodo = $"Desde: {fechaInicio:dd/MM/yyyy}";
+            }
+            else if (fechaFin.HasValue)
+            {
+                periodo = $"Hasta: {fechaFin:dd/MM/yyyy}";
+            }
+            else
+            {
+                periodo = "Todos los registros";
+            }
+
+            if (!string.IsNullOrEmpty(filtroProducto))
+            {
+                periodo += $" | Filtro: {filtroProducto}";
+            }
+
+            worksheet.Cell(2, 1).Value = periodo;
+            worksheet.Cell(2, 1).Style.Font.Bold = true;
+            worksheet.Range(2, 1, 2, 10).Merge();
+
+            worksheet.Cell(3, 1).Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range(3, 1, 3, 10).Merge();
+
+            // Headers
+            var headers = new string[] 
+            { 
+                "ID", "Fecha Venta", "Cliente", "Producto", "Cantidad", "Precio Unitario", 
+                "Descuento %", "Monto Descuento", "Monto Impuesto", "Subtotal" 
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(5, i + 1).Value = headers[i];
+                worksheet.Cell(5, i + 1).Style.Font.Bold = true;
+                worksheet.Cell(5, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                worksheet.Cell(5, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            // Datos
+            int row = 6;
+            decimal totalSubtotal = 0;
+            decimal totalImpuestos = 0;
+
+            foreach (var detalle in ventaDetalles)
+            {
+                worksheet.Cell(row, 1).Value = detalle.Id;
+                worksheet.Cell(row, 2).Value = detalle.Venta?.Fecha.ToString("dd/MM/yyyy") ?? "";
+                worksheet.Cell(row, 3).Value = detalle.Venta?.Cliente?.Nombre ?? "N/A";
+                worksheet.Cell(row, 4).Value = $"{detalle.Producto?.Descripcion} ({detalle.Codigo_Producto})";
+                worksheet.Cell(row, 5).Value = detalle.Cantidad;
+                worksheet.Cell(row, 6).Value = detalle.Precio_Unitario;
+                worksheet.Cell(row, 7).Value = detalle.Porcentaje_Descuento;
+                worksheet.Cell(row, 8).Value = detalle.Monto_Descuento;
+                worksheet.Cell(row, 9).Value = detalle.Monto_Impuesto;
+                worksheet.Cell(row, 10).Value = detalle.Subtotal;
+
+                totalSubtotal += detalle.Subtotal;
+                totalImpuestos += detalle.Monto_Impuesto;
+                row++;
+            }
+
+            // Totales
+            worksheet.Cell(row + 1, 8).Value = "TOTAL IMPUESTOS:";
+            worksheet.Cell(row + 1, 8).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 9).Value = totalImpuestos;
+            worksheet.Cell(row + 1, 9).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 9).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            worksheet.Cell(row + 2, 8).Value = "TOTAL GENERAL:";
+            worksheet.Cell(row + 2, 8).Style.Font.Bold = true;
+            worksheet.Cell(row + 2, 10).Value = totalSubtotal;
+            worksheet.Cell(row + 2, 10).Style.Font.Bold = true;
+            worksheet.Cell(row + 2, 10).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Formatear monedas
+            worksheet.Range(6, 6, row - 1, 6).Style.NumberFormat.Format = FORMATO_COLONES;
+            worksheet.Range(6, 8, row - 1, 10).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Auto-ajustar columnas
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        public static byte[] GenerarReporteMovimientosInventarioExcel(List<Movimiento_Inventario> movimientos, DateTime? fechaInicio, DateTime? fechaFin, string filtroMotivo = "")
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Movimientos Inventario");
+
+            // Configurar título
+            worksheet.Cell(1, 1).Value = "HISTÓRICO - MOVIMIENTOS DE INVENTARIO";
+            worksheet.Cell(1, 1).Style.Font.Bold = true;
+            worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+            worksheet.Range(1, 1, 1, 8).Merge();
+
+            // Configurar período y filtros
+            string periodo = "";
+            if (fechaInicio.HasValue && fechaFin.HasValue)
+            {
+                periodo = $"Período: {fechaInicio:dd/MM/yyyy} - {fechaFin:dd/MM/yyyy}";
+            }
+            else if (fechaInicio.HasValue)
+            {
+                periodo = $"Desde: {fechaInicio:dd/MM/yyyy}";
+            }
+            else if (fechaFin.HasValue)
+            {
+                periodo = $"Hasta: {fechaFin:dd/MM/yyyy}";
+            }
+            else
+            {
+                periodo = "Todos los registros";
+            }
+
+            if (!string.IsNullOrEmpty(filtroMotivo))
+            {
+                periodo += $" | Filtro: {filtroMotivo}";
+            }
+
+            worksheet.Cell(2, 1).Value = periodo;
+            worksheet.Cell(2, 1).Style.Font.Bold = true;
+            worksheet.Range(2, 1, 2, 8).Merge();
+
+            worksheet.Cell(3, 1).Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range(3, 1, 3, 8).Merge();
+
+            // Headers
+            var headers = new string[] 
+            { 
+                "ID", "Fecha", "Producto", "Motivo", "Tipo Movimiento", "Cantidad", "Stock Actual", "Precio Venta" 
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(5, i + 1).Value = headers[i];
+                worksheet.Cell(5, i + 1).Style.Font.Bold = true;
+                worksheet.Cell(5, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                worksheet.Cell(5, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            // Datos
+            int row = 6;
+            int totalMovimientos = 0;
+
+            foreach (var movimiento in movimientos)
+            {
+                var tipoMovimiento = GetTipoMovimiento(movimiento.Motivo);
+                
+                worksheet.Cell(row, 1).Value = movimiento.Id;
+                worksheet.Cell(row, 2).Value = movimiento.Fecha.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 3).Value = $"{movimiento.Inventario?.Producto?.Descripcion} ({movimiento.Inventario?.Codigo_Producto})";
+                worksheet.Cell(row, 4).Value = movimiento.Motivo;
+                worksheet.Cell(row, 5).Value = tipoMovimiento;
+                worksheet.Cell(row, 6).Value = movimiento.Cantidad;
+                worksheet.Cell(row, 7).Value = movimiento.Inventario?.Existencia ?? 0;
+                worksheet.Cell(row, 8).Value = movimiento.Inventario?.Precio_Venta ?? 0;
+
+                totalMovimientos += Math.Abs(movimiento.Cantidad);
+                row++;
+            }
+
+            // Total
+            worksheet.Cell(row + 1, 5).Value = "TOTAL MOVIMIENTOS:";
+            worksheet.Cell(row + 1, 5).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 6).Value = totalMovimientos;
+            worksheet.Cell(row + 1, 6).Style.Font.Bold = true;
+
+            // Formatear precios
+            worksheet.Range(6, 8, row - 1, 8).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Auto-ajustar columnas
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        // Nuevo método sobrecargado para manejar movimientos con stock histórico calculado
+        public static byte[] GenerarReporteMovimientosInventarioConStockExcel(List<(Movimiento_Inventario movimiento, int stockHistorico)> movimientosConStock, DateTime? fechaInicio, DateTime? fechaFin, string filtroMotivo = "")
+        {
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Movimientos Inventario");
+
+            // Configurar título
+            worksheet.Cell(1, 1).Value = "HISTÓRICO - MOVIMIENTOS DE INVENTARIO";
+            worksheet.Cell(1, 1).Style.Font.Bold = true;
+            worksheet.Cell(1, 1).Style.Font.FontSize = 16;
+            worksheet.Range(1, 1, 1, 8).Merge();
+
+            // Configurar período y filtros
+            string periodo = "";
+            if (fechaInicio.HasValue && fechaFin.HasValue)
+            {
+                periodo = $"Período: {fechaInicio:dd/MM/yyyy} - {fechaFin:dd/MM/yyyy}";
+            }
+            else if (fechaInicio.HasValue)
+            {
+                periodo = $"Desde: {fechaInicio:dd/MM/yyyy}";
+            }
+            else if (fechaFin.HasValue)
+            {
+                periodo = $"Hasta: {fechaFin:dd/MM/yyyy}";
+            }
+            else
+            {
+                periodo = "Todos los registros";
+            }
+
+            if (!string.IsNullOrEmpty(filtroMotivo))
+            {
+                periodo += $" | Filtro: {filtroMotivo}";
+            }
+
+            worksheet.Cell(2, 1).Value = periodo;
+            worksheet.Cell(2, 1).Style.Font.Bold = true;
+            worksheet.Range(2, 1, 2, 8).Merge();
+
+            worksheet.Cell(3, 1).Value = $"Generado: {DateTime.Now:dd/MM/yyyy HH:mm}";
+            worksheet.Range(3, 1, 3, 8).Merge();
+
+            // Headers
+            var headers = new string[] 
+            { 
+                "ID", "Fecha", "Producto", "Motivo", "Tipo Movimiento", "Cantidad", "Stock después del Movimiento", "Precio Venta" 
+            };
+
+            for (int i = 0; i < headers.Length; i++)
+            {
+                worksheet.Cell(5, i + 1).Value = headers[i];
+                worksheet.Cell(5, i + 1).Style.Font.Bold = true;
+                worksheet.Cell(5, i + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
+                worksheet.Cell(5, i + 1).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            }
+
+            // Datos
+            int row = 6;
+            int totalMovimientos = 0;
+
+            foreach (var (movimiento, stockHistorico) in movimientosConStock)
+            {
+                var tipoMovimiento = GetTipoMovimiento(movimiento.Motivo);
+                
+                worksheet.Cell(row, 1).Value = movimiento.Id;
+                worksheet.Cell(row, 2).Value = movimiento.Fecha.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(row, 3).Value = $"{movimiento.Inventario?.Producto?.Descripcion} ({movimiento.Inventario?.Codigo_Producto})";
+                worksheet.Cell(row, 4).Value = movimiento.Motivo;
+                worksheet.Cell(row, 5).Value = tipoMovimiento;
+                worksheet.Cell(row, 6).Value = movimiento.Cantidad;
+                worksheet.Cell(row, 7).Value = stockHistorico;
+                worksheet.Cell(row, 8).Value = movimiento.Inventario?.Precio_Venta ?? 0;
+
+                totalMovimientos += Math.Abs(movimiento.Cantidad);
+                row++;
+            }
+
+            // Total
+            worksheet.Cell(row + 1, 5).Value = "TOTAL MOVIMIENTOS:";
+            worksheet.Cell(row + 1, 5).Style.Font.Bold = true;
+            worksheet.Cell(row + 1, 6).Value = totalMovimientos;
+            worksheet.Cell(row + 1, 6).Style.Font.Bold = true;
+
+            // Formatear precios
+            worksheet.Range(6, 8, row - 1, 8).Style.NumberFormat.Format = FORMATO_COLONES;
+
+            // Auto-ajustar columnas
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
+        private static string GetTipoMovimiento(string motivo)
+        {
+            var motivoLower = motivo?.ToLower() ?? "";
+            
+            if (motivoLower.Contains("venta") || motivoLower.Contains("salida") || motivoLower.Contains("producción"))
+                return "Salida";
+            else if (motivoLower.Contains("compra") || motivoLower.Contains("entrada") || motivoLower.Contains("ingreso"))
+                return "Entrada";
+            else if (motivoLower.Contains("ajuste") || motivoLower.Contains("corrección"))
+                return "Ajuste";
+            else
+                return "Otros";
+        }
+
+        #endregion
     }
 }

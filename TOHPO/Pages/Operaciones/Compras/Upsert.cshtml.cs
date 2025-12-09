@@ -499,11 +499,15 @@ namespace TOHPO.Pages.Operaciones.Compras
                     throw new Exception($"No se encontró inventario para el producto {codigoProducto}");
                 }
 
+                // CORREGIDO: Determinar la cantidad para el movimiento según el tipo
+                int cantidadMovimiento;
+                
                 // Actualizar inventario según tipo de movimiento
                 if (tipoMovimiento == "ENTRADA")
                 {
                     inventario.Cantidad += cantidad;
                     inventario.Existencia += cantidad;
+                    cantidadMovimiento = cantidad; // Positivo para entradas
                     
                     // Actualizar precio de compra
                     var detalleCompra = DetallesCompra.FirstOrDefault(d => d.CodigoProducto == codigoProducto);
@@ -516,6 +520,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                 {
                     inventario.Cantidad -= cantidad;
                     inventario.Existencia -= cantidad;
+                    cantidadMovimiento = -cantidad; // CORREGIDO: Negativo para salidas
 
                     // Validar que no queden valores negativos
                     if (inventario.Cantidad < 0 || inventario.Existencia < 0)
@@ -523,12 +528,16 @@ namespace TOHPO.Pages.Operaciones.Compras
                         throw new Exception($"La cantidad del producto {codigoProducto} no puede ser negativa.");
                     }
                 }
+                else
+                {
+                    throw new Exception($"Tipo de movimiento no válido: {tipoMovimiento}");
+                }
 
-                // Crear movimiento de inventario para auditoría
+                // Crear movimiento de inventario para auditoría con cantidad correcta
                 var movimiento = new Movimiento_Inventario
                 {
                     Id_Inventario = inventario.Id,
-                    Cantidad = cantidad,
+                    Cantidad = cantidadMovimiento, // CORREGIDO: Usar cantidad con signo correcto
                     Motivo = concepto,
                     Fecha = DateTime.Now
                 };
