@@ -24,18 +24,21 @@ namespace TOHPO.Models
         [DisplayName("Correo (opcional):")]
         public string? Correo_Electronico { get; set; }
 
-
-
         [Required(ErrorMessage = "El teléfono es obligatorio")]
         [RegularExpression(@"^\d{4}-\d{4}$", ErrorMessage = "Formato inválido. Use 0000-0000")]
         [DisplayName("Teléfono:")]
         public string Telefono { get; set; }
 
-
         [Required(ErrorMessage = "La cédula es obligatoria")]
         [DisplayName("Identificación:")]
-        public String Cedula { get; set; }
+        public string Cedula { get; set; }
 
-        public bool Estado { get; set; }
+        [DisplayName("Activo")]
+        public bool Estado { get; set; } = true;
+
+        // Propiedades de navegación
+        public ICollection<Venta> Ventas { get; set; } = new List<Venta>();
+        public ICollection<Pedido> Pedidos { get; set; } = new List<Pedido>();
+        public ICollection<Recordatorio> Recordatorios { get; set; } = new List<Recordatorio>();
     }
 }

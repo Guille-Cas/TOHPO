@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model TOHPO.Pages.Operaciones.Reportes.IndexModel
 @{
     ViewData["Title"] = "Reportes";
@@ -8,52 +8,61 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h4><i class="fas fa-file-pdf"></i> Generar Reportes</h4>
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Generar Reportes
+                </h3>
             </div>
             <div class="card-body">
-                @if (TempData["Error"] != null)
-                {
-                    <div class="alert alert-danger">
-                        @TempData["Error"]
-                    </div>
-                }
-                <a asp-page="/Index" class="btn btn-light">
-                    <i class="bi bi-arrow-left"></i> Regresar
-                </a>
-                <form method="post" asp-page-handler="GenerarReporte">
+                <form method="post">
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-3" id="fechaInicioCol">
                             <div class="form-group">
-                                <label asp-for="TipoReporte" class="form-label">Tipo de Reporte</label>
-                                <select asp-for="TipoReporte" class="form-select">
-                                    <option value="ventas">Reporte de Ventas</option>
-                                    <option value="compras">Reporte de Compras</option>
-                                    <option value="inventario">Reporte de Inventario</option>
-                                   @*  <option value="pedidos">Reporte de Pedidos</option> *@
+                                <label asp-for="FechaInicio" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i> Fecha Inicio
+                                </label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3" id="fechaFinCol">
+                            <div class="form-group">
+                                <label asp-for="FechaFin" class="form-label">
+                                    <i class="fas fa-calendar-alt"></i> Fecha Fin
+                                </label>
+                                <input asp-for="FechaFin" type="date" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-3" id="tipoReporteCol">
+                            <div class="form-group">
+                                <label asp-for="TipoReporte" class="form-label">
+                                    <i class="fas fa-file-alt"></i> Tipo de Reporte
+                                </label>
+                                <select asp-for="TipoReporte" class="form-control" id="tipoReporteSelect">
+                                    <option value="ventas">📊 Ventas</option>
+                                    <option value="compras">🛒 Compras</option>
+                                    <option value="inventario">📦 Inventario</option>
+                                    <option value="pedidos">📋 Pedidos</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label asp-for="FechaInicio" class="form-label">Fecha Inicio</label>
-                                <input asp-for="FechaInicio" type="date" class="form-control" />
+                                <label asp-for="FormatoReporte" class="form-label">
+                                    <i class="fas fa-file-export"></i> Formato
+                                </label>
+                                <select asp-for="FormatoReporte" class="form-control">
+                                    <option value="pdf">📄 PDF</option>
+                                    <option value="excel">📊 Excel</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label asp-for="FechaFin" class="form-label">Fecha Fin</label>
-                                <input asp-for="FechaFin" type="date" class="form-control" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-label">&nbsp;</label>
-                                <div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-download"></i> Generar PDF
-                                    </button>
-                                </div>
-                            </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" asp-page-handler="GenerarReporte" class="btn btn-primary btn-lg">
+                                <i class="fas fa-download"></i> Generar y Descargar Reporte
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -66,13 +75,13 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5>Informaci�n de Reportes</h5>
+                <h5>Información de Reportes</h5>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
                         <h6><i class="fas fa-chart-line"></i> Reporte de Ventas</h6>
-                        <p class="text-muted">Genera un reporte detallado de todas las ventas realizadas en el per�odo seleccionado, incluyendo totales y estad�sticas.</p>
+                        <p class="text-muted">Genera un reporte detallado de todas las ventas realizadas en el período seleccionado, incluyendo totales y estadísticas.</p>
                     </div>
                     <div class="col-md-6">
                         <h6><i class="fas fa-shopping-cart"></i> Reporte de Compras</h6>
@@ -84,10 +93,10 @@
                         <h6><i class="fas fa-boxes"></i> Reporte de Inventario</h6>
                         <p class="text-muted">Estado actual del inventario, incluyendo productos con stock bajo destacados en rojo.</p>
                     </div>
-@*                     <div class="col-md-6">
+                    <div class="col-md-6">
                         <h6><i class="fas fa-clipboard-list"></i> Reporte de Pedidos</h6>
-                        <p class="text-muted">Listado de todos los pedidos realizados por clientes en el per�odo seleccionado.</p>
-                    </div> *@
+                        <p class="text-muted">Listado de todos los pedidos realizados por clientes en el período seleccionado.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,29 +105,52 @@
 
 @section Scripts {
     <script>
-        // Validar que la fecha fin no sea menor a la fecha inicio
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const fechaInicio = new Date(document.querySelector('[name="FechaInicio"]').value);
-            const fechaFin = new Date(document.querySelector('[name="FechaFin"]').value);
-            
-            if (fechaFin < fechaInicio) {
-                e.preventDefault();
-                alert('La fecha fin no puede ser menor a la fecha inicio');
-                return false;
+        function toggleCamposPorTipoReporte() {
+            const tipoReporte = document.getElementById('tipoReporteSelect').value;
+            const fechaInicioCol = document.getElementById('fechaInicioCol');
+            const fechaFinCol = document.getElementById('fechaFinCol');
+
+            if (tipoReporte === 'inventario') {
+                // Ocultar campos de fecha para inventario
+                fechaInicioCol.style.display = 'none';
+                fechaFinCol.style.display = 'none';
+
+                // Remover el atributo required de las fechas cuando están ocultas
+                document.querySelector('[name="FechaInicio"]').removeAttribute('required');
+                document.querySelector('[name="FechaFin"]').removeAttribute('required');
+            } else {
+                // Mostrar campos de fecha para otros reportes
+                fechaInicioCol.style.display = 'block';
+                fechaFinCol.style.display = 'block';
+
+                // Restaurar el atributo required de las fechas
+                document.querySelector('[name="FechaInicio"]').setAttribute('required', '');
+                document.querySelector('[name="FechaFin"]').setAttribute('required', '');
             }
+        }
+
+        // Ejecutar al cargar la página para establecer el estado inicial
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleCamposPorTipoReporte();
         });
 
-        // Ocultar campos de fecha para reporte de inventario
-        document.querySelector('[name="TipoReporte"]').addEventListener('change', function() {
-            const fechasDiv = document.querySelectorAll('.col-md-3')[1].parentElement;
-            const tipoReporte = this.value;
-            
-            if (tipoReporte === 'inventario') {
-                document.querySelectorAll('.col-md-3')[1].style.display = 'none';
-                document.querySelectorAll('.col-md-3')[2].style.display = 'none';
-            } else {
-                document.querySelectorAll('.col-md-3')[1].style.display = 'block';
-                document.querySelectorAll('.col-md-3')[2].style.display = 'block';
+        // Ejecutar cuando cambie el tipo de reporte
+        document.getElementById('tipoReporteSelect').addEventListener('change', toggleCamposPorTipoReporte);
+
+        // Validar que la fecha fin no sea menor a la fecha inicio
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const tipoReporte = document.getElementById('tipoReporteSelect').value;
+
+            // Solo validar fechas si no es reporte de inventario
+            if (tipoReporte !== 'inventario') {
+                const fechaInicio = new Date(document.querySelector('[name="FechaInicio"]').value);
+                const fechaFin = new Date(document.querySelector('[name="FechaFin"]').value);
+
+                if (fechaFin < fechaInicio) {
+                    e.preventDefault();
+                    alert('La fecha fin no puede ser menor a la fecha inicio');
+                    return false;
+                }
             }
         });
     </script>

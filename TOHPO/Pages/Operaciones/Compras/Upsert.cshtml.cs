@@ -139,16 +139,25 @@ namespace TOHPO.Pages.Operaciones.Compras
             // Calcular totales antes de la validación
             CalcularTotales();
 
-            // Validar que los totales de métodos de pago coincidan con el total de la compra
+            // NUEVA LÓGICA: Validar métodos de pago - permitir montos superiores para flujo de caja
             var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
             var totalCompraRedondeado = Math.Round(Compra.Total, 2);
             var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
             
-            if (totalCompraRedondeado != totalPagosRedondeado)
+            // Validar que el total de pagos no sea menor que el total de la compra
+            if (totalPagosRedondeado < totalCompraRedondeado)
             {
-                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) debe coincidir con el total de la compra (₡{totalCompraRedondeado:F2}). Diferencia: ₡{Math.Abs(totalCompraRedondeado - totalPagosRedondeado):F2}";
+                var diferencia = totalCompraRedondeado - totalPagosRedondeado;
+                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) no puede ser menor que el total de la compra (₡{totalCompraRedondeado:F2}). Faltante: ₡{diferencia:F2}";
                 await CargarDatos();
                 return Page();
+            }
+            
+            // Si el pago es mayor que la compra, mostrar información sobre el pago adelantado
+            if (totalPagosRedondeado > totalCompraRedondeado)
+            {
+                var exceso = totalPagosRedondeado - totalCompraRedondeado;
+                TempData["InfoMessage"] = $"Pago realizado: ₡{totalPagosRedondeado:F2} | Total compra: ₡{totalCompraRedondeado:F2} | Pago adelantado/exceso: ₡{exceso:F2}";
             }
 
             try
@@ -199,19 +208,20 @@ namespace TOHPO.Pages.Operaciones.Compras
 
             try
             {
+                // CAMBIO: Buscar por CodigoReferencia en lugar de Codigo_Barra
                 var producto = await _context.Producto
                     .Include(p => p.Impuesto)
                     .Include(p => p.Inventario)
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo);
+                    .FirstOrDefaultAsync(p => p.Codigo_Barra == codigo && p.Estado);
 
                 if (producto == null)
                 {
-                    return new JsonResult(new { success = false, message = "Producto no encontrado en el catálogo" });
+                    return new JsonResult(new { success = false, message = "Producto no encontrado" });
                 }
 
                 // Verificar si el producto tiene inventario registrado
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == codigo);
+                    .FirstOrDefaultAsync(i => i.Codigo_Producto == producto.CodigoReferencia);
 
                 if (inventario == null)
                 {
@@ -232,7 +242,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                 else
                 {
                     var ultimaCompra = await _context.Compra_Detalle
-                        .Where(cd => cd.Codigo_Producto == codigo)
+                        .Where(cd => cd.Codigo_Producto == producto.CodigoReferencia)
                         .Include(cd => cd.Compra)
                         .OrderByDescending(cd => cd.Compra.Fecha)
                         .ThenByDescending(cd => cd.Compra.Hora)
@@ -244,11 +254,13 @@ namespace TOHPO.Pages.Operaciones.Compras
                     }
                 }
 
+                // Retornar información usando CodigoReferencia
                 var productoInfo = new
                 {
-                    codigo = producto.CodigoReferencia,
+                    codigo = producto.CodigoReferencia, // CAMBIO: Usar CodigoReferencia
                     nombre = producto.Descripcion,
                     costo = costoUnitarioSugerido,
+                    existencia = inventario.Existencia, // Agregar existencia
                     porcentajeImpuesto = producto.Impuesto?.Porcentaje ?? 0
                 };
 
@@ -487,11 +499,15 @@ namespace TOHPO.Pages.Operaciones.Compras
                     throw new Exception($"No se encontró inventario para el producto {codigoProducto}");
                 }
 
+                // CORREGIDO: Determinar la cantidad para el movimiento según el tipo
+                int cantidadMovimiento;
+                
                 // Actualizar inventario según tipo de movimiento
                 if (tipoMovimiento == "ENTRADA")
                 {
                     inventario.Cantidad += cantidad;
                     inventario.Existencia += cantidad;
+                    cantidadMovimiento = cantidad; // Positivo para entradas
                     
                     // Actualizar precio de compra
                     var detalleCompra = DetallesCompra.FirstOrDefault(d => d.CodigoProducto == codigoProducto);
@@ -504,6 +520,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                 {
                     inventario.Cantidad -= cantidad;
                     inventario.Existencia -= cantidad;
+                    cantidadMovimiento = -cantidad; // CORREGIDO: Negativo para salidas
 
                     // Validar que no queden valores negativos
                     if (inventario.Cantidad < 0 || inventario.Existencia < 0)
@@ -511,12 +528,16 @@ namespace TOHPO.Pages.Operaciones.Compras
                         throw new Exception($"La cantidad del producto {codigoProducto} no puede ser negativa.");
                     }
                 }
+                else
+                {
+                    throw new Exception($"Tipo de movimiento no válido: {tipoMovimiento}");
+                }
 
-                // Crear movimiento de inventario para auditoría
+                // Crear movimiento de inventario para auditoría con cantidad correcta
                 var movimiento = new Movimiento_Inventario
                 {
                     Id_Inventario = inventario.Id,
-                    Cantidad = cantidad,
+                    Cantidad = cantidadMovimiento, // CORREGIDO: Usar cantidad con signo correcto
                     Motivo = concepto,
                     Fecha = DateTime.Now
                 };
@@ -540,7 +561,7 @@ namespace TOHPO.Pages.Operaciones.Compras
                     .Where(p => p.Estado == true)
                     .Select(p => new
                     {
-                        codigo = p.CodigoReferencia,
+                        codigo = p.Codigo_Barra, // Cambiado de p.CodigoReferencia a p.Codigo_Barra
                         nombre = p.Descripcion,
                         descripcion = p.Descripcion,
                         costo = _context.Inventario

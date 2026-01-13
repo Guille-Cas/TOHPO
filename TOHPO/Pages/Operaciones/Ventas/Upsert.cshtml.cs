@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Office2013.Excel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -134,7 +135,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 var producto = await _context.Producto
                     .Include(p => p.Inventario)
                     .Include(p => p.Impuesto)
-                    .FirstOrDefaultAsync(p => p.CodigoReferencia == codigo && p.Estado);
+                    .FirstOrDefaultAsync(p => p.Codigo_Barra == codigo && p.Estado);
 
                 if (producto == null)
                 {
@@ -151,7 +152,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     success = true,
                     producto = new
                     {
-                        codigo = producto.CodigoReferencia,
+                        codigo = producto.CodigoReferencia, // CORREGIDO: Usar CodigoReferencia para guardar en BD
                         nombre = producto.Descripcion,
                         precio = producto.Inventario.Precio_Venta,
                         existencia = producto.Inventario.Existencia,
@@ -176,7 +177,7 @@ namespace TOHPO.Pages.Operaciones.Ventas
                     .Where(i => i.Estado && i.Existencia > 0)
                     .Select(i => new
                     {
-                        codigo = i.Codigo_Producto,
+                        codigo = i.Producto.CodigoReferencia, 
                         nombre = i.Producto.Descripcion,
                         cantidadInventario = i.Existencia,
                         precioUnitario = i.Precio_Venta,
@@ -199,11 +200,17 @@ namespace TOHPO.Pages.Operaciones.Ventas
             ModelState.Remove("Venta.Cliente");
             ModelState.Remove("Venta.Detalle_Ventas");
             ModelState.Remove("Venta.Venta_Metodo_Pagos");
+            ModelState.Remove("Venta.Id_Cliente");
 
             if (!ModelState.IsValid)
             {
                 await CargarDatos();
                 return Page();
+            }
+
+            if (!Venta.Id_Cliente.HasValue || Venta.Id_Cliente == 0)
+            {
+                Venta.Id_Cliente = null;
             }
 
             // Validar que hay productos en la venta
@@ -225,28 +232,39 @@ namespace TOHPO.Pages.Operaciones.Ventas
             // Calcular totales antes de la validación
             CalcularTotalesVenta();
 
-            // Validar que los totales de métodos de pago coincidan con el total de la venta
+            // NUEVA LÓGICA: Validar métodos de pago - permitir montos superiores para flujo de caja
             var totalMetodosPago = MetodosPago.Sum(mp => mp.Monto);
-            var diferencia = Math.Abs(Venta.Total - totalMetodosPago);
-            
-            // Usar una tolerancia más pequeña y redondear a 2 decimales
             var totalVentaRedondeado = Math.Round(Venta.Total, 2);
             var totalPagosRedondeado = Math.Round(totalMetodosPago, 2);
             
-            if (totalVentaRedondeado != totalPagosRedondeado)
+            // Validar que el total de pagos no sea menor que el total de la venta
+            if (totalPagosRedondeado < totalVentaRedondeado)
             {
-                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) debe coincidir con el total de la venta (₡{totalVentaRedondeado:F2}). Diferencia: ₡{Math.Abs(totalVentaRedondeado - totalPagosRedondeado):F2}";
+                var diferencia = totalVentaRedondeado - totalPagosRedondeado;
+                TempData["ErrorMessage"] = $"El total de los métodos de pago (₡{totalPagosRedondeado:F2}) no puede ser menor que el total de la venta (₡{totalVentaRedondeado:F2}). Faltante: ₡{diferencia:F2}";
                 await CargarDatos();
                 return Page();
+            }
+            
+            // Si el pago es mayor que la venta, mostrar información de cambio/vuelto
+            if (totalPagosRedondeado > totalVentaRedondeado)
+            {
+                var vuelto = totalPagosRedondeado - totalVentaRedondeado;
+                TempData["InfoMessage"] = $"Pago recibido: ₡{totalPagosRedondeado:F2} | Total venta: ₡{totalVentaRedondeado:F2} | Vuelto a entregar: ₡{vuelto:F2}";
             }
 
             try
             {
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
-                if (Venta.Id == 0)
+                // Variable para determinar si es nueva venta
+                bool esNuevaVenta = Venta.Id == 0;
+
+                if (esNuevaVenta)
                 {
                     // Nueva venta
+                    Venta.Fecha = DateTime.Now.Date;
+                    Venta.Hora = DateTime.Now;
                     await CrearNuevaVenta();
                 }
                 else
@@ -256,7 +274,9 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 }
 
                 await transaction.CommitAsync();
-                TempData["SuccessMessage"] = Venta.Id == 0 ? "Venta creada exitosamente" : "Venta actualizada exitosamente";
+                
+                // CORREGIDO: Establecer mensaje de éxito y redirigir correctamente
+                TempData["SuccessMessage"] = esNuevaVenta ? "Venta creada exitosamente" : "Venta actualizada exitosamente";
                 return RedirectToPage("./Index");
             }
             catch (Exception ex)
@@ -293,14 +313,26 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 _context.Detalle_Venta.Add(detalleVenta);
 
-                // Actualizar inventario - reducir existencias
+                // CORREGIDO: Buscar inventario por CodigoReferencia (que es lo que se guarda en detalle.CodigoProducto)
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
+                   .Include(i => i.Producto)
+                   .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {
                     inventario.Existencia -= detalle.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear movimiento de inventario para la venta
+                    var movimientoInventario = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = -detalle.Cantidad, // Negativo porque es una salida
+                        Motivo = $"Venta #{Venta.Id} - {inventario.Producto?.Descripcion ?? detalle.NombreProducto}",
+                        Fecha = Venta.Hora
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoInventario);
                 }
             }
 
@@ -333,16 +365,29 @@ namespace TOHPO.Pages.Operaciones.Ventas
                 throw new InvalidOperationException("Venta no encontrada");
             }
 
-            // Restaurar inventario de la venta original
+            // CORREGIDO: Restaurar inventario y eliminar movimientos de inventario de la venta original
             foreach (var detalleOriginal in ventaExistente.Detalle_Ventas)
             {
                 var inventario = await _context.Inventario
+                    .Include(i => i.Producto)
                     .FirstOrDefaultAsync(i => i.Codigo_Producto == detalleOriginal.Codigo_Producto);
 
                 if (inventario != null)
                 {
+                    // Restaurar el stock
                     inventario.Existencia += detalleOriginal.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear movimiento de reversión para el histórico
+                    var movimientoReversion = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = detalleOriginal.Cantidad, // Positivo porque es una entrada (reversión)
+                        Motivo = $"Reversión edición venta #{Venta.Id} - {inventario.Producto?.Descripcion ?? ""}",
+                        Fecha = DateTime.Now
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoReversion);
                 }
             }
 
@@ -354,7 +399,11 @@ namespace TOHPO.Pages.Operaciones.Ventas
             ventaExistente.Fecha = Venta.Fecha;
             ventaExistente.Hora = Venta.Hora;
             ventaExistente.Concepto = Venta.Concepto;
-            ventaExistente.Id_Cliente = Venta.Id_Cliente;
+
+            if (ventaExistente.Id_Cliente > 0)
+            {
+                ventaExistente.Id_Cliente = Venta.Id_Cliente;
+            }
 
             // Calcular nuevos totales
             CalcularTotalesVenta();
@@ -367,11 +416,11 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
             // Agregar nuevos detalles
             foreach (var detalle in DetallesVenta)
-            {
+            { 
                 var detalleVenta = new Detalle_Venta
                 {
                     Id_Venta = Venta.Id,
-                    Codigo_Producto = detalle.CodigoProducto,
+                    Codigo_Producto = detalle.CodigoProducto ?? string.Empty,
                     Cantidad = detalle.Cantidad,
                     Precio_Unitario = detalle.PrecioUnitario,
                     Porcentaje_Descuento = detalle.PorcentajeDescuento,
@@ -382,14 +431,26 @@ namespace TOHPO.Pages.Operaciones.Ventas
 
                 _context.Detalle_Venta.Add(detalleVenta);
 
-                // Actualizar inventario - reducir existencias
+                // CORREGIDO: Buscar inventario por CodigoReferencia y crear nuevos movimientos
                 var inventario = await _context.Inventario
-                    .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
+                   .Include(i => i.Producto)
+                   .FirstOrDefaultAsync(i => i.Codigo_Producto == detalle.CodigoProducto);
 
                 if (inventario != null)
                 {
                     inventario.Existencia -= detalle.Cantidad;
                     _context.Inventario.Update(inventario);
+
+                    // NUEVO: Crear nuevo movimiento de inventario para la venta actualizada
+                    var movimientoInventario = new Movimiento_Inventario
+                    {
+                        Id_Inventario = inventario.Id,
+                        Cantidad = -detalle.Cantidad, // Negativo porque es una salida
+                        Motivo = $"Venta #{Venta.Id} (actualizada) - {inventario.Producto?.Descripcion ?? detalle.NombreProducto}",
+                        Fecha = Venta.Hora
+                    };
+
+                    _context.Movimiento_Inventario.Add(movimientoInventario);
                 }
             }
 

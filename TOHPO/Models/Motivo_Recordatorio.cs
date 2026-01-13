@@ -11,5 +11,11 @@ namespace TOHPO.Models
         [Required(ErrorMessage = "La descripción es obligatoria")]
         [DisplayName("Descripción:")]
         public string Descripcion { get; set; }
+
+        [DisplayName("Activo")]
+        public bool Estado { get; set; } = true;
+
+        // Propiedades de navegación
+        public ICollection<Recordatorio> Recordatorios { get; set; } = new List<Recordatorio>();
     }
 }

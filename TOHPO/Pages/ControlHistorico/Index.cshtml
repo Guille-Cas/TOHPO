@@ -1,0 +1,98 @@
+@page
+@model TOHPO.Pages.ControlHistorico.IndexModel
+@{
+    ViewData["Title"] = "Control Histórico";
+}
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="main-title text-center mb-3">
+                <h3 class="fs-3 main-subtitle">
+                    Control Histórico - Auditoría
+                </h3>
+                <p class="text-muted">Visualización de registros históricos (solo lectura)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Seleccione el tipo de registro a consultar</h4>
+                    <div class="card-tools">
+                        <a asp-page="/Index" class="btn btn-light">
+                            <i class="bi bi-arrow-left"></i> Regresar al Menú Principal
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Detalles de Compras -->
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-light border-primary h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3">
+                                        <i class="fas fa-shopping-cart fa-3x text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title">Detalles de Compras</h5>
+                                    <p class="card-text flex-grow-1">
+                                        Historial completo de todos los detalles de compras realizadas
+                                    </p>
+                                    <a asp-page="./CompraDetalle/Index" class="btn btn-primary">
+                                        Ver Histórico
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalles de Ventas -->
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-light border-success h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3">
+                                        <i class="fas fa-cash-register fa-3x text-success"></i>
+                                    </div>
+                                    <h5 class="card-title">Detalles de Ventas</h5>
+                                    <p class="card-text flex-grow-1">
+                                        Historial completo de todos los detalles de ventas realizadas
+                                    </p>
+                                    <a asp-page="./DetalleVenta/Index" class="btn btn-success">
+                                        Ver Histórico
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalles de Inventario -->
+                        <div class="col-12 col-md-4">
+                            <div class="card bg-light border-info h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3">
+                                        <i class="fas fa-exchange-alt fa-3x text-info"></i>
+                                    </div>
+                                    <h5 class="card-title">Movimientos de Inventario</h5>
+                                    <p class="card-text flex-grow-1">
+                                        Historial completo de movimientos de inventario: entradas, salidas, compras, ventas y producción
+                                    </p>
+                                    <a asp-page="./DetalleInventario/Index" class="btn btn-info">
+                                        Ver Histórico
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle"></i>
+                        Todas las consultas son de solo lectura. No se pueden realizar modificaciones desde esta sección.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

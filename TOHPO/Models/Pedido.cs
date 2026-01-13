@@ -9,13 +9,23 @@ namespace TOHPO.Models
         [Key]
         public int Id { get; set; }
 
+        private DateTime _fechaCreacion;
         [Required(ErrorMessage = "La fecha de creación es obligatoria")]
         [DisplayName("Fecha de creación")]
-        public DateTime Fecha_Creacion { get; set; }
+        public DateTime Fecha_Creacion 
+        { 
+            get => _fechaCreacion;
+            set => _fechaCreacion = new DateTime(value.Year, value.Month, value.Day, value.Hour, value.Minute, 0);
+        }
 
+        private DateTime _fechaEntrega;
         [Required(ErrorMessage = "La fecha de entrega es obligatoria")]
         [DisplayName("Fecha de entrega")]
-        public DateTime Fecha_Entrega { get; set; }
+        public DateTime Fecha_Entrega 
+        { 
+            get => _fechaEntrega;
+            set => _fechaEntrega = new DateTime(value.Year, value.Month, value.Day, value.Hour, value.Minute, 0);
+        }
 
         [DisplayName("Abono")]
         [Column(TypeName = "decimal(18,2)")]

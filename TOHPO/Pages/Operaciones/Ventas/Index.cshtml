@@ -102,11 +102,20 @@
                                             <td>@venta.Fecha.ToString("dd/MM/yyyy")</td>
                                             <td>@venta.Hora.ToString("HH:mm")</td>
                                             <td>
-                                                <div>
-                                                    <strong>@venta.Cliente.Nombre @venta.Cliente.Primer_Apellido</strong>
-                                                    <br>
-                                                    <small class="text-muted">@venta.Cliente.Cedula</small>
-                                                </div>
+                                                @if (venta.Cliente != null)
+                                                {
+                                                    <div>
+                                                        <strong>@venta.Cliente.Nombre @venta.Cliente.Primer_Apellido</strong>
+                                                        <br>
+                                                        <small class="text-muted">@venta.Cliente.Cedula</small>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div>
+                                                        <span class="text-muted">Sin cliente asignado</span>
+                                                    </div>
+                                                }
                                             </td>
                                             <td>
                                                 <span class="badge bg-info">@venta.Detalle_Ventas.Sum(dv => dv.Cantidad) items</span>
@@ -132,7 +141,7 @@
                                                     </a>
                                                     <button type="button"
                                                             class="btn btn-danger btn-sm me-2 rounded"
-                                                            onclick="confirmarEliminar(@venta.Id, '@venta.Cliente.Nombre @venta.Cliente.Primer_Apellido')"
+                                                            onclick="confirmarEliminar(@venta.Id, '@(venta.Cliente?.Nombre ?? "Sin cliente") @(venta.Cliente?.Primer_Apellido ?? "")')"
                                                             title="Eliminar">
                                                         Eliminar
                                                     </button>

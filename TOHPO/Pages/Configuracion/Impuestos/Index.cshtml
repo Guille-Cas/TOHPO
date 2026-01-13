@@ -39,6 +39,7 @@
                                     <th class="text-center">Id</th>
                                     <th class="text-center">Descripción</th>
                                     <th class="text-center">Porcentaje</th>
+                                    <th class="text-center">Estado</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -55,4 +56,5 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script src="~/js/Configuracion/impuestos.js" asp-append-version="true"></script>
+    <partial name="~/Pages/Shared/_TempDataFeedback.cshtml" />
 }

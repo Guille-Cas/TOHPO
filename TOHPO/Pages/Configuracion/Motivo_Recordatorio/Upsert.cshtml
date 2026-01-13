@@ -1,4 +1,4 @@
-@page "{id:int?}"
+ï»¿@page "{id:int?}"
 @model TOHPO.Pages.Configuracion.Motivo_Recordatorio.UpsertModel
 @{
     var isEdit = Model.MotivoRecordatorio != null && Model.MotivoRecordatorio.Id > 0;
@@ -9,9 +9,9 @@
     <div class="row justify-content-center">
         <div class="col-12">
             <div class="card">
-                <!-- ENCABEZADO -->
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title mb-0">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas @(Model.MotivoRecordatorio?.Id == 0 ? "fa-plus" : "fa-edit") me-2"></i>
                         @ViewData["Title"]
                     </h3>
                     <a asp-page="./Index" class="btn btn-light">
@@ -19,12 +19,12 @@
                     </a>
                 </div>
 
-                <!-- DESCRIPCIÓN (ALERT) -->
+                <!-- DESCRIPCIÃ“N (ALERT) -->
                 <div class="card-body border-bottom">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
                         @(isEdit
-                                                ? "Actualice la información del motivo de recordatorio y guarde los cambios para mantener sus datos al día."
-                                                : "Complete la información del nuevo motivo de recordatorio y guarde el registro para que quede disponible en el sistema.")
+                                                ? "Actualice la informaciÃ³n del motivo de recordatorio y guarde los cambios para mantener sus datos al dÃ­a."
+                                                : "Complete la informaciÃ³n del nuevo motivo de recordatorio y guarde el registro para que quede disponible en el sistema.")
 
                     </div>
                 </div>
@@ -34,7 +34,7 @@
                         <!-- ID oculto -->
                         <input asp-for="MotivoRecordatorio.Id" type="hidden" />
 
-                        <!-- Descripción -->
+                        <!-- DescripciÃ³n -->
                         <div class="mb-3">
                             <label asp-for="MotivoRecordatorio.Descripcion" class="form-label"></label>
                             <input asp-for="MotivoRecordatorio.Descripcion" class="form-control"/>
@@ -56,5 +56,5 @@
 </div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

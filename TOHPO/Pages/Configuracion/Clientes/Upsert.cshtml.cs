@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Models;
@@ -48,13 +48,13 @@ namespace TOHPO.Pages.Configuracion.Clientes
         {
             try
             {
-                // Validar cédula única
+                // Validar cÃ©dula Ãºnica
                 var existeCliente = await _context.Cliente
                     .AnyAsync(c => c.Cedula == Cliente.Cedula && c.Id != Cliente.Id);
 
                 if (existeCliente)
                 {
-                    ModelState.AddModelError("Cliente.Cedula", "Ya existe un cliente con esta cédula");
+                    ModelState.AddModelError("Cliente.Cedula", "Ya existe un cliente con esta cÃ©dula");
                 }
 
                 if (!ModelState.IsValid)
@@ -78,6 +78,7 @@ namespace TOHPO.Pages.Configuracion.Clientes
                     clienteExistente.Segundo_Apellido = Cliente.Segundo_Apellido;
                     clienteExistente.Correo_Electronico = Cliente.Correo_Electronico;
                     clienteExistente.Telefono = Cliente.Telefono;
+                    clienteExistente.Estado = Cliente.Estado;
 
                     _context.Cliente.Update(clienteExistente);
                     TempData["SuccessMessage"] = "Cliente actualizado correctamente";

@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Text;
 using TOHPO.Data;
 using TOHPO.Models;
+using TOHPO.Helpers;
 
 namespace TOHPO.Pages.Operaciones.Reportes
 {
@@ -26,41 +27,90 @@ namespace TOHPO.Pages.Operaciones.Reportes
         [BindProperty]
         public string TipoReporte { get; set; } = "ventas";
 
+        [BindProperty]
+        public string FormatoReporte { get; set; } = "pdf";
+
         public void OnGet()
         {
         }
 
+        // Método corregido
         public async Task<IActionResult> OnPostGenerarReporteAsync()
         {
             try
             {
-                byte[] pdfBytes = null;
+                byte[] fileBytes = null;
                 string fileName = "";
+                string contentType = "";
 
                 switch (TipoReporte.ToLower())
                 {
                     case "ventas":
-                        pdfBytes = await GenerarReporteVentasAsync();
-                        fileName = $"Reporte_Ventas_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                        if (FormatoReporte == "excel")
+                        {
+                            fileBytes = await GenerarReporteVentasExcelAsync();
+                            fileName = $"Reporte_Ventas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                        }
+                        else
+                        {
+                            fileBytes = await GenerarReporteVentasAsync();
+                            fileName = $"Reporte_Ventas_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                            contentType = "application/pdf";
+                        }
                         break;
+
                     case "compras":
-                        pdfBytes = await GenerarReporteComprasAsync();
-                        fileName = $"Reporte_Compras_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                        if (FormatoReporte == "excel")
+                        {
+                            fileBytes = await GenerarReporteComprasExcelAsync();
+                            fileName = $"Reporte_Compras_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                        }
+                        else
+                        {
+                            fileBytes = await GenerarReporteComprasAsync();
+                            fileName = $"Reporte_Compras_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                            contentType = "application/pdf";
+                        }
                         break;
+
                     case "inventario":
-                        pdfBytes = await GenerarReporteInventarioAsync();
-                        fileName = $"Reporte_Inventario_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                        if (FormatoReporte == "excel")
+                        {
+                            fileBytes = await GenerarReporteInventarioExcelAsync();
+                            fileName = $"Reporte_Inventario_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                        }
+                        else
+                        {
+                            fileBytes = await GenerarReporteInventarioAsync();
+                            fileName = $"Reporte_Inventario_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                            contentType = "application/pdf";
+                        }
                         break;
+
                     case "pedidos":
-                        pdfBytes = await GenerarReportePedidosAsync();
-                        fileName = $"Reporte_Pedidos_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                        if (FormatoReporte == "excel")
+                        {
+                            fileBytes = await GenerarReportePedidosExcelAsync();
+                            fileName = $"Reporte_Pedidos_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                            contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                        }
+                        else
+                        {
+                            fileBytes = await GenerarReportePedidosAsync();
+                            fileName = $"Reporte_Pedidos_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                            contentType = "application/pdf";
+                        }
                         break;
+
                     default:
                         TempData["Error"] = "Tipo de reporte no válido";
                         return RedirectToPage();
                 }
 
-                return File(pdfBytes, "application/pdf", fileName);
+                return File(fileBytes, contentType, fileName);
             }
             catch (Exception ex)
             {
@@ -69,22 +119,77 @@ namespace TOHPO.Pages.Operaciones.Reportes
             }
         }
 
+        // Nuevos métodos para Excel
+        private async Task<byte[]> GenerarReporteVentasExcelAsync()
+        {
+            var ventas = await _context.Venta
+                .Include(v => v.Cliente)
+                .Include(v => v.Detalle_Ventas)
+                    .ThenInclude(d => d.Producto)
+                .Include(v => v.Venta_Metodo_Pagos)
+                    .ThenInclude(vm => vm.Metodo_Pago)
+                .Where(v => v.Fecha >= FechaInicio && v.Fecha <= FechaFin)
+                .OrderBy(v => v.Fecha)
+                .ToListAsync();
+
+            return ExcelReportHelper.GenerarReporteVentasExcel(ventas, FechaInicio, FechaFin);
+        }
+
+        private async Task<byte[]> GenerarReporteComprasExcelAsync()
+        {
+            var compras = await _context.Compra
+                .Include(c => c.Proveedor)
+                .Include(c => c.Compra_Detalles)
+                    .ThenInclude(d => d.Producto)
+                .Include(c => c.Compra_Metodo_Pagos)
+                    .ThenInclude(mp => mp.Metodo_Pago)
+                .Where(c => c.Fecha >= FechaInicio && c.Fecha <= FechaFin)
+                .OrderBy(c => c.Fecha)
+                .ThenBy(c => c.Hora)
+                .ToListAsync();
+
+            return ExcelReportHelper.GenerarReporteComprasExcel(compras, FechaInicio, FechaFin);
+        }
+
+        private async Task<byte[]> GenerarReporteInventarioExcelAsync()
+        {
+            var inventario = await _context.Inventario
+                .Include(i => i.Producto)
+                    .ThenInclude(p => p.Categoria)
+                .Include(i => i.Producto)
+                    .ThenInclude(p => p.Presentacion)
+                .ToListAsync();
+
+            return ExcelReportHelper.GenerarReporteInventarioExcel(inventario);
+        }
+
+        private async Task<byte[]> GenerarReportePedidosExcelAsync()
+        {
+            var pedidos = await _context.Pedido
+                .Include(p => p.Cliente)
+                .Where(p => p.Fecha_Creacion >= FechaInicio && p.Fecha_Creacion <= FechaFin)
+                .OrderBy(p => p.Fecha_Creacion)
+                .ToListAsync();
+
+            return ExcelReportHelper.GenerarReportePedidosExcel(pedidos, FechaInicio, FechaFin);
+        }
+
+        // Mantener todos tus métodos existentes para PDF
         private async Task<byte[]> GenerarReporteVentasAsync()
         {
             var ventas = await _context.Venta
-    .Include(v => v.Cliente)
-    .Include(v => v.Detalle_Ventas)
-        .ThenInclude(d => d.Producto)
-    .Include(v => v.Venta_Metodo_Pagos)
-        .ThenInclude(vm => vm.Metodo_Pago)
-    .Where(v => v.Fecha >= FechaInicio && v.Fecha <= FechaFin)
-    .OrderBy(v => v.Fecha)
-    .ToListAsync();
+                .Include(v => v.Cliente)
+                .Include(v => v.Detalle_Ventas)
+                    .ThenInclude(d => d.Producto)
+                .Include(v => v.Venta_Metodo_Pagos)
+                    .ThenInclude(vm => vm.Metodo_Pago)
+                .Where(v => v.Fecha >= FechaInicio && v.Fecha <= FechaFin)
+                .OrderBy(v => v.Fecha)
+                .ToListAsync();
 
             var htmlContent = GenerarHtmlVentas(ventas);
             return ConvertirHtmlAPdf(htmlContent);
         }
-
 
         private async Task<byte[]> GenerarReporteComprasAsync()
         {
@@ -102,7 +207,6 @@ namespace TOHPO.Pages.Operaciones.Reportes
             string htmlContent = GenerarHtmlCompras(compras);
             return ConvertirHtmlAPdf(htmlContent);
         }
-
 
         private async Task<byte[]> GenerarReporteInventarioAsync()
         {
@@ -789,8 +893,7 @@ namespace TOHPO.Pages.Operaciones.Reportes
                 <td class='text-right'><strong>₡{totalSubCompra.ToString("N2", culture)}</strong></td>
             </tr>
         </tbody>
-    </table>
-";
+    </table>";
 
                 if (metodosPago.Any())
                 {

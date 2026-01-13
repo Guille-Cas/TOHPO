@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TOHPO.Data;
 using TOHPO.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace TOHPO.Pages.Configuracion.Impuestos
 {
@@ -15,35 +16,88 @@ namespace TOHPO.Pages.Configuracion.Impuestos
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
-            if (id.HasValue)
+            try
             {
-                Impuesto = await _context.Impuesto.FindAsync(id.Value);
-                if (Impuesto == null) return NotFound();
+                if (id.HasValue)
+                {
+                    Impuesto = await _context.Impuesto.FindAsync(id.Value);
+                    if (Impuesto == null) 
+                    {
+                        TempData["error"] = "Impuesto no encontrado";
+                        return RedirectToPage("/Configuracion/Impuestos/Index");
+                    }
+                }
+                else
+                {
+                    Impuesto = new Impuesto { Estado = true }; // Por defecto activo para nuevos impuestos
+                }
+                return Page();
             }
-            else
+            catch (Exception ex)
             {
-                Impuesto = new Impuesto();
+                TempData["error"] = $"Error al cargar el impuesto: {ex.Message}";
+                return RedirectToPage("/Configuracion/Impuestos/Index");
             }
-            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-            if (!ModelState.IsValid) return Page();
-            if (Impuesto.Id > 0)
+            try
             {
-                var existente = await _context.Impuesto.FindAsync(Impuesto.Id);
-                if (existente == null) return NotFound();
-                existente.Descripcion = Impuesto.Descripcion;
-                existente.Porcentaje = Impuesto.Porcentaje;
-                _context.Impuesto.Update(existente);
+                if (!ModelState.IsValid)
+                {
+                    TempData["error"] = "Por favor corrija los errores en el formulario";
+                    return Page();
+                }
+
+                if (Impuesto.Porcentaje < 0 || Impuesto.Porcentaje > 100)
+                {
+                    TempData["error"] = "El porcentaje debe estar entre 0 y 100";
+                    return Page();
+                }
+
+                // Verificar si ya existe un impuesto con la misma descripción
+                var impuestoExistente = await _context.Impuesto
+                    .AnyAsync(i => i.Descripcion.ToLower() == Impuesto.Descripcion.ToLower() && i.Id != Impuesto.Id);
+
+                if (impuestoExistente)
+                {
+                    TempData["error"] = "Ya existe un impuesto con esa descripción";
+                    return Page();
+                }
+                
+                if (Impuesto.Id > 0)
+                {
+                    var existente = await _context.Impuesto.FindAsync(Impuesto.Id);
+                    if (existente == null) 
+                    {
+                        TempData["error"] = "Impuesto no encontrado";
+                        return RedirectToPage("/Configuracion/Impuestos/Index");
+                    }
+                    
+                    // Actualizar todas las propiedades
+                    existente.Descripcion = Impuesto.Descripcion?.Trim();
+                    existente.Porcentaje = Impuesto.Porcentaje;
+                    existente.Estado = Impuesto.Estado;
+                    
+                    _context.Impuesto.Update(existente);
+                    TempData["success"] = "Impuesto actualizado exitosamente";
+                }
+                else
+                {
+                    Impuesto.Descripcion = Impuesto.Descripcion?.Trim();
+                    _context.Impuesto.Add(Impuesto);
+                    TempData["success"] = "Impuesto creado exitosamente";
+                }
+                
+                await _context.SaveChangesAsync();
+                return RedirectToPage("/Configuracion/Impuestos/Index");
             }
-            else
+            catch (Exception ex)
             {
-                _context.Impuesto.Add(Impuesto);
+                TempData["error"] = $"Error al guardar el impuesto: {ex.Message}";
+                return Page();
             }
-            await _context.SaveChangesAsync();
-            return RedirectToPage("/Configuracion/Impuestos/Index");
         }
     }
 }

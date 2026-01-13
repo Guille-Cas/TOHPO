@@ -1,4 +1,4 @@
-function verDetalleReceta(id) {
+锘縡unction verDetalleReceta(id) {
     fetch(`?handler=DetalleReceta&id=${id}`)
         .then(response => response.json())
         .then(data => {
@@ -7,11 +7,11 @@ function verDetalleReceta(id) {
                 document.getElementById('contenidoDetalleReceta').innerHTML = `
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Descripci髇:</strong> ${receta.descripcion}</p>
+                            <p><strong>Descripci贸n:</strong> ${receta.descripcion}</p>
                             <p><strong>Producto:</strong> ${receta.producto}</p>
                             <p><strong>Rendimiento:</strong> ${receta.rendimiento}</p>
                             <p><strong>Cantidad Empaque:</strong> ${receta.cantidadEmpaque}</p>
-                            <p><strong>Fecha Creaci髇:</strong> ${receta.fechaCreacion}</p>
+                            <p><strong>Fecha Creaci贸n:</strong> ${receta.fechaCreacion}</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Detalle:</strong></p>
@@ -57,7 +57,7 @@ function verDetalleProduccion(id) {
                         </tr>
                     `).join('');
                 } else {
-                    detallesHtml = '<tr><td colspan="7" class="text-center">No hay detalles de producci髇</td></tr>';
+                    detallesHtml = '<tr><td colspan="7" class="text-center">No hay detalles de producci贸n</td></tr>';
                 }
 
                 document.getElementById('contenidoDetalleProduccion').innerHTML = `
@@ -68,7 +68,7 @@ function verDetalleProduccion(id) {
                             <p><strong>Obra:</strong> ${produccion.obra || 'Sin especificar'}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Descripci髇:</strong> ${produccion.descripcion}</p>
+                            <p><strong>Descripci贸n:</strong> ${produccion.descripcion}</p>
                             <p><strong>Fecha Planeada:</strong> ${produccion.fechaPlaneada}</p>
                             <p><strong>Estado:</strong> <span class="badge ${produccion.estado ? 'bg-success' : 'bg-secondary'}">${produccion.estado ? 'En Progreso' : 'Finalizada'}</span></p>
                         </div>
@@ -99,6 +99,6 @@ function verDetalleProduccion(id) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cargar el detalle de la producci髇');
+            alert('Error al cargar el detalle de la producci贸n');
         });
 }

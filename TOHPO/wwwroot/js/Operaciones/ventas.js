@@ -107,4 +107,77 @@ $(document).ready(function() {
             responsive: true
         });
     }
+
+    // Similar implementación para ventas
+    const buscadorProducto = document.getElementById('inputBuscarProducto');
+    if (buscadorProducto) {
+        buscadorProducto.focus();
+        
+        buscadorProducto.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('btnBuscarProducto').click();
+            }
+        });
+
+        // Búsqueda automática por código de barras
+        let timeoutId = null;
+        buscadorProducto.addEventListener('input', function(e) {
+            const inputValue = e.target.value;
+            
+            if (inputValue.length >= 8) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    buscarProductoPorCodigoVenta(inputValue);
+                }, 100);
+            }
+        });
+    }
+
+    function buscarProductoPorCodigoVenta(codigo) {
+        fetch(`/api/Productos/BuscarPorCodigo?codigo=${encodeURIComponent(codigo)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.producto) {
+                    document.getElementById('inputBuscarProducto').value = data.producto.descripcion;
+                    document.getElementById('inputPrecioUnitario').value = data.producto.precioVenta || 0;
+                    document.getElementById('hiddenCodigoProducto').value = data.producto.codigoReferencia;
+                    
+                    // Verificar stock disponible
+                    if (data.producto.stock <= 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Sin Stock',
+                            text: 'Este producto no tiene stock disponible'
+                        });
+                        return;
+                    }
+                    
+                    document.getElementById('inputCantidad').focus();
+                    document.getElementById('inputCantidad').select();
+                }
+            })
+            .catch(error => {
+                console.error('Error buscando producto:', error);
+            });
+    }
+
+    // Atajos de teclado para ventas
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'F2') {
+            e.preventDefault();
+            document.getElementById('inputBuscarProducto').focus();
+            document.getElementById('inputBuscarProducto').select();
+        }
+        
+        if (e.key === 'F3') {
+            e.preventDefault();
+            document.getElementById('btnAgregarProducto').click();
+        }
+        
+        if (e.key === 'F4') { // Finalizar venta
+            e.preventDefault();
+            document.getElementById('btnGuardarVenta')?.click();
+        }
+    });
 });

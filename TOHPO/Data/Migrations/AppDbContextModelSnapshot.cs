@@ -616,6 +616,9 @@ namespace TOHPO.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Estado")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.ToTable("Motivo_Recordatorio");
@@ -877,17 +880,20 @@ namespace TOHPO.Data.Migrations
                     b.Property<bool>("Estado")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Id_Categoria")
+                    b.Property<int?>("Id_Categoria")
                         .HasColumnType("int");
 
                     b.Property<int>("Id_Impuesto")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id_Materia_Prima")
+                    b.Property<int?>("Id_Materia_Prima")
                         .HasColumnType("int");
 
                     b.Property<int>("Id_Presentacion")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Se_Daña")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Tiempo_De_Vida")
                         .HasColumnType("int");
@@ -1096,6 +1102,9 @@ namespace TOHPO.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ClienteId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Concepto")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -1111,7 +1120,7 @@ namespace TOHPO.Data.Migrations
                     b.Property<DateTime>("Hora")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Id_Cliente")
+                    b.Property<int?>("Id_Cliente")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Iva")
@@ -1123,6 +1132,8 @@ namespace TOHPO.Data.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClienteId");
 
                     b.HasIndex("Fecha")
                         .HasDatabaseName("IX_Venta_Fecha");
@@ -1325,7 +1336,7 @@ namespace TOHPO.Data.Migrations
             modelBuilder.Entity("TOHPO.Models.Pedido", b =>
                 {
                     b.HasOne("TOHPO.Models.Cliente", "Cliente")
-                        .WithMany()
+                        .WithMany("Pedidos")
                         .HasForeignKey("Id_Cliente")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1403,8 +1414,7 @@ namespace TOHPO.Data.Migrations
                     b.HasOne("TOHPO.Models.Categoria", "Categoria")
                         .WithMany()
                         .HasForeignKey("Id_Categoria")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TOHPO.Models.Impuesto", "Impuesto")
                         .WithMany("Productos")
@@ -1415,8 +1425,7 @@ namespace TOHPO.Data.Migrations
                     b.HasOne("TOHPO.Models.Materia_Prima", "Materia_Prima")
                         .WithMany()
                         .HasForeignKey("Id_Materia_Prima")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TOHPO.Models.Presentacion", "Presentacion")
                         .WithMany()
@@ -1485,13 +1494,13 @@ namespace TOHPO.Data.Migrations
             modelBuilder.Entity("TOHPO.Models.Recordatorio", b =>
                 {
                     b.HasOne("TOHPO.Models.Cliente", "Cliente")
-                        .WithMany()
+                        .WithMany("Recordatorios")
                         .HasForeignKey("ClienteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("TOHPO.Models.Motivo_Recordatorio", "Motivo_Recordatorio")
-                        .WithMany()
+                        .WithMany("Recordatorios")
                         .HasForeignKey("Motivo_RecordatorioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1509,11 +1518,14 @@ namespace TOHPO.Data.Migrations
 
             modelBuilder.Entity("TOHPO.Models.Venta", b =>
                 {
+                    b.HasOne("TOHPO.Models.Cliente", null)
+                        .WithMany("Ventas")
+                        .HasForeignKey("ClienteId");
+
                     b.HasOne("TOHPO.Models.Cliente", "Cliente")
                         .WithMany()
                         .HasForeignKey("Id_Cliente")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Cliente");
                 });
@@ -1537,6 +1549,15 @@ namespace TOHPO.Data.Migrations
                     b.Navigation("Venta");
                 });
 
+            modelBuilder.Entity("TOHPO.Models.Cliente", b =>
+                {
+                    b.Navigation("Pedidos");
+
+                    b.Navigation("Recordatorios");
+
+                    b.Navigation("Ventas");
+                });
+
             modelBuilder.Entity("TOHPO.Models.Compra", b =>
                 {
                     b.Navigation("Compra_Detalles");
@@ -1552,6 +1573,11 @@ namespace TOHPO.Data.Migrations
             modelBuilder.Entity("TOHPO.Models.Inventario", b =>
                 {
                     b.Navigation("Detalle_Inventarios");
+                });
+
+            modelBuilder.Entity("TOHPO.Models.Motivo_Recordatorio", b =>
+                {
+                    b.Navigation("Recordatorios");
                 });
 
             modelBuilder.Entity("TOHPO.Models.Pedido", b =>

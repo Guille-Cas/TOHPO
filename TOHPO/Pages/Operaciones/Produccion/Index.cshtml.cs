@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+Ôªøusing Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
@@ -99,7 +99,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
         {
             if (id <= 0)
             {
-                TempData["ErrorMessage"] = "ID de receta no v·lido";
+                TempData["ErrorMessage"] = "ID de receta no v√°lido";
                 return RedirectToPage();
             }
 
@@ -112,7 +112,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
             try
             {
-                // Verificar si la receta est· siendo usada en producciones activas
+                // Verificar si la receta est√° siendo usada en producciones activas
                 var produccionesActivas = await _context.Produccion_Detalle
                     .Where(pd => pd.Id_Receta == id)
                     .Include(pd => pd.Produccion)
@@ -120,7 +120,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
                 if (produccionesActivas)
                 {
-                    TempData["ErrorMessage"] = "No se puede eliminar la receta porque est· siendo utilizada en producciones activas";
+                    TempData["ErrorMessage"] = "No se puede eliminar la receta porque est√° siendo utilizada en producciones activas";
                     return RedirectToPage();
                 }
 
@@ -141,7 +141,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
         {
             if (RecetaIdProduccion <= 0 || CantidadProducir <= 0)
             {
-                TempData["ErrorMessage"] = "Debe seleccionar una receta y especificar una cantidad v·lida";
+                TempData["ErrorMessage"] = "Debe seleccionar una receta y especificar una cantidad v√°lida";
                 await CargarDatos();
                 return Page();
             }
@@ -170,12 +170,12 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     return Page();
                 }
 
-                // Crear la producciÛn
+                // Crear la producci√≥n
                 var produccion = new Models.Produccion
                 {
                     Fecha = DateTime.Now,
                     Obra = ObraProduccion ?? "",
-                    Descripcion = DescripcionProduccion ?? $"ProducciÛn de {receta.Producto.Descripcion}",
+                    Descripcion = DescripcionProduccion ?? $"Producci√≥n de {receta.Producto.Descripcion}",
                     Fecha_Planeada = FechaPlaneada,
                     Estado = true
                 };
@@ -183,7 +183,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 _context.Produccion.Add(produccion);
                 await _context.SaveChangesAsync();
 
-                // Crear el detalle de producciÛn
+                // Crear el detalle de producci√≥n
                 var detalle = new Produccion_Detalle
                 {
                     Id_Produccion = produccion.Id,
@@ -198,7 +198,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 _context.Produccion_Detalle.Add(detalle);
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"ProducciÛn generada exitosamente. ID: {produccion.Id}";
+                TempData["SuccessMessage"] = $"Producci√≥n generada exitosamente. ID: {produccion.Id}";
                 
                 // Limpiar formulario
                 RecetaIdProduccion = 0;
@@ -209,19 +209,19 @@ namespace TOHPO.Pages.Operaciones.Produccion
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error al generar la producciÛn: " + ex.Message;
+                TempData["ErrorMessage"] = "Error al generar la producci√≥n: " + ex.Message;
             }
 
             await CargarDatos();
             return Page();
         }
 
-        // NUEVO: MÈtodo para finalizar la producciÛn
+        // NUEVO: M√©todo para finalizar la producci√≥n
         public async Task<IActionResult> OnGetFinalizarProduccionAsync(int id)
         {
             if (id <= 0)
             {
-                TempData["ErrorMessage"] = "ID de producciÛn no v·lido";
+                TempData["ErrorMessage"] = "ID de producci√≥n no v√°lido";
                 return RedirectToPage();
             }
 
@@ -238,38 +238,38 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
                 if (produccion == null)
                 {
-                    TempData["ErrorMessage"] = "ProducciÛn no encontrada";
+                    TempData["ErrorMessage"] = "Producci√≥n no encontrada";
                     return RedirectToPage();
                 }
 
                 if (!produccion.Estado)
                 {
-                    TempData["ErrorMessage"] = "La producciÛn ya est· finalizada";
+                    TempData["ErrorMessage"] = "La producci√≥n ya est√° finalizada";
                     return RedirectToPage();
                 }
 
-                // Validar que hay detalles de producciÛn
+                // Validar que hay detalles de producci√≥n
                 if (!produccion.Produccion_Detalles.Any())
                 {
-                    TempData["ErrorMessage"] = "No se encontraron detalles de producciÛn";
+                    TempData["ErrorMessage"] = "No se encontraron detalles de producci√≥n";
                     return RedirectToPage();
                 }
 
-                // Finalizar cada detalle de producciÛn
+                // Finalizar cada detalle de producci√≥n
                 var resultadoFinalizacion = await FinalizarProduccionCompleta(produccion);
                 
                 if (resultadoFinalizacion.Exitoso)
                 {
-                    TempData["SuccessMessage"] = $"ProducciÛn finalizada exitosamente. {resultadoFinalizacion.Mensaje}";
+                    TempData["SuccessMessage"] = $"Producci√≥n finalizada exitosamente. {resultadoFinalizacion.Mensaje}";
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = $"Error al finalizar la producciÛn: {resultadoFinalizacion.Mensaje}";
+                    TempData["ErrorMessage"] = $"Error al finalizar la producci√≥n: {resultadoFinalizacion.Mensaje}";
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error al finalizar la producciÛn: " + ex.Message;
+                TempData["ErrorMessage"] = "Error al finalizar la producci√≥n: " + ex.Message;
             }
 
             return RedirectToPage();
@@ -280,7 +280,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
             var produccion = await _context.Produccion.FindAsync(id);
             if (produccion == null)
             {
-                TempData["ErrorMessage"] = "ProducciÛn no encontrada";
+                TempData["ErrorMessage"] = "Producci√≥n no encontrada";
                 return RedirectToPage();
             }
 
@@ -289,7 +289,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 produccion.Estado = !produccion.Estado;
                 await _context.SaveChangesAsync();
 
-                TempData["SuccessMessage"] = $"Estado de producciÛn {(produccion.Estado ? "activado" : "desactivado")} exitosamente";
+                TempData["SuccessMessage"] = $"Estado de producci√≥n {(produccion.Estado ? "activado" : "desactivado")} exitosamente";
             }
             catch (Exception ex)
             {
@@ -340,7 +340,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
             if (produccion == null)
             {
-                return new JsonResult(new { success = false, message = "ProducciÛn no encontrada" });
+                return new JsonResult(new { success = false, message = "Producci√≥n no encontrada" });
             }
 
             var detalle = new
@@ -381,7 +381,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 // Validar materias primas
                 foreach (var materiaPrimaReceta in receta.Receta_Materias_Primas.Where(rmp => rmp.Estado))
                 {
-                    // Buscar si la materia prima est· registrada como producto en inventario
+                    // Buscar si la materia prima est√° registrada como producto en inventario
                     var inventarioMateriaPrima = await _context.Inventario
                         .Include(i => i.Producto)
                         .FirstOrDefaultAsync(i => i.Producto.Es_Materia_Prima && 
@@ -389,7 +389,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
                     if (inventarioMateriaPrima == null)
                     {
-                        mensajesError.Add($"La materia prima '{materiaPrimaReceta.Materia_Prima?.Descripcion}' no est· registrada en inventario");
+                        mensajesError.Add($"La materia prima '{materiaPrimaReceta.Materia_Prima?.Descripcion}' no est√° registrada en inventario");
                         continue;
                     }
 
@@ -406,7 +406,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     return (false, string.Join("; ", mensajesError));
                 }
 
-                return (true, "Inventario suficiente para la producciÛn");
+                return (true, "Inventario suficiente para la producci√≥n");
             }
             catch (Exception ex)
             {
@@ -414,7 +414,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
             }
         }
 
-        // NUEVO: MÈtodo principal para finalizar la producciÛn completa
+        // NUEVO: M√©todo principal para finalizar la producci√≥n completa
         private async Task<(bool Exitoso, string Mensaje)> FinalizarProduccionCompleta(Models.Produccion produccion)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -425,7 +425,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
 
                 foreach (var detalle in produccion.Produccion_Detalles)
                 {
-                    // Finalizar el detalle de producciÛn
+                    // Finalizar el detalle de producci√≥n
                     detalle.Cantidad_Producida = detalle.Cantidad_Programada; // Asumir que se produce la cantidad programada
                     detalle.Fecha_Fin = DateTime.Now;
                     detalle.Estado = false; // Marcar como terminado
@@ -442,13 +442,13 @@ namespace TOHPO.Pages.Operaciones.Produccion
                     resumenMovimientos.Add(resultadoMovimientos.Mensaje);
                 }
 
-                // Finalizar la producciÛn
+                // Finalizar la producci√≥n
                 produccion.Estado = false; // Marcar como finalizada
                 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var mensajeFinal = $"ProducciÛn completada. Movimientos: {string.Join("; ", resumenMovimientos)}";
+                var mensajeFinal = $"Producci√≥n completada. Movimientos: {string.Join("; ", resumenMovimientos)}";
                 return (true, mensajeFinal);
             }
             catch (Exception ex)
@@ -458,7 +458,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
             }
         }
 
-        // NUEVO: Procesar los movimientos de inventario para un detalle de producciÛn
+        // NUEVO: Procesar los movimientos de inventario para un detalle de producci√≥n
         private async Task<(bool Exitoso, string Mensaje)> ProcesarMovimientosInventario(Produccion_Detalle detalle)
         {
             try
@@ -543,7 +543,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 {
                     Id_Inventario = inventarioMateriaPrima.Id,
                     Cantidad = -cantidadADescontar, // Cantidad negativa para descuento
-                    Motivo = $"ProducciÛn #{detalleProduccionId} - Consumo de materia prima",
+                    Motivo = $"Producci√≥n #{detalleProduccionId} - Consumo de materia prima",
                     Fecha = DateTime.Now
                 };
 
@@ -601,7 +601,7 @@ namespace TOHPO.Pages.Operaciones.Produccion
                 {
                     Id_Inventario = inventarioProducto.Id,
                     Cantidad = cantidadAgregar, // Cantidad positiva para ingreso
-                    Motivo = $"ProducciÛn #{detalle.Id} - Producto terminado",
+                    Motivo = $"Producci√≥n #{detalle.Id} - Producto terminado",
                     Fecha = DateTime.Now
                 };
 

@@ -4,6 +4,7 @@
     ViewData["Title"] = Model.Compra.Id == 0 ? "Nueva Compra - Registro de Inventario" : "Editar Compra";
 }
 
+
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -37,9 +38,9 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label asp-for="Compra.Hora" class="form-label">Hora</label>
+                                    <label asp-for="Compra.Hora" class="form-label">Hora <small class="text-muted">(se actualiza automáticamente)</small></label>
                                     <input asp-for="Compra.Hora" class="form-control" type="time" 
-                                           value="@Model.Compra.Hora.ToString("HH:mm")" />
+                                           value="@Model.Compra.Hora.ToString("HH:mm")" readonly />
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -66,56 +67,51 @@
                         <div class="card mb-4">
                             <div class="card-header bg-success text-white">
                                 <h5 class="card-title mb-0">
-                                    Agregar Productos
+                                    <i class="fas fa-scanner"></i> Agregar Productos
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-10">
                                         <div class="form-group">
-                                            <label class="form-label">Buscar Producto</label>
+                                            <label class="form-label">Código/Nombre del Producto</label>
                                             <div class="input-group">
-                                                <input type="text" id="inputBuscarProducto" class="form-control" placeholder="Hacer clic en Seleccionar para elegir producto..." readonly />
+                                                <input type="text" id="inputBuscarProducto" class="form-control form-control-lg" 
+                                                       placeholder="Escanee código de barras o ingrese código del producto..." 
+                                                       data-codigo="" data-porcentaje-impuesto="0"
+                                                       style="font-size: 1.1rem;" />
                                                 <button type="button" class="btn btn-outline-primary" id="btnSeleccionarProducto" data-bs-toggle="modal" data-bs-target="#modalSeleccionarProducto">
-                                                    Seleccionar
+                                                    <i class="fas fa-search"></i> Seleccionar
                                                 </button>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Cantidad</label>
-                                            <input type="number" id="inputCantidad" class="form-control" value="1" min="1" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Costo Unit.</label>
-                                            <input type="number" id="inputCostoUnitario" class="form-control" step="0.01" />
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="form-label">Desc. %</label>
-                                            <input type="number" id="inputDescuento" class="form-control" value="0" min="0" max="100" step="0.01" />
+                                            <small class="form-text text-success">
+                                                <i class="fas fa-barcode"></i> <strong>Escáner activo:</strong> Escanee el código de barras y se agregará automáticamente con cantidad 1
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
                                             <label class="form-label">&nbsp;</label>
                                             <div class="d-grid">
-                                                <button type="button" class="btn btn-success" id="btnAgregarProducto">
-                                                    Agregar
+                                                <button type="button" class="btn btn-success btn-lg" id="btnAgregarProducto">
+                                                    <i class="fas fa-plus"></i> Agregar
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Campos ocultos para valores por defecto -->
+                                <input type="hidden" id="inputCantidad" value="1" />
+                                <input type="hidden" id="inputCostoUnitario" value="" />
+                                <input type="hidden" id="inputDescuento" value="0" />
+                                
                                 <div class="row mt-2">
                                     <div class="col-12">
                                         <div class="alert alert-info">
-                                            <strong>Validación de Inventario:</strong> Se verificará automáticamente que el producto esté registrado antes de agregarlo.
-                                            Los productos comprados se agregarán al inventario disponible.
+                                            <i class="fas fa-info-circle"></i> <strong>Modo Escáner Simplificado:</strong> 
+                                            Los productos se agregan automáticamente con cantidad 1, costo sugerido y sin descuento. 
+                                            Puede modificar estos valores directamente en la tabla de productos.
                                         </div>
                                     </div>
                                 </div>
@@ -269,42 +265,73 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalSeleccionarProductoLabel">Seleccionar Producto</h5>
+                <h5 class="modal-title" id="modalSeleccionarProductoLabel">
+                    <i class="fas fa-search"></i> Seleccionar Producto para Compra
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <input type="text" id="filtroProducto" class="form-control" placeholder="Filtrar por nombre o código..." />
-                            <button type="button" class="btn btn-outline-secondary" id="btnLimpiarFiltro">
-                                Limpiar
-                            </button>
-                        </div>
+                    <div class="col-md-8">
+                        <input type="text" id="buscarEnModalCompra" class="form-control" 
+                               placeholder="Buscar producto por nombre o código... (código de barras detectado automáticamente)"
+                               autofocus />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="filtrarProductosCompra()">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
                     </div>
                 </div>
-                <div class="table-responsive">
+
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="fas fa-keyboard"></i> 
+                        Atajos: <kbd>F2</kbd> Abrir selector | <kbd>F3</kbd> Agregar producto | <kbd>Enter</kbd> Buscar | <kbd>Esc</kbd> Cerrar
+                    </small>
+                </div>
+                
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                     <table class="table table-hover" id="tablaProductosModal">
-                        <thead class="table-dark">
+                        <thead class="table-dark sticky-top">
                             <tr>
                                 <th>Nombre</th>
                                 <th>Código</th>
                                 <th>Cantidad en Inventario</th>
-                                <th>Precio Unitario</th>
-                                <th width="100">Acción</th>
+                                <th>Costo Sugerido</th>
+                                <th width="120">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="bodyProductosModal">
+                        <tbody id="tablaProductosModalCompra">
                             <!-- Los productos se cargan dinámicamente -->
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Mensaje cuando no hay resultados de búsqueda -->
+                <div id="mensajeSinResultadosCompra" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-search fa-2x text-warning"></i>
+                    <h5 class="text-muted mt-2">No se encontraron resultados</h5>
+                    <p class="text-muted">Intenta con otros términos de búsqueda</p>
+                </div>
+                
+                <div id="loadingProductosCompra" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando productos...</p>
+                </div>
+
                 <div id="noProductsMessage" class="text-center py-4" style="display: none;">
-                    <h6 class="text-muted">No se encontraron productos</h6>
+                    <i class="fas fa-box-open fa-3x text-muted"></i>
+                    <h5 class="text-muted mt-2">No hay productos disponibles</h5>
+                    <p class="text-muted">No se encontraron productos en el sistema</p>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
             </div>
         </div>
     </div>
@@ -312,7 +339,8 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    
+    <script src="~/js/Operaciones/compras-upsert.js"></script>
+
     <script>
         // Variables globales - adaptadas para compras
         let productos = @Html.Raw(Json.Serialize(Model.DetallesCompra));
@@ -398,7 +426,7 @@
 
             // Función para mostrar productos en el modal
             mostrarProductosModal: function(productos) {
-                const tbody = $('#bodyProductosModal');
+                const tbody = $('#tablaProductosModalCompra');
                 tbody.empty();
 
                 if (productos.length === 0) {
@@ -437,9 +465,15 @@
 
             // Función para seleccionar un producto del modal
             seleccionarProducto: function(codigo, nombre, costo) {
-                $('#inputBuscarProducto').val(`${codigo} - ${nombre}`).data('codigo', codigo);
-                $('#inputCostoUnitario').val(costo);
-                $('#inputCantidad').focus();
+                // Llamar a la función actualizada del archivo compras-upsert.js
+                if (typeof seleccionarProductoCompra === 'function') {
+                    seleccionarProductoCompra(codigo, nombre, costo, 0, 0);
+                } else {
+                    // Fallback para compatibilidad
+                    $('#inputBuscarProducto').val(`${codigo}`).data('codigo', codigo);
+                    $('#inputCostoUnitario').val(costo);
+                    $('#inputCantidad').focus();
+                }
             },
 
             // Función para filtrar productos en el modal
@@ -465,7 +499,12 @@
                 const busqueda = $('#inputBuscarProducto').val().toLowerCase();
                 
                 if (!busqueda) {
-                    alert('Ingrese un código o nombre de producto');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Búsqueda requerida',
+                        text: 'Ingrese un código o nombre de producto',
+                        confirmButtonColor: '#d33'
+                    });
                     return;
                 }
 
@@ -486,14 +525,29 @@
                                 $('#inputBuscarProducto').val(`${data.producto.codigo} - ${data.producto.nombre}`).data('codigo', data.producto.codigo);
                                 $('#inputCantidad').focus();
                             } else {
-                                alert(data.message);
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message,
+                                    confirmButtonColor: '#d33'
+                                });
                             }
                         })
                         .fail(function() {
-                            alert('Error al obtener información del producto');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error de conexión',
+                                text: 'Error al obtener información del producto',
+                                confirmButtonColor: '#d33'
+                            });
                         });
                 } else {
-                    alert('Producto no encontrado');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Producto no encontrado',
+                        text: 'No se encontró el producto especificado',
+                        confirmButtonColor: '#d33'
+                    });
                     $('#inputBuscarProducto').focus();
                 }
             },
@@ -506,18 +560,36 @@
                 const porcentajeDescuento = parseFloat($('#inputDescuento').val()) || 0;
 
                 if (!codigoBusqueda) {
-                    alert('Seleccione un producto válido');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Producto requerido',
+                        text: 'Debe seleccionar un producto válido',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputBuscarProducto').focus();
                     return;
                 }
 
                 if (costoUnitario <= 0) {
-                    alert('El costo unitario debe ser mayor a 0');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Costo inválido',
+                        text: 'El costo unitario debe ser mayor a 0',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputCostoUnitario').focus();
                     return;
                 }
 
                 const producto = productosDisponibles.find(p => p.codigo === codigoBusqueda);
                 if (!producto) {
-                    alert('Producto no válido');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Producto no válido',
+                        text: 'El producto seleccionado no es válido',
+                        confirmButtonColor: '#d33'
+                    });
+                    $('#inputBuscarProducto').focus();
                     return;
                 }
 
@@ -545,6 +617,16 @@
                     });
                 }
 
+                // Toast de confirmación
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `${producto.nombre} agregado exitosamente a la compra`,
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+
                 // Limpiar campos
                 $('#inputBuscarProducto').val('').removeData('codigo');
                 $('#inputCantidad').val(1);
@@ -553,16 +635,35 @@
 
                 this.actualizarVistaProductos();
                 this.calcularTotales();
-                $('#inputBuscarProducto').focus();
             },
 
             // Función para eliminar productos
             eliminarProducto: function(index) {
-                if (confirm('¿Está seguro de eliminar este producto?')) {
-                    productos.splice(index, 1);
-                    this.actualizarVistaProductos();
-                    this.calcularTotales();
-                }
+                Swal.fire({
+                    title: '¿Está seguro?',
+                    text: '¿Desea eliminar este producto de la compra?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        productos.splice(index, 1);
+                        this.actualizarVistaProductos();
+                        this.calcularTotales();
+                        
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Producto eliminado',
+                            showConfirmButton: false,
+                            timer: 2000
+                        });
+                    }
+                });
             },
 
             // Función para editar cantidad
@@ -691,7 +792,7 @@
                     container.append(`
                         <input type="hidden" name="DetallesCompra[${index}].Id" value="${producto.id}" />
                         <input type="hidden" name="DetallesCompra[${index}].CodigoProducto" value="${producto.codigoProducto}" />
-                        <input type="hidden" name="DetallesCompra[${index}].NombreProducto" value="${producto.nombreProducto}" />
+                        <input type="hidden" name="DetallesCompra[${index}].NombreProducto" value="${ producto.nombreProducto}" />
                         <input type="hidden" name="DetallesCompra[${index}].Cantidad" value="${producto.cantidad}" />
                         <input type="hidden" name="DetallesCompra[${index}].CostoUnitario" value="${producto.costoUnitario}" />
                         <input type="hidden" name="DetallesCompra[${index}].PorcentajeDescuento" value="${producto.porcentajeDescuento}" />
@@ -704,13 +805,49 @@
             }
         };
 
-        // Funciones de métodos de pago (copiadas exactamente de Ventas)
+        function actualizarValidacionPagos() {
+            const totalCompra = parseFloat(document.getElementById('totalDisplay').textContent.replace('₡', '').replace(',', '')) || 0;
+            const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
+            
+            const alerta = document.getElementById('alertaPagos');
+            
+            if (totalPagos < totalCompra) {
+                // Pago insuficiente - mostrar error
+                alerta.style.display = 'block';
+                alerta.className = 'alert alert-danger';
+                alerta.innerHTML = `
+                    <strong>¡Atención!</strong> 
+                    Total Compra: ₡${totalCompra.toFixed(2)} - 
+                    Total Pagos: ₡${totalPagos.toFixed(2)} - 
+                    <strong>Faltante: ₡${(totalCompra - totalPagos).toFixed(2)}</strong>
+                `;
+            } else if (totalPagos > totalCompra) {
+                // Pago superior - mostrar información de pago adelantado
+                alerta.style.display = 'block';
+                alerta.className = 'alert alert-success';
+                alerta.innerHTML = `
+                    <strong>Pago Realizado:</strong> ₡${totalPagos.toFixed(2)} | 
+                    <strong>Total Compra:</strong> ₡${totalCompra.toFixed(2)} | 
+                    <strong>Pago adelantado/exceso:</strong> ₡${(totalPagos - totalCompra).toFixed(2)}
+                `;
+            } else {
+                // Pago exacto - ocultar alerta
+                alerta.style.display = 'none';
+            }
+        }
+
+        // Función mejorada para agregar método de pago
         function agregarMetodoPago() {
             const selectMetodo = document.getElementById('selectMetodoPago');
             const inputMonto = document.getElementById('inputMontoMetodo');
             
             if (!selectMetodo.value || !inputMonto.value || parseFloat(inputMonto.value) <= 0) {
-                alert('Debe seleccionar un método de pago y un monto válido');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un método de pago y un monto válido',
+                    confirmButtonColor: '#d33'
+                });
                 return;
             }
 
@@ -723,17 +860,27 @@
 
             metodosPagoData.push(metodoPago);
             actualizarTablaMetodosPago();
-            actualizarValidacionPagos();
+            actualizarValidacionPagos(); // Asegurarse de que se llame aquí
             
             // Limpiar campos
             selectMetodo.value = '';
             inputMonto.value = '';
+            
+            // Toast de confirmación
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `Método de pago agregado: ${metodoPago.nombreMetodoPago}`,
+                showConfirmButton: false,
+                timer: 2000
+            });
         }
 
         function eliminarMetodoPago(index) {
             metodosPagoData.splice(index, 1);
             actualizarTablaMetodosPago();
-            actualizarValidacionPagos();
+            actualizarValidacionPagos(); // Asegurarse de que se llame aquí también
         }
 
         function actualizarTablaMetodosPago() {
@@ -756,25 +903,6 @@
             // Actualizar total de pagos
             const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
             document.getElementById('totalPagos').textContent = `₡${totalPagos.toFixed(2)}`;
-        }
-
-        function actualizarValidacionPagos() {
-            const totalCompra = parseFloat(document.getElementById('totalDisplay').textContent.replace('₡', '').replace(',', '')) || 0;
-            const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
-            
-            const alerta = document.getElementById('alertaPagos');
-            
-            if (Math.abs(totalCompra - totalPagos) > 0.01 && totalPagos > 0) {
-                alerta.style.display = 'block';
-                alerta.innerHTML = `
-                    <strong>Atención:</strong> 
-                    Total Compra: ₡${totalCompra.toFixed(2)} - 
-                    Total Pagos: ₡${totalPagos.toFixed(2)} - 
-                    Diferencia: ₡${(totalCompra - totalPagos).toFixed(2)}
-                `;
-            } else {
-                alerta.style.display = 'none';
-            }
         }
 
         function generarCamposOcultosMetodosPago() {
@@ -837,19 +965,29 @@
                 }
             });
 
-            // Validación antes de enviar
+            // Validación antes de enviar - CORREGIDA CON SWEETALERT
             $('#compraForm').on('submit', function(e) {
                 // Primero validar en cliente
                 if (productos.length === 0) {
                     e.preventDefault();
-                    alert('Debe agregar al menos un producto a la compra');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Productos requeridos',
+                        text: 'Debe agregar al menos un producto a la compra',
+                        confirmButtonColor: '#d33'
+                    });
                     reiniciarBotonGuardar();
                     return false;
                 }
 
                 if (!$('#Compra_Id_Proveedor').val()) {
                     e.preventDefault();
-                    alert('Debe seleccionar un proveedor');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Proveedor requerido',
+                        text: 'Debe seleccionar un proveedor',
+                        confirmButtonColor: '#d33'
+                    });
                     $('#Compra_Id_Proveedor').focus();
                     reiniciarBotonGuardar();
                     return false;
@@ -858,23 +996,81 @@
                 // Validar métodos de pago
                 if (metodosPagoData.length === 0) {
                     e.preventDefault();
-                    alert('Debe agregar al menos un método de pago');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Métodos de pago requeridos',
+                        text: 'Debe agregar al menos un método de pago',
+                        confirmButtonColor: '#d33'
+                    });
                     reiniciarBotonGuardar();
                     return false;
                 }
 
-                // Validar que los totales coincidan
+                // NUEVA VALIDACIÓN: Permitir pagos superiores para manejo de flujo de caja
                 const totalCompra = parseFloat(document.getElementById('totalDisplay').textContent.replace('₡', '').replace(',', '')) || 0;
                 const totalPagos = metodosPagoData.reduce((sum, metodo) => sum + metodo.monto, 0);
                 
-                if (Math.abs(totalCompra - totalPagos) > 0.01) {
+                // Solo validar que el pago no sea menor que el total de la compra
+                if (totalPagos < totalCompra) {
                     e.preventDefault();
-                    alert(`Los totales no coinciden:\nCompra: ₡${totalCompra.toFixed(2)}\nPagos: ₡${totalPagos.toFixed(2)}`);
+                    const faltante = totalCompra - totalPagos;
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Pago insuficiente',
+                        html: `
+                            <div class="text-left">
+                                <p><strong>Total Compra:</strong> ₡${totalCompra.toFixed(2)}</p>
+                                <p><strong>Total Pagos:</strong> ₡${totalPagos.toFixed(2)}</p>
+                                <p><strong>Faltante:</strong> <span class="text-danger">₡${faltante.toFixed(2)}</span></p>
+                            </div>
+                        `,
+                        confirmButtonColor: '#d33'
+                    });
                     reiniciarBotonGuardar();
                     return false;
                 }
+                
+                // Si el pago es mayor, mostrar confirmación del pago adelantado pero NO PREVENIR el submit
+                if (totalPagos > totalCompra) {
+                    const exceso = totalPagos - totalCompra;
+                    // No prevenir el evento, solo mostrar información
+                    e.preventDefault(); // Temporalmente prevenir para mostrar SweetAlert
+                    
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Confirmar compra con pago adelantado',
+                        html: `
+                            <div class="text-left">
+                                <p><strong>Pago realizado:</strong> ₡${totalPagos.toFixed(2)}</p>
+                                <p><strong>Total compra:</strong> ₡${totalCompra.toFixed(2)}</p>
+                                <p><strong>Pago adelantado/exceso:</strong> <span class="text-success">₡${exceso.toFixed(2)}</span></p>
+                            </div>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Continuar con la compra',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Generar campos ocultos de métodos de pago
+                            generarCamposOcultosMetodosPago();
 
-                // Generar campos ocultos de métodos de pago
+                            // Si pasa las validaciones del cliente, deshabilitar botón
+                            $('#guardarBtn').prop('disabled', true).html('Procesando...');
+
+                            // Remover este event listener temporalmente y reenviar el formulario
+                            const form = $('#compraForm')[0];
+                            form.removeEventListener('submit', arguments.callee);
+                            form.submit();
+                        } else {
+                            reiniciarBotonGuardar();
+                        }
+                    });
+                    return false;
+                }
+
+                // Si llegó aquí, pago exacto - continuar normalmente
                 generarCamposOcultosMetodosPago();
 
                 // Si pasa las validaciones del cliente, deshabilitar botón

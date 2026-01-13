@@ -1,4 +1,4 @@
-@page
+Ôªø@page
 @model TOHPO.Pages.Operaciones.Productos.UpsertModel
 @{
     ViewData["Title"] = string.IsNullOrEmpty(Model.Producto.CodigoReferencia) ? "Crear Producto" : "Editar Producto";
@@ -24,13 +24,13 @@
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                         
                         <div class="row">
-                            <!-- InformaciÛn b·sica del producto -->
+                            <!-- Informaci√≥n b√°sica del producto -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.CodigoReferencia" class="form-label"></label>
                                     <input asp-for="Producto.CodigoReferencia" class="form-control" />
                                     <span asp-validation-for="Producto.CodigoReferencia" class="text-danger"></span>
-                                    <small class="form-text text-muted">CÛdigo ˙nico del producto</small>
+                                    <small class="form-text text-muted">C√≥digo √∫nico del producto</small>
                                 </div>
                             </div>
                             
@@ -39,7 +39,7 @@
                                     <label asp-for="Producto.Codigo_Barra" class="form-label"></label>
                                     <input asp-for="Producto.Codigo_Barra" class="form-control" />
                                     <span asp-validation-for="Producto.Codigo_Barra" class="text-danger"></span>
-                                    <small class="form-text text-muted">CÛdigo de barras (opcional)</small>
+                                    <small class="form-text text-muted">C√≥digo de barras (opcional)</small>
                                 </div>
                             </div>
                         </div>
@@ -55,14 +55,14 @@
                         </div>
 
                         <div class="row">
-                            <!-- CategorÌa -->
+                            <!-- Categor√≠a -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="Producto.Id_Categoria" class="form-label">CategorÌa</label>
+                                    <label asp-for="Producto.Id_Categoria" class="form-label">Categor√≠a</label>
                                     <select asp-for="Producto.Id_Categoria" 
                                             asp-items="Model.CategoriasList" 
                                             class="form-select">
-                                        <option value="">-- Seleccionar CategorÌa --</option>
+                                        <option value="">-- Seleccionar Categor√≠a --</option>
                                     </select>
                                     <span asp-validation-for="Producto.Id_Categoria" class="text-danger"></span>
                                 </div>
@@ -84,7 +84,7 @@
 
                         <div class="row">
                             <!-- Materia Prima -->
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="materia-prima-container">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.Id_Materia_Prima" class="form-label">Materia Prima</label>
                                     <select asp-for="Producto.Id_Materia_Prima" 
@@ -96,14 +96,14 @@
                                 </div>
                             </div>
 
-                            <!-- PresentaciÛn -->
+                            <!-- Presentaci√≥n -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label asp-for="Producto.Id_Presentacion" class="form-label">PresentaciÛn</label>
+                                    <label asp-for="Producto.Id_Presentacion" class="form-label">Presentaci√≥n</label>
                                     <select asp-for="Producto.Id_Presentacion" 
                                             asp-items="Model.PresentacionesList" 
                                             class="form-select">
-                                        <option value="">-- Seleccionar PresentaciÛn --</option>
+                                        <option value="">-- Seleccionar Presentaci√≥n --</option>
                                     </select>
                                     <span asp-validation-for="Producto.Id_Presentacion" class="text-danger"></span>
                                 </div>
@@ -122,7 +122,7 @@
                                         <option value="3">Litro</option>
                                         <option value="4">Mililitro</option>
                                         <option value="5">Metro</option>
-                                        <option value="6">CentÌmetro</option>
+                                        <option value="6">Cent√≠metro</option>
                                         <option value="7">Caja</option>
                                         <option value="8">Paquete</option>
                                     </select>
@@ -131,38 +131,44 @@
                             </div>
 
                             <!-- Tiempo de Vida -->
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="tiempo-vida-container">
                                 <div class="form-group mb-3">
                                     <label asp-for="Producto.Tiempo_De_Vida" class="form-label"></label>
                                     <input asp-for="Producto.Tiempo_De_Vida" class="form-control" type="number" min="0" />
                                     <span asp-validation-for="Producto.Tiempo_De_Vida" class="text-danger"></span>
-                                    <small class="form-text text-muted">DÌas de vida ˙til del producto</small>
+                                    <small class="form-text text-muted">D√≠as de vida √∫til del producto</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Checkboxes para caracterÌsticas especiales -->
+                        <!-- Checkboxes para caracter√≠sticas especiales -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h6 class="card-title mb-0">CaracterÌsticas del Producto</h6>
+                                        <h6 class="card-title mb-0">Caracter√≠sticas del Producto</h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-check">
-                                                    <input asp-for="Producto.Es_Materia_Prima" class="form-check-input" type="checkbox" />
+                                                    <input asp-for="Producto.Es_Materia_Prima" class="form-check-input" type="checkbox" id="chk-materia-prima" />
                                                     <label asp-for="Producto.Es_Materia_Prima" class="form-check-label">Materia Prima</label>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-check">
                                                     <input asp-for="Producto.Es_De_Terceros" class="form-check-input" type="checkbox" />
                                                     <label asp-for="Producto.Es_De_Terceros" class="form-check-label">De Terceros</label>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
+                                                <div class="form-check">
+                                                    <input asp-for="Producto.Se_Da√±a" class="form-check-input" type="checkbox" id="chk-se-dana" />
+                                                    <label asp-for="Producto.Se_Da√±a" class="form-check-label">Se da√±a con el tiempo</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
                                                 <div class="form-check">
                                                     <input asp-for="Producto.Estado" class="form-check-input" type="checkbox" />
                                                     <label asp-for="Producto.Estado" class="form-check-label">Activo</label>
@@ -177,7 +183,7 @@
                         @if (!string.IsNullOrEmpty(Model.Producto.CodigoReferencia))
                         {
                             <div class="alert alert-info mt-3">
-                                <strong>InformaciÛn:</strong> Est· editando un producto existente.
+                                <strong>Informaci√≥n:</strong> Est√° editando un producto existente.
                             </div>
                         }
                     </div>
@@ -205,35 +211,82 @@
     
     <script>
         $(document).ready(function() {
-            // ValidaciÛn personalizada
+            // Funci√≥n para manejar la visibilidad de campos
+            function toggleFieldVisibility() {
+                var esMateriaPrima = $('#chk-materia-prima').is(':checked');
+                var seDana = $('#chk-se-dana').is(':checked');
+                
+                // Mostrar/ocultar campo Materia Prima
+                if (esMateriaPrima) {
+                    $('#materia-prima-container').show();
+                    $('#Producto_Id_Materia_Prima').prop('required', true);
+                } else {
+                    $('#materia-prima-container').hide();
+                    $('#Producto_Id_Materia_Prima').val('').prop('required', false);
+                }
+                
+                // Mostrar/ocultar campo Tiempo de Vida
+                if (seDana) {
+                    $('#tiempo-vida-container').show();
+                    $('#Producto_Tiempo_De_Vida').prop('required', true);
+                } else {
+                    $('#tiempo-vida-container').hide();
+                    $('#Producto_Tiempo_De_Vida').val('0').prop('required', false);
+                }
+            }
+            
+            // Ejecutar al cargar la p√°gina
+            toggleFieldVisibility();
+            
+            // Ejecutar cuando cambie el checkbox de materia prima
+            $('#chk-materia-prima').on('change', toggleFieldVisibility);
+            
+            // Ejecutar cuando cambie el checkbox de se da√±a
+            $('#chk-se-dana').on('change', toggleFieldVisibility);
+
+            // Validaci√≥n personalizada
             $('form').on('submit', function(e) {
                 var codigo = $('#Producto_CodigoReferencia').val();
                 var descripcion = $('#Producto_Descripcion').val();
                 
                 if (!codigo.trim()) {
                     e.preventDefault();
-                    alert('El cÛdigo de referencia es obligatorio');
+                    alert('El c√≥digo de referencia es obligatorio');
                     $('#Producto_CodigoReferencia').focus();
                     return false;
                 }
                 
                 if (!descripcion.trim()) {
                     e.preventDefault();
-                    alert('La descripciÛn es obligatoria');
+                    alert('La descripci√≥n es obligatoria');
                     $('#Producto_Descripcion').focus();
+                    return false;
+                }
+                
+                // Validaci√≥n condicional para materia prima
+                var esMateriaPrima = $('#chk-materia-prima').is(':checked');
+                var materiaPrimaSeleccionada = $('#Producto_Id_Materia_Prima').val();
+                
+                if (esMateriaPrima && !materiaPrimaSeleccionada) {
+                    e.preventDefault();
+                    alert('Debe seleccionar una materia prima');
+                    $('#Producto_Id_Materia_Prima').focus();
+                    return false;
+                }
+                
+                // Validaci√≥n condicional para tiempo de vida
+                var seDana = $('#chk-se-dana').is(':checked');
+                var tiempoVida = parseInt($('#Producto_Tiempo_De_Vida').val()) || 0;
+                
+                if (seDana && tiempoVida <= 0) {
+                    e.preventDefault();
+                    alert('Debe especificar un tiempo de vida mayor a 0 d√≠as');
+                    $('#Producto_Tiempo_De_Vida').focus();
                     return false;
                 }
             });
 
-            // Actualizar vista previa cuando cambian los valores
-            $('#Producto_Id_Impuesto').on('change', function() {
-                var selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    console.log('Impuesto seleccionado:', selectedOption.text());
-                }
-            });
-
-            // Mostrar informaciÛn adicional del impuesto seleccionado
+            // Mostrar informaci√≥n adicional del impuesto seleccionado
             $('#Producto_Id_Impuesto').on('change', function() {
                 var selectedText = $(this).find('option:selected').text();
                 if (selectedText && selectedText !== '-- Seleccionar Impuesto --') {

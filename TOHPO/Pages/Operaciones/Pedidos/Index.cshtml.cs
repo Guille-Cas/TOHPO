@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+ï»¿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TOHPO.Data;
@@ -96,7 +96,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
         {
             if (id <= 0)
             {
-                TempData["ErrorMessage"] = "ID de pedido no válido";
+                TempData["ErrorMessage"] = "ID de pedido no vÃ¡lido";
                 return RedirectToPage();
             }
 
@@ -112,7 +112,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             try
             {
-                // Verificar que el pedido no esté completado para poder eliminarlo
+                // Verificar que el pedido no estÃ© completado para poder eliminarlo
                 if (pedido.Estado)
                 {
                     TempData["ErrorMessage"] = "No se puede eliminar un pedido completado";
@@ -159,7 +159,7 @@ namespace TOHPO.Pages.Operaciones.Pedidos
 
             try
             {
-                // Si se está completando el pedido
+                // Si se estÃ¡ completando el pedido
                 if (!pedido.Estado)
                 {
                     // Validar que hay suficiente inventario para completar
