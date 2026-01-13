@@ -20,6 +20,20 @@
                 }
             }
         ],
+        columnDefs: [
+            {
+                targets: "_all",      // todas las columnas
+                className: "align-middle"  // centra verticalmente
+            },
+            {
+                targets: [1, 2, 3, 4],   // columnas: id, cedula, nombre
+                className: "text-start" // alineado a la izquierda
+            },
+            {
+                targets: [0, 5],         // columna de acciones
+                className: "text-center" // centrado horizontal
+            }
+        ],
         language: {
             emptyTable: "No hay proveedores registrados",
             loadingRecords: "Cargando...",

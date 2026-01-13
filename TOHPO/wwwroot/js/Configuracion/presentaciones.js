@@ -18,6 +18,24 @@
                 }
             }
         ],
+        columnDefs: [
+            {
+                targets: "_all",      // todas las columnas
+                className: "align-middle"  // centra verticalmente
+            },
+            {
+                targets: [2],   // columnas: id, cedula, nombre
+                className: "text-start" // alineado a la izquierda
+            },
+            {
+                targets: [0, 3],         // columna de acciones
+                className: "text-center" // centrado horizontal
+            },
+            {
+                targets: [1],   // columnas: id, cedula, nombre
+                className: "text-end" // alineado a la izquierda
+            }
+        ],
         language: {
             emptyTable: "No hay presentaciones registradas",
             loadingRecords: "Cargando...",

@@ -8,7 +8,7 @@ namespace TOHPO.Models
         [Key]
         public int Id { get; set; }
         [Required(ErrorMessage = "La descripción es obligatoria")]
-        [DisplayName("Descripción")]
+        [DisplayName("Descripción:")]
         public string Descripcion { get; set; }
         public bool Estado { get; set; }
     }

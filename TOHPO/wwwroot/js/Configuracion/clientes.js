@@ -27,23 +27,20 @@
                 }
             }
         ],
-
-        /* -------------- AQUI VIENE LA MAGIA ---------------- */
         columnDefs: [
             {
                 targets: "_all",      // todas las columnas
                 className: "align-middle"  // centra verticalmente
             },
             {
-                targets: [0, 1, 2],   // columnas: id, cedula, nombre
+                targets: [1, 2],   // columnas: id, cedula, nombre
                 className: "text-start" // alineado a la izquierda
             },
             {
-                targets: [3],         // columna de acciones
+                targets: [0, 3],         // columna de acciones
                 className: "text-center" // centrado horizontal
             }
         ],
-        /* --------------------------------------------------- */
 
         language: {
             emptyTable: "No hay clientes registrados en el sistema",

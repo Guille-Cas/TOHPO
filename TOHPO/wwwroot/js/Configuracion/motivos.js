@@ -13,7 +13,6 @@ $(document).ready(function () {
                 render: function (data) {
                     return `
                         <div class="d-flex justify-content-center gap-2">
-                            <button class="btn btn-success btn-sm btnDetalles" data-id="${data}">Detalles</button>
                             <button class="btn btn-warning btn-sm btnEditar" data-id="${data}">Editar</button>
                             <button class="btn btn-danger btn-sm btnEliminar" data-id="${data}">Eliminar</button>
                         </div>
@@ -28,11 +27,11 @@ $(document).ready(function () {
                 className: "align-middle"
             },
             {
-                targets: [0, 1],
+                targets: [1],
                 className: "text-start"
             },
             {
-                targets: [2],
+                targets: [0, 2],
                 className: "text-center"
             }
         ],
@@ -86,17 +85,6 @@ $(document).ready(function () {
                 })
                 .catch(err => console.error("Error en fetch:", err));
         }
-    });
-
-    // Mostrar detalles
-    $('#tablaMotivos').on('click', '.btnDetalles', function () {
-        const fila = tabla.row($(this).parents('tr')).data();
-
-        $('#modalId').text(fila.id);
-        $('#modalDescripcion').text(fila.descripcion);
-
-        var modal = new bootstrap.Modal(document.getElementById('detallesModal'));
-        modal.show();
     });
 
     // Editar motivo

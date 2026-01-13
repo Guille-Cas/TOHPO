@@ -69,7 +69,7 @@
 
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label">Proveedor</label>
+                                    <label asp-for="AgenteVentas.Id_Proveedor" class="form-label"></label>
                                     <div class="input-group">
                                         <input type="text"
                                                id="proveedorDescripcion"
@@ -83,6 +83,7 @@
                                             Buscar
                                         </button>
                                     </div>
+                                    <span asp-validation-for="AgenteVentas.Id_Proveedor" class="text-danger"></span>
                                     <input type="hidden" asp-for="AgenteVentas.Id_Proveedor" />
                                 </div>
                             </div>

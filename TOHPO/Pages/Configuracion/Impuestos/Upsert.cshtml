@@ -26,10 +26,13 @@
                 <!-- DESCRIPCIÓN (ALERT) -->
                 <div class="card-body border-bottom">
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        @(isEdit
-                                                ? "Actualice la información del impuesto y guarde los cambios para mantener sus datos al día."
-                                                : "Complete la información del nuevo impuesto y guarde el registro para que quede disponible en el sistema.")
-
+                        @Html.Raw(
+                        isEdit
+                        ? "Actualice la información del impuesto y guarde los cambios para mantener sus datos al día."
+                        : "Complete la información del nuevo impuesto y guarde el registro para que quede disponible en el sistema.<br />" +
+                        "El porcentaje debe ingresarse como un valor entre 0 y 100.<br />" +
+                        "Por ejemplo: 10 para representar 10 %, no 0.10."
+                                                )
                     </div>
                 </div>
 
@@ -56,7 +59,7 @@
                                 <div class="mb-3">
                                     <label asp-for="Impuesto.Porcentaje" class="form-label"></label>
                                     <div class="input-group">
-                                        <input asp-for="Impuesto.Porcentaje" class="form-control" />
+                                        <input type="number" min="0" step="0.01"  asp-for="Impuesto.Porcentaje" class="form-control" />
                                         <span class="input-group-text">%</span>
                                     </div>
                                     <span asp-validation-for="Impuesto.Porcentaje" class="text-danger"></span>

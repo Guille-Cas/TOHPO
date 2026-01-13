@@ -10,11 +10,12 @@ namespace TOHPO.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "La descripción es obligatoria")]
-        [DisplayName("Descripción")]
+        [DisplayName("Descripción:")]
         public string Descripcion { get; set; }
         public bool Estado { get; set; }
 
         [Required(ErrorMessage = "La unidad de medida es obligatoria")]
+        [DisplayName("Unidad de medida:")]
         public Unidad_Medida Unidad_Medida { get; set; }
     }
 }

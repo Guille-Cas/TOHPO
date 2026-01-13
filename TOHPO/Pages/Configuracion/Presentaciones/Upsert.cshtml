@@ -46,7 +46,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="Presentacion.Cantidad" class="form-label"></label>
-                                    <input asp-for="Presentacion.Cantidad" class="form-control" />
+                                    <input type="number" min="0" step="0.01" asp-for="Presentacion.Cantidad" class="form-control" />
                                     <span asp-validation-for="Presentacion.Cantidad" class="text-danger"></span>
                                 </div>
                             </div>

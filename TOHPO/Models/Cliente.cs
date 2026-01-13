@@ -35,5 +35,7 @@ namespace TOHPO.Models
         [Required(ErrorMessage = "La cédula es obligatoria")]
         [DisplayName("Identificación:")]
         public String Cedula { get; set; }
+
+        public bool Estado { get; set; }
     }
 }

@@ -17,6 +17,20 @@
                 }
             }
         ],
+        columnDefs: [
+            {
+                targets: "_all",      // todas las columnas
+                className: "align-middle"  // centra verticalmente
+            },
+            {
+                targets: [1],   // columnas: id, cedula, nombre
+                className: "text-start" // alineado a la izquierda
+            },
+            {
+                targets: [0, 2],         // columna de acciones
+                className: "text-center" // centrado horizontal
+            }
+        ],
         language: {
             emptyTable: "No hay categorías registradas",
             loadingRecords: "Cargando...",

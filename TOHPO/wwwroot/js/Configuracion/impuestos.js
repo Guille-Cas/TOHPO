@@ -7,7 +7,12 @@
         columns: [
             { data: 'id' },
             { data: 'descripcion' },
-            { data: 'porcentaje' },
+            {
+                data: 'porcentaje',
+                render: function (data) {
+                    return data + ' %';
+                }
+            },
             {
                 data: 'id',
                 render: function (data) {
@@ -16,6 +21,20 @@
                         <button class="btn btn-danger btn-sm btnEliminar" data-id="${data}">Eliminar</button>
                     `;
                 }
+            }
+        ],
+        columnDefs: [
+            {
+                targets: "_all",      // todas las columnas
+                className: "align-middle"  // centra verticalmente
+            },
+            {
+                targets: [1, 2],   // columnas: id, cedula, nombre
+                className: "text-start" // alineado a la izquierda
+            },
+            {
+                targets: [0, 3],         // columna de acciones
+                className: "text-center" // centrado horizontal
             }
         ],
         language: {
